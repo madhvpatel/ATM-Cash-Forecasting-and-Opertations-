@@ -76,6 +76,53 @@ class IterationTwoHandler(SimpleHTTPRequestHandler):
             self.wfile.write(json.dumps(manifest).encode("utf-8"))
             return
 
+        if parsed.path == "/api/reports/daily-action-plan":
+            qs = parse_qs(parsed.query)
+            fmt = qs.get("format", ["csv"])[0].lower()
+            if fmt == "json":
+                rep_data = masters_mgr.generate_daily_cash_action_report_data()
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+                self._send_cors_headers()
+                self.end_headers()
+                self.wfile.write(json.dumps(rep_data).encode("utf-8"))
+            else:
+                csv_bytes = masters_mgr.generate_daily_cash_action_csv().encode("utf-8")
+                self.send_response(200)
+                self.send_header("Content-Type", "text/csv; charset=utf-8")
+                self.send_header("Content-Disposition", 'attachment; filename="Daily_Cash_Action_Report.csv"')
+                self._send_cors_headers()
+                self.end_headers()
+                self.wfile.write(csv_bytes)
+            return
+
+        if parsed.path == "/api/reports/workbook":
+            try:
+                wb_bytes = masters_mgr.generate_daily_cash_action_workbook()
+                self.send_response(200)
+                self.send_header("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                self.send_header("Content-Disposition", 'attachment; filename="Daily_Cash_Action_Report_Workbook.xlsx"')
+                self._send_cors_headers()
+                self.end_headers()
+                self.wfile.write(wb_bytes)
+            except Exception as e:
+                self.send_response(500)
+                self.send_header("Content-Type", "application/json")
+                self._send_cors_headers()
+                self.end_headers()
+                self.wfile.write(json.dumps({"error": str(e)}).encode("utf-8"))
+            return
+
+        if parsed.path == "/api/reports/predictions":
+            csv_bytes = masters_mgr.generate_predictions_csv().encode("utf-8")
+            self.send_response(200)
+            self.send_header("Content-Type", "text/csv; charset=utf-8")
+            self.send_header("Content-Disposition", 'attachment; filename="Historical_Predictions_Accuracy_Log.csv"')
+            self._send_cors_headers()
+            self.end_headers()
+            self.wfile.write(csv_bytes)
+            return
+
         return super().do_GET()
 
     def do_POST(self):
@@ -240,6 +287,49 @@ class IterationTwoHandler(SimpleHTTPRequestHandler):
             officer = str(body.get("officer_name", "Chief Treasury Officer"))
             notes = str(body.get("notes", "Authorized for CIT Dispatch"))
             res = masters_mgr.lock_manifest(checker_name=officer, notes=notes)
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self._send_cors_headers()
+            self.end_headers()
+            self.wfile.write(json.dumps(res).encode("utf-8"))
+            return
+
+        if parsed.path == "/api/actions/sweep":
+            donor_id = str(body.get("donor_id", "")).strip()
+            recipient_id = str(body.get("recipient_id", "")).strip()
+            amount = float(body.get("amount", 200000.0))
+            actor = str(body.get("actor", "Chief Treasury Officer"))
+            try:
+                res = masters_mgr.execute_inter_atm_sweep(donor_id=donor_id, recipient_id=recipient_id, amount=amount, actor=actor)
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+                self._send_cors_headers()
+                self.end_headers()
+                self.wfile.write(json.dumps(res).encode("utf-8"))
+            except Exception as e:
+                self.send_response(400)
+                self.send_header("Content-Type", "application/json")
+                self._send_cors_headers()
+                self.end_headers()
+                self.wfile.write(json.dumps({"error": str(e)}).encode("utf-8"))
+            return
+
+        if parsed.path == "/api/actions/clear-reject-bin":
+            tid = str(body.get("terminal_id", "1")).strip()
+            actor = str(body.get("actor", "Field Custodian Technician"))
+            res = masters_mgr.execute_clear_reject_bin(terminal_id=tid, actor=actor)
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self._send_cors_headers()
+            self.end_headers()
+            self.wfile.write(json.dumps(res).encode("utf-8"))
+            return
+
+        if parsed.path == "/api/actions/emergency-indent":
+            tid = str(body.get("terminal_id", "1")).strip()
+            amt = float(body["amount"]) if "amount" in body and body["amount"] is not None else None
+            actor = str(body.get("actor", "Emergency Hot-Dispatch Planner"))
+            res = masters_mgr.execute_emergency_indent(terminal_id=tid, amount=amt, actor=actor)
             self.send_response(200)
             self.send_header("Content-Type", "application/json")
             self._send_cors_headers()

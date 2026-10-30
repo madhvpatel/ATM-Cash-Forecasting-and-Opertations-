@@ -7,7 +7,12 @@
     "unmet_demand_penalty_rate": 0.01,
     "target_service_level": 0.99,
     "target_cer_buffer": 0.7,
-    "default_cassette_capacity": 6000000.0
+    "default_cassette_capacity": 6000000.0,
+    "min_sweep_threshold": 200000.0,
+    "inter_atm_transfer_fee": 1500.0,
+    "hood_threat_idle_cap": 2000000.0,
+    "reject_bin_warning_pct": 75.0,
+    "reject_bin_critical_pct": 90.0
   },
   "terminal_configs": {
     "1": {
@@ -75,6 +80,12 @@
       "start_date": "2026-08-28",
       "end_date": "2026-08-30",
       "demand_multiplier": 0.82,
+      "category_multipliers": {
+        "Metro Transit": 0.85,
+        "Corporate": 0.9,
+        "Hood": 0.7,
+        "Residential": 0.78
+      },
       "notes": "Heavy localized waterlogging reduces footfall near street concourses."
     },
     {
@@ -84,6 +95,12 @@
       "start_date": "2026-08-31",
       "end_date": "2026-09-04",
       "demand_multiplier": 1.28,
+      "category_multipliers": {
+        "Corporate": 1.68,
+        "Metro Transit": 1.25,
+        "Hood": 1.18,
+        "Residential": 1.15
+      },
       "notes": "Month-end salary dispersal spike across commercial & IT zones."
     },
     {
@@ -93,6 +110,12 @@
       "start_date": "2026-09-04",
       "end_date": "2026-09-07",
       "demand_multiplier": 1.45,
+      "category_multipliers": {
+        "Hood": 1.65,
+        "Residential": 1.4,
+        "Metro Transit": 1.3,
+        "Corporate": 0.6
+      },
       "notes": "Festival bazaar cash withdrawals at peak demand."
     },
     {
@@ -102,76 +125,20 @@
       "start_date": "2026-09-10",
       "end_date": "2026-09-12",
       "demand_multiplier": 1.15,
+      "category_multipliers": {
+        "Residential": 1.3,
+        "Hood": 1.12,
+        "Corporate": 1.0,
+        "Metro Transit": 1.05
+      },
       "notes": "Senior citizen pension credits at post & bank branches."
     }
   ],
   "approved_indents": {},
-  "checker_overrides": {
-    "8": {
-      "terminal_id": "8",
-      "maker_proposed_indent": 100700.0,
-      "checker_custom_indent": 1500000.0,
-      "delta_rupees": 1399300.0,
-      "reason": "Amended: Configured 2-CYCLE multi-drop strategy (\u20b915,00,000)",
-      "actor": "Treasury Operations Planner",
-      "timestamp": "2026-10-29 01:37:07"
-    }
-  },
-  "amended_replenishments": {
-    "8": {
-      "terminal_id": "8",
-      "strategy": "2-CYCLE",
-      "refill_cycles": [
-        {
-          "cycle_id": 1,
-          "name": "Refill Cycle #1 (Mid-Week Primary)",
-          "date": "2026-08-26",
-          "window": "08:00 AM",
-          "amount": 600000.0,
-          "is_enabled": true,
-          "servicing": "BRANCH",
-          "status": "Amended",
-          "reason": "Primary operational replenishment"
-        },
-        {
-          "cycle_id": 2,
-          "name": "Refill Cycle #2 (Weekend Surge Shield)",
-          "date": "2026-08-28",
-          "window": "07:00 AM \u2013 09:15 AM",
-          "amount": 900000.0,
-          "is_enabled": true,
-          "servicing": "BRANCH",
-          "status": "Amended",
-          "reason": "Auto-suggested to eliminate 2026-08-29 stockout"
-        }
-      ],
-      "amended_date": "2026-08-26",
-      "amended_window": "08:00 AM",
-      "amended_indent": 1500000.0,
-      "original_indent": 100700.0,
-      "notes": "Configured 2-CYCLE multi-drop strategy (\u20b915,00,000)",
-      "actor": "Treasury Operations Planner",
-      "timestamp": "2026-10-29 01:37:07"
-    }
-  },
-  "feedback_logs": [
-    {
-      "terminal_id": "1",
-      "feedback": "thumbs_down",
-      "reason": "INDENT_TOO_HIGH",
-      "comment": "",
-      "actor": "CMS Ops Operator",
-      "timestamp": "2026-10-28 23:39:17"
-    },
-    {
-      "terminal_id": "1",
-      "feedback": "thumbs_down",
-      "reason": "INDENT_TOO_HIGH",
-      "comment": "",
-      "actor": "CMS Ops Operator",
-      "timestamp": "2026-10-28 23:40:20"
-    }
-  ],
+  "checker_overrides": {},
+  "amended_replenishments": {},
+  "feedback_logs": [],
+  "executed_sweeps": [],
   "is_manifest_locked": false,
   "manifest_lock_info": null
 }

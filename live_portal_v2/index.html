@@ -3104,6 +3104,14 @@
       <a href="cash_intelligence_ui_ux_mockups.html" target="_blank" class="btn-secondary" style="background:#EEF2FF; color:#4F46E5; border-color:#C7D2FE; font-weight:700; text-decoration:none; display:inline-flex; align-items:center; gap:6px;">
         <span>✨ 20 UX Laws Mockup</span>
       </a>
+      <button class="btn-secondary" onclick="openReportsModal()" style="background:#0F172A; color:#FFFFFF; border-color:#334155; font-weight:700; display:inline-flex; align-items:center; gap:6px;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="7 10 12 15 17 10"/>
+          <line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        <span>📥 Download Reports</span>
+      </button>
       <button class="btn-secondary" onclick="openMastersModal()">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <circle cx="12" cy="12" r="3" />
@@ -3133,6 +3141,44 @@
          SCREEN 1: OVERALL NETWORK VIEW
          ---------------------------------------------------- -->
     <div class="view-screen active" id="screenNetworkView">
+
+      <!-- ========================================================
+           TWO-TIER PRIORITIZATION: Pinned Top Deck - Critical Action Queue
+           ======================================================== -->
+      <div class="critical-action-deck" id="criticalActionDeck" style="margin-bottom: 24px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span class="pulse-danger-dot"></span>
+            <span style="font-size: 13px; font-weight: 800; letter-spacing: 0.5px; color: var(--crimson-text); text-transform: uppercase;">
+              🚨 Priority Critical Action Queue (Action Required Before 18:00 Cutoff)
+            </span>
+            <span class="badge" id="criticalQueueCountBadge" style="background: var(--crimson-bg); color: var(--crimson-text); border: 1px solid var(--crimson-border); font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 12px;">
+              2 ATMs At Risk
+            </span>
+          </div>
+          <span style="font-size: 12px; color: var(--text-muted);">Real-time Telemetry & CRA SLA Threat Monitoring</span>
+        </div>
+
+        <!-- Dynamic Critical Queue Cards -->
+        <div id="criticalQueueCardsContainer" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 14px;">
+          <!-- Rendered dynamically by renderCriticalQueue() -->
+        </div>
+
+        <!-- Dynamic Inter-ATM Surplus Rebalancing Proposal Card -->
+        <div id="interAtmRebalancingStrip" style="margin-top: 14px;">
+          <!-- Rendered dynamically by renderInterAtmRebalancing() -->
+        </div>
+      </div>
+
+      <!-- ========================================================
+           TIER 2: Lower Deck - Network Health & Corridor Analytics
+           ======================================================== -->
+      <div class="card-section-label" style="margin-bottom: 10px; display:flex; align-items:center; gap:6px;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+        </svg>
+        <span>Network Health & Fleet Financial Analytics</span>
+      </div>
 
       <!-- Executive Metric Strip -->
       <div class="metric-strip">
@@ -3219,13 +3265,14 @@
           <table class="roster-table" id="networkRosterTable">
             <thead>
               <tr>
-                <th>ATM Identifier & Location</th>
-                <th>Corridor / Van Route</th>
-                <th>ATM Safe Cash</th>
-                <th>Cash Remaining</th>
-                <th>24h Burn Forecast</th>
-                <th>Maker Proposed Indent</th>
-                <th>Replenishment Window</th>
+                <th>ATM & Location Category</th>
+                <th>Corridor / Servicing</th>
+                <th>Usable Balance</th>
+                <th>Reject / Divert Bin</th>
+                <th>Runway</th>
+                <th>Burn / P50 Forecast</th>
+                <th>Proposed Indent & Note Mix</th>
+                <th>Downtime Risk</th>
                 <th>Checker Status</th>
                 <th style="text-align: right;">Action</th>
               </tr>
@@ -3746,28 +3793,83 @@
 
             <!-- Visual Physical Stack Fill Meter -->
             <div style="margin-top:10px;">
-              <div
-                style="display:flex; justify-content:space-between; font-size:10px; color:var(--text-muted); margin-bottom:4px;">
+              <div style="display:flex; justify-content:space-between; font-size:10px; color:var(--text-muted); margin-bottom:4px;">
                 <span>ATM Safe Capacity Utilization</span>
-                <span id="capacityUtilizationText" style="font-weight:700; color:var(--text-main);">₹60,00,000 /
-                  ₹60,00,000 (100%)</span>
+                <span id="capacityUtilizationText" style="font-weight:700; color:var(--text-main);">₹60,00,000 / ₹60,00,000 (100%)</span>
               </div>
-              <div class="capacity-meter-bar"
-                style="height:8px; border-radius:4px; overflow:hidden; background:var(--border-subtle); display:flex;">
-                <div id="meterBarResidual" style="background:#0284C7; width:43%; height:100%; transition:width 0.3s;"
-                  title="Current ATM Safe Cash"></div>
-                <div id="meterBarIndent" style="background:#059669; width:57%; height:100%; transition:width 0.3s;"
-                  title="Proposed Indent"></div>
+              <div class="capacity-meter-bar" style="height:8px; border-radius:4px; overflow:hidden; background:var(--border-subtle); display:flex;">
+                <div id="meterBarResidual" style="background:#0284C7; width:43%; height:100%; transition:width 0.3s;" title="Current ATM Safe Cash"></div>
+                <div id="meterBarIndent" style="background:#059669; width:57%; height:100%; transition:width 0.3s;" title="Proposed Indent"></div>
               </div>
               <div style="display:flex; gap:12px; font-size:9.5px; color:var(--text-muted); margin-top:4px;">
-                <span style="display:flex; align-items:center; gap:4px;"><span
-                    style="width:7px; height:7px; background:#0284C7; border-radius:1px; display:inline-block;"></span>
-                  Residual Cash</span>
-                <span style="display:flex; align-items:center; gap:4px;"><span
-                    style="width:7px; height:7px; background:#059669; border-radius:1px; display:inline-block;"></span>
-                  New Indent</span>
+                <span style="display:flex; align-items:center; gap:4px;"><span style="width:7px; height:7px; background:#0284C7; border-radius:1px; display:inline-block;"></span> Residual Cash</span>
+                <span style="display:flex; align-items:center; gap:4px;"><span style="width:7px; height:7px; background:#059669; border-radius:1px; display:inline-block;"></span> New Indent</span>
               </div>
             </div>
+
+            <!-- Hardware Divert / Reject Bin & CRM Collection Modules -->
+            <div style="margin-top:12px; padding-top:10px; border-top:1px solid var(--border-subtle);">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                <span style="font-size:11px; font-weight:700; color:var(--text-main);">Hardware Module Status</span>
+                <span id="singleAtmDeviceBadge" class="badge" style="background:#E0E7FF; color:#3730A3; font-weight:700; font-size:10px;">CRM Machine</span>
+              </div>
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+                <!-- Reject Bin Slot -->
+                <div style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:6px; padding:8px 10px;" id="rejectBinCard">
+                  <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <span style="font-size:10px; font-weight:700; color:#475569;">Purge Reject Bin</span>
+                    <span id="rejectBinStatusBadge" class="badge" style="font-size:9px; font-weight:700; background:#F1F5F9; color:#64748B;">NORMAL</span>
+                  </div>
+                  <div style="font-size:12px; font-weight:700; font-family:var(--font-mono); color:#0F172A; margin:2px 0;" id="rejectBinNotesDisplay">48 / 300 notes (16%)</div>
+                  <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">
+                    <span style="font-size:9px; color:#64748B;">Divert divert cassette</span>
+                    <button class="btn-secondary" style="font-size:9.5px; padding:2px 6px;" onclick="executeClearRejectBin(ACTIVE_TERMINAL_ID)">Reset 0 🧹</button>
+                  </div>
+                </div>
+
+                <!-- CRM Collection Module Slot -->
+                <div style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:6px; padding:8px 10px;" id="crmCollectionCard">
+                  <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <span style="font-size:10px; font-weight:700; color:#475569;">CRM Collection / Overflow</span>
+                    <span id="crmCollectionBadge" class="badge" style="font-size:9px; font-weight:700; background:#F1F5F9; color:#64748B;">ACTIVE</span>
+                  </div>
+                  <div style="font-size:12px; font-weight:700; font-family:var(--font-mono); color:#0F172A; margin:2px 0;" id="crmCollectionNotesDisplay">412 / 2,000 notes</div>
+                  <div style="font-size:9px; color:#64748B;" id="crmDepositIntakeDisplay">Accepts deposits for recirculation</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Average Ticket Size & Plausible Quantiles Strip -->
+            <div style="margin-top:12px; padding-top:10px; border-top:1px solid var(--border-subtle); display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+              <div style="background:#F1F5F9; border-radius:6px; padding:8px 10px;">
+                <div style="font-size:10px; font-weight:700; color:#334155; margin-bottom:4px;">Average Withdrawal Ticket Size</div>
+                <div style="display:flex; justify-content:space-between; font-size:10.5px; color:#475569;">
+                  <span>Daily: <strong id="ticketDailyVal" style="font-family:var(--font-mono); color:#0F172A;">₹3,200</strong></span>
+                  <span>Weekly: <strong id="ticketWeeklyVal" style="font-family:var(--font-mono); color:#0F172A;">₹3,100</strong></span>
+                  <span>Monthly: <strong id="ticketMonthlyVal" style="font-family:var(--font-mono); color:#0F172A;">₹3,050</strong></span>
+                </div>
+              </div>
+              <div style="background:#EFF6FF; border-radius:6px; padding:8px 10px;">
+                <div style="font-size:10px; font-weight:700; color:#1E40AF; margin-bottom:4px;">Plausible Quantile Demand (7-Day)</div>
+                <div style="display:flex; justify-content:space-between; font-size:10.5px; color:#1E3A8A;">
+                  <span>P50: <strong id="qfP50Val" style="font-family:var(--font-mono);">₹28.4L</strong></span>
+                  <span>P80: <strong id="qfP80Val" style="font-family:var(--font-mono);">₹32.1L</strong></span>
+                  <span>P95: <strong id="qfP95Val" style="font-family:var(--font-mono);">₹35.8L</strong></span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Past 3 Cycles Efficacy Audit Quad -->
+            <div style="margin-top:12px; padding-top:10px; border-top:1px solid var(--border-subtle);">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                <span style="font-size:11px; font-weight:700; color:var(--text-main);">Last 3 Cycles Prediction Efficacy & SLA Audit</span>
+                <span id="cycleEfficacyRatingBadge" class="badge" style="background:#DCFCE7; color:#166534; font-weight:700; font-size:10px;">OPTIMAL (94.2% Eff)</span>
+              </div>
+              <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:6px;" id="pastCyclesGrid">
+                <!-- Populated dynamically -->
+              </div>
+            </div>
+
           </div>
         </div>
 
@@ -4163,6 +4265,97 @@
   </div>
 
   <!-- ========================================================
+       MODAL 4: DAILY CASH ACTION REPORT & EXPORT CENTER
+       ======================================================== -->
+  <div class="modal-overlay" id="modalReports">
+    <div class="modal-box" style="max-width: 960px;">
+      <div class="modal-header">
+        <div>
+          <div class="modal-title">📥 Daily Cash Action Reports & Data Export Center</div>
+          <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">
+            Full parameter accountability, cassette physics, quantile demand forecasts, and 3-cycle efficacy audit
+          </div>
+        </div>
+        <button class="btn-icon" onclick="closeReportsModal()">✕</button>
+      </div>
+
+      <div class="modal-body" style="display: flex; flex-direction: column; gap: 18px;">
+        <!-- Download Cards Grid -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px;">
+          <div style="background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 8px; padding: 14px; display:flex; flex-direction:column; justify-content:space-between;">
+            <div>
+              <div style="font-weight: 700; color: #166534; font-size: 13px; margin-bottom: 4px;">📗 Multi-Tab Workbook (.xlsx)</div>
+              <div style="font-size: 11px; color: #15803D; line-height: 1.4;">
+                4 formatted tabs: Daily Action Plan, Hopper & Cassettes, Cycle Efficacy Audit, Model Parameters & Masters.
+              </div>
+            </div>
+            <a href="/api/reports/workbook" download="Daily_Cash_Action_Report_Workbook.xlsx" class="btn-primary" style="margin-top: 12px; text-decoration: none; text-align: center; font-size: 12px; font-weight: 700; background: #166534; border-color: #15803D;">
+              Download .XLSX
+            </a>
+          </div>
+
+          <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 14px; display:flex; flex-direction:column; justify-content:space-between;">
+            <div>
+              <div style="font-weight: 700; color: #0F172A; font-size: 13px; margin-bottom: 4px;">📊 Flattened CSV Report</div>
+              <div style="font-size: 11px; color: #64748B; line-height: 1.4;">
+                Complete single-sheet flat format with all 17 schema columns for automated core banking / CIT ingestion.
+              </div>
+            </div>
+            <a href="/api/reports/daily-action-plan?format=csv" download="Daily_Cash_Action_Report.csv" class="btn-secondary" style="margin-top: 12px; text-decoration: none; text-align: center; font-size: 12px; font-weight: 700;">
+              Download .CSV
+            </a>
+          </div>
+
+          <div style="background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 8px; padding: 14px; display:flex; flex-direction:column; justify-content:space-between;">
+            <div>
+              <div style="font-weight: 700; color: #1E40AF; font-size: 13px; margin-bottom: 4px;">📈 Prediction & Anomaly Log</div>
+              <div style="font-size: 11px; color: #2563EB; line-height: 1.4;">
+                Historical actuals vs predictions, cycle error percentages, and switch telemetry anomaly alerts.
+              </div>
+            </div>
+            <a href="/api/reports/predictions" download="Historical_Predictions_Accuracy_Log.csv" class="btn-secondary" style="margin-top: 12px; text-decoration: none; text-align: center; font-size: 12px; font-weight: 700; background:#DBEAFE; color:#1E40AF; border-color:#BFDBFE;">
+              Download Log (.CSV)
+            </a>
+          </div>
+
+          <div style="background: #FAF5FF; border: 1px solid #E9D5FF; border-radius: 8px; padding: 14px; display:flex; flex-direction:column; justify-content:space-between;">
+            <div>
+              <div style="font-weight: 700; color: #6B21A8; font-size: 13px; margin-bottom: 4px;">📋 CIT Indent Manifest</div>
+              <div style="font-size: 11px; color: #7E22CE; line-height: 1.4;">
+                Route-grouped dispatch slips with cryptographic SHA-256 digital signature token for carrier handoff.
+              </div>
+            </div>
+            <button onclick="closeReportsModal(); openManifestModal();" class="btn-secondary" style="margin-top: 12px; font-size: 12px; font-weight: 700; background:#F3E8FF; color:#6B21A8; border-color:#E9D5FF;">
+              View Manifest
+            </button>
+          </div>
+        </div>
+
+        <!-- Live Table Preview of Daily Cash Action Report -->
+        <div style="border: 1px solid #E2E8F0; border-radius: 8px; overflow: hidden;">
+          <div style="background: #F8FAFC; padding: 10px 14px; border-bottom: 1px solid #E2E8F0; display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-size: 12px; font-weight: 700; color: #0F172A;">Live Table Preview: Daily Cash Action Plan (17 Specification Columns)</span>
+            <span style="font-size: 11px; color: #64748B;">Showing all 8 network terminals</span>
+          </div>
+          <div style="max-height: 320px; overflow-x: auto; overflow-y: auto;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 11px; white-space: nowrap;" id="previewActionReportTable">
+              <thead id="previewReportThead" style="background: #F1F5F9; position: sticky; top: 0; z-index: 1;"></thead>
+              <tbody id="previewReportTbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center;">
+        <span style="font-size: 11px; color: var(--text-muted);">
+          Compliant with RBI Circular RBI/2019-20/127 for Cash Management & Cassette Swaps
+        </span>
+        <button class="btn-secondary" onclick="closeReportsModal()">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================
        MODAL 3: AMEND REPLENISHMENT SCHEDULE & INDENT
        ======================================================== -->
   <div class="modal-overlay" id="modalAmendReplen">
@@ -4478,6 +4671,8 @@
       if (topbarAppText) topbarAppText.innerText = `${approvedCount}/${totalTerminals} Signed`;
       if (topbarAppBar) topbarAppBar.style.width = `${approvalPct}%`;
 
+      renderCriticalQueue();
+      renderInterAtmRebalancing();
       renderRosterTable();
       renderCopilotContext();
 
@@ -4495,6 +4690,233 @@
       document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
       if (btnEl) btnEl.classList.add("active");
       renderRosterTable();
+    }
+
+    // ========================================================
+    // TIER 1: CRITICAL ACTION QUEUE & INTER-ATM BALANCING
+    // ========================================================
+
+    function renderCriticalQueue() {
+      const container = document.getElementById("criticalQueueCardsContainer");
+      if (!container) return;
+      container.innerHTML = "";
+
+      const criticalList = APP_DATA.critical_queue || [];
+      const badge = document.getElementById("criticalQueueCountBadge");
+      if (badge) {
+        badge.innerText = `${criticalList.length} ATM${criticalList.length === 1 ? '' : 's'} At Risk`;
+      }
+
+      if (criticalList.length === 0) {
+        container.innerHTML = `
+          <div style="grid-column: 1 / -1; background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 8px; padding: 14px 18px; display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 16px;">✅</span>
+            <span style="font-size: 12.5px; font-weight: 600; color: #166534;">All 8 ATMs Operating with Healthy Runway & Zero Saturated Bins</span>
+          </div>
+        `;
+        return;
+      }
+
+      criticalList.forEach(t => {
+        const dcrHours = t.dcr_hours ?? 14;
+        const rb = t.reject_bin || { current_notes: 0, max_notes: 300, pct_full: 0, status: 'NORMAL' };
+        const cra = t.cra_tracking || { cra_status: 'ON_SCHEDULE' };
+        const causes = t.downtime_causes || [];
+        const isCrm = t.is_crm || false;
+
+        const card = document.createElement("div");
+        card.style.cssText = "background: #FFFFFF; border: 1px solid #FECACA; border-left: 4px solid #DC2626; border-radius: 8px; padding: 14px; display: flex; flex-direction: column; justify-content: space-between; gap: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);";
+
+        let causesHtml = causes.map(c => `
+          <div style="display:flex; align-items:flex-start; gap:6px; font-size:11px; color:#991B1B; line-height:1.3;">
+            <span style="color:#DC2626; font-weight:700;">●</span>
+            <span>${c}</span>
+          </div>
+        `).join("");
+
+        let actionPillsHtml = '';
+        if (cra.cra_status === 'MISSED_SLA_BREACH' || dcrHours < 24) {
+          actionPillsHtml += `
+            <button class="btn-primary" style="background:#DC2626; border-color:#B91C1C; font-size:11px; padding:4px 10px; font-weight:700;" onclick="executeEmergencyHotRun('${t.terminal_id}')">
+              ⚡ Emergency Hot-Dispatch
+            </button>
+          `;
+        }
+        if (rb.status !== 'NORMAL' || t.human_error_audit?.reject_bin_unemptied) {
+          actionPillsHtml += `
+            <button class="btn-secondary" style="background:#FFFBEB; color:#92400E; border-color:#FDE68A; font-size:11px; padding:4px 10px; font-weight:700;" onclick="executeClearRejectBin('${t.terminal_id}')">
+              🧹 Clear Reject Bin (${rb.current_notes}n)
+            </button>
+          `;
+        }
+        actionPillsHtml += `
+          <button class="btn-secondary" style="font-size:11px; padding:4px 10px; font-weight:600;" onclick="selectAtmAndOpenDeepDive('${t.terminal_id}')">
+            Inspect Physics →
+          </button>
+        `;
+
+        card.innerHTML = `
+          <div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <div style="display: flex; align-items: center; gap: 6px;">
+                <span style="font-weight: 800; font-size: 13px; color: #0F172A; font-family: var(--font-mono);">${t.terminal_code || ('ATM #' + t.terminal_id)}</span>
+                <span class="badge" style="background:${isCrm ? '#E0E7FF' : '#F1F5F9'}; color:${isCrm ? '#3730A3' : '#475569'}; font-size:10px; font-weight:700;">${t.device_type || 'ATM'}</span>
+                <span class="badge" style="background:#FEF3C7; color:#92400E; font-size:10px; font-weight:700;">${t.location_category || 'Commercial'}</span>
+              </div>
+              <span class="dcr-pill dcr-urgent" style="font-size:10.5px;">${dcrHours}h Runway</span>
+            </div>
+            <div style="font-size: 11.5px; font-weight: 600; color: #334155; margin-bottom: 2px;">${t.site_name}</div>
+            <div style="font-size: 11px; color: #64748B; margin-bottom: 8px;">${t.city} · ${t.corridor_route || 'Route'} · Safe Cash: <strong>${formatINR(t.usable_balance || t.existing_cash)}</strong></div>
+            <div style="background: #FEF2F2; border-radius: 6px; padding: 8px 10px; display: flex; flex-direction: column; gap: 4px;">
+              ${causesHtml}
+            </div>
+          </div>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px;">
+            ${actionPillsHtml}
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function renderInterAtmRebalancing() {
+      const container = document.getElementById("interAtmRebalancingStrip");
+      if (!container) return;
+      container.innerHTML = "";
+
+      const proposals = APP_DATA.inter_atm_rebalancing_proposals || [];
+      if (proposals.length === 0) {
+        container.style.display = "none";
+        return;
+      }
+      container.style.display = "block";
+
+      const p = proposals[0]; // Primary proposal
+      container.innerHTML = `
+        <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-left: 4px solid #6366F1; border-radius: 8px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap;">
+          <div style="display:flex; align-items:center; gap:12px;">
+            <div style="width:36px; height:36px; border-radius:50%; background:#EEF2FF; display:flex; align-items:center; justify-content:center; font-size:18px;">
+              🔄
+            </div>
+            <div>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span style="font-size:12.5px; font-weight:800; color:#1E1B4B; text-transform:uppercase; letter-spacing:0.5px;">Recommended Inter-ATM Surplus Rebalancing (Corridor Sweep)</span>
+                <span class="badge" style="background:#C7D2FE; color:#3730A3; font-weight:700; font-size:10px;">Corridor Route Proximity</span>
+              </div>
+              <div style="font-size:12px; color:#334155; margin-top:2px;">
+                Sweep <strong>${formatINR(p.suggested_transfer_amount)}</strong> from <strong>${p.donor_terminal_code}</strong> (${p.donor_site_name} · Surplus) ➔ <strong>${p.recipient_terminal_code}</strong> (${p.recipient_site_name} · Starving: ${p.recipient_runway_hours}h runway).
+              </div>
+              <div style="font-size:11px; color:#059669; font-weight:600; margin-top:2px;">
+                💡 Net Benefit: Eliminates stockout penalty (₹10,000) & emergency CIT hot-trip (₹3,500) | Net Economic Savings: <strong>₹${p.net_savings.toLocaleString()}</strong>
+              </div>
+            </div>
+          </div>
+          <button class="btn-primary" style="background:#4F46E5; border-color:#4338CA; font-weight:700; font-size:12px; padding:7px 14px; white-space:nowrap;" onclick="executeSweep('${p.donor_terminal_id}', '${p.recipient_terminal_id}', ${p.suggested_transfer_amount})">
+            ⚡ Execute Inter-ATM Sweep (${formatINR(p.suggested_transfer_amount)})
+          </button>
+        </div>
+      `;
+    }
+
+    async function executeSweep(donorId, recipientId, amount) {
+      if (!confirm(`Confirm Inter-ATM Cash Sweep: Transfer ${formatINR(amount)} from ATM #${donorId} to ATM #${recipientId}?`)) return;
+      try {
+        const res = await fetch('/api/actions/sweep', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ donor_id: donorId, recipient_id: recipientId, amount: amount })
+        });
+        if (res.ok) {
+          showToast(`✓ Cash Sweep of ${formatINR(amount)} executed successfully!`);
+          await fetchAppData();
+        } else {
+          showToast(`Failed to execute cash sweep`, true);
+        }
+      } catch (e) {
+        console.error("Sweep error:", e);
+      }
+    }
+
+    async function executeClearRejectBin(tid) {
+      if (!confirm(`Reset Reject/Retract Bin counters to 0 for ATM #${tid}?`)) return;
+      try {
+        const res = await fetch('/api/actions/clear-reject-bin', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ terminal_id: tid })
+        });
+        if (res.ok) {
+          showToast(`✓ Reject bin emptied & counters reset to zero for ATM #${tid}`);
+          await fetchAppData();
+        }
+      } catch (e) {
+        console.error("Reject bin reset error:", e);
+      }
+    }
+
+    async function executeEmergencyHotRun(tid) {
+      if (!confirm(`Authorize immediate Emergency Hot-Dispatch replenishment for ATM #${tid}?`)) return;
+      try {
+        const res = await fetch('/api/actions/emergency-indent', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ terminal_id: tid })
+        });
+        if (res.ok) {
+          showToast(`⚡ Emergency Hot-Dispatch Indent Scheduled for ATM #${tid}`);
+          await fetchAppData();
+        }
+      } catch (e) {
+        console.error("Emergency indent error:", e);
+      }
+    }
+
+    // ========================================================
+    // REPORTS & EXPORT CENTER MODAL HANDLERS
+    // ========================================================
+
+    async function openReportsModal() {
+      const modal = document.getElementById("modalReports");
+      if (!modal) return;
+      modal.classList.add("active");
+      await renderReportsModalPreview();
+    }
+
+    function closeReportsModal() {
+      const modal = document.getElementById("modalReports");
+      if (modal) modal.classList.remove("active");
+    }
+
+    async function renderReportsModalPreview() {
+      const thead = document.getElementById("previewReportThead");
+      const tbody = document.getElementById("previewReportTbody");
+      if (!thead || !tbody) return;
+
+      thead.innerHTML = "<tr><th style='padding:8px;'>Loading report schema...</th></tr>";
+      tbody.innerHTML = "";
+
+      try {
+        const res = await fetch('/api/reports/daily-action-plan?format=json');
+        if (res.ok) {
+          const rep = await res.json();
+          thead.innerHTML = `
+            <tr>
+              ${rep.headers.map(h => `<th style="padding:7px 10px; border-bottom:2px solid #CBD5E1; color:#0F172A; text-align:left;">${h}</th>`).join("")}
+            </tr>
+          `;
+          tbody.innerHTML = rep.rows.map((row, idx) => `
+            <tr style="background:${idx % 2 === 0 ? '#FFFFFF' : '#F8FAFC'};">
+              ${row.map((cell, cIdx) => `
+                <td style="padding:6px 10px; border-bottom:1px solid #E2E8F0; color:#334155; font-family:${cIdx in [3, 8] ? 'var(--font-mono)' : 'inherit'}; font-weight:${cIdx === 0 ? '700' : 'normal'};">
+                  ${typeof cell === 'number' ? formatINR(cell) : (cell || '')}
+                </td>
+              `).join("")}
+            </tr>
+          `).join("");
+        }
+      } catch (e) {
+        thead.innerHTML = "<tr><th style='color:red;'>Failed to load preview data.</th></tr>";
+      }
     }
 
     function renderRosterTable() {
@@ -4569,10 +4991,18 @@
         const burn24h = Math.round(rawBurn / 100) * 100;
 
         const dangerDot = isUrgent ? '<span class="pulse-danger-dot" title="Urgent: Cashout in <24h"></span>' : '';
+        const isCrm = t.is_crm || false;
+        const rb = t.reject_bin || { current_notes: 45, max_notes: 300, pct_full: 15, status: 'NORMAL' };
+        const rbAlert = rb.status !== 'NORMAL';
+
         tr.innerHTML = `
           <td>
-            <div class="atm-cell-title">${dangerDot}ATM #${t.terminal_id} · ${t.site_name || 'Terminal'}</div>
-            <div class="atm-cell-sub">${t.site_type || 'Hub'} · ${t.city || 'India'}</div>
+            <div class="atm-cell-title">${dangerDot}${t.terminal_code || ('ATM #' + t.terminal_id)} · ${t.site_name || 'Terminal'}</div>
+            <div style="display:flex; align-items:center; gap:5px; margin-top:2px;">
+              <span class="badge" style="background:${isCrm ? '#E0E7FF' : '#F1F5F9'}; color:${isCrm ? '#3730A3' : '#475569'}; font-size:10px; font-weight:700;">${t.device_type || 'ATM'}</span>
+              <span class="badge" style="background:#FEF3C7; color:#92400E; font-size:10px; font-weight:700;">${t.location_category || 'Commercial'}</span>
+              <span style="font-size:11px; color:#64748B;">${t.city || 'India'}</span>
+            </div>
             <div class="atm-cell-coords">📍 ${t.coords_str || (t.lat + '° N, ' + t.lng + '° E')}</div>
           </td>
           <td>
@@ -4580,15 +5010,38 @@
             <div class="atm-cell-sub">${t.assigned_van || t.serviced_by || 'CIT'} · ${t.vault_distance_km || 10}km from Chest</div>
           </td>
           <td>
-            <div style="font-family:var(--font-mono); font-weight:600;">${formatINR(t.existing_cash)}</div>
-            <div class="atm-cell-sub">${Math.round((t.existing_cash / (t.capacity || 6000000)) * 100)}% Safe Cap</div>
+            <div style="font-family:var(--font-mono); font-weight:700; color:#0F172A;">${formatINR(t.usable_balance || t.existing_cash)}</div>
+            <div class="atm-cell-sub">${Math.round(((t.usable_balance || t.existing_cash) / (t.capacity || 6000000)) * 100)}% Safe Cap</div>
+          </td>
+          <td>
+            <div style="font-size:11.5px; font-family:var(--font-mono); font-weight:600; color:${rbAlert ? '#DC2626' : '#475569'};">
+              ${rb.current_notes} / ${rb.max_notes} notes
+            </div>
+            <div style="display:flex; align-items:center; gap:4px; margin-top:2px;">
+              <span class="badge" style="background:${rbAlert ? '#FEE2E2' : '#F1F5F9'}; color:${rbAlert ? '#991B1B' : '#64748B'}; font-size:9.5px; font-weight:700;">
+                ${rb.pct_full}% ${rbAlert ? '⚠️ SATURATED' : 'Normal'}
+              </span>
+            </div>
           </td>
           <td>
             <span class="dcr-pill ${dcrClass}">${dcrHours} Hours</span>
           </td>
-          <td style="font-family:var(--font-mono);">${formatINR(burn24h)}</td>
-          <td style="font-family:var(--font-mono); font-weight:700; color:var(--emerald-dark);">${formatINR(indentVal)}</td>
-          <td>${replenBadgeHtml}</td>
+          <td>
+            <div style="font-family:var(--font-mono); font-weight:600;">${formatINR(burn24h)}/d</div>
+            <div style="font-size:10px; color:#64748B;">P50: ${formatINR(t.quantile_forecast?.p50_demand || burn24h*7)}</div>
+          </td>
+          <td>
+            <div style="font-family:var(--font-mono); font-weight:700; color:var(--emerald-dark);">${formatINR(indentVal)}</div>
+            <div style="font-size:10px; color:#475569; max-width:180px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${t.denomination_mix || ''}">
+              ${t.indent_notes_split ? `₹500: ${t.indent_notes_split['500']} | ₹200: ${t.indent_notes_split['200']} | ₹100: ${t.indent_notes_split['100']}` : 'Standard Fill'}
+            </div>
+          </td>
+          <td>
+            <div style="font-size:11.5px; font-weight:700; color:${t.downtime_risk_score >= 70 ? '#DC2626' : (t.downtime_risk_score >= 40 ? '#D97706' : '#166534')};">
+              ${t.downtime_risk_score || 10}%
+            </div>
+            <div style="font-size:9.5px; color:#64748B;">${t.downtime_risk_score >= 70 ? 'High Risk' : (t.downtime_risk_score >= 40 ? 'Moderate' : 'Low Risk')}</div>
+          </td>
           <td>${statusBadge}</td>
           <td style="text-align: right;">
             <button class="btn-table-inspect" onclick="event.stopPropagation(); selectAtmAndOpenDeepDive('${t.terminal_id}')">
@@ -4854,20 +5307,105 @@
     }
 
     function updateCassettePhysics(netIndent, vaultCash, cap) {
-      let rem = netIndent;
-      const c1Amt = Math.min(rem, 1000000); rem -= c1Amt;
-      const c2Amt = Math.min(rem, 500000); rem -= c2Amt;
-      const c3Amt = Math.min(rem, 200000); rem -= c3Amt;
-      const c4Amt = rem;
+      const atm = APP_DATA?.terminals?.[ACTIVE_TERMINAL_ID] || {};
+      const cassettes = atm.cassettes || [];
 
-      document.getElementById("c1NotesVal").innerText = `${Math.round(c1Amt / 500).toLocaleString()} Notes`;
-      document.getElementById("c1AmtVal").innerText = formatINR(c1Amt);
-      document.getElementById("c2NotesVal").innerText = `${Math.round(c2Amt / 500).toLocaleString()} Notes`;
-      document.getElementById("c2AmtVal").innerText = formatINR(c2Amt);
-      document.getElementById("c3NotesVal").innerText = `${Math.round(c3Amt / 200).toLocaleString()} Notes`;
-      document.getElementById("c3AmtVal").innerText = formatINR(c3Amt);
-      document.getElementById("c4NotesVal").innerText = `${Math.round(c4Amt / 100).toLocaleString()} Notes`;
-      document.getElementById("c4AmtVal").innerText = formatINR(c4Amt);
+      if (cassettes.length >= 4) {
+        document.getElementById("c1NotesVal").innerText = `${cassettes[0].current_notes.toLocaleString()} Notes (Slot 1)`;
+        document.getElementById("c1AmtVal").innerText = formatINR(cassettes[0].amount);
+        document.getElementById("c2NotesVal").innerText = `${cassettes[1].current_notes.toLocaleString()} Notes (Slot 2)`;
+        document.getElementById("c2AmtVal").innerText = formatINR(cassettes[1].amount);
+        document.getElementById("c3NotesVal").innerText = `${cassettes[2].current_notes.toLocaleString()} Notes (Slot 3)`;
+        document.getElementById("c3AmtVal").innerText = formatINR(cassettes[2].amount);
+        document.getElementById("c4NotesVal").innerText = `${cassettes[3].current_notes.toLocaleString()} Notes (Slot 4)`;
+        document.getElementById("c4AmtVal").innerText = formatINR(cassettes[3].amount);
+      } else {
+        let rem = netIndent;
+        const c1Amt = Math.min(rem, 1000000); rem -= c1Amt;
+        const c2Amt = Math.min(rem, 500000); rem -= c2Amt;
+        const c3Amt = Math.min(rem, 200000); rem -= c3Amt;
+        const c4Amt = rem;
+        document.getElementById("c1NotesVal").innerText = `${Math.round(c1Amt / 500).toLocaleString()} Notes`;
+        document.getElementById("c1AmtVal").innerText = formatINR(c1Amt);
+        document.getElementById("c2NotesVal").innerText = `${Math.round(c2Amt / 500).toLocaleString()} Notes`;
+        document.getElementById("c2AmtVal").innerText = formatINR(c2Amt);
+        document.getElementById("c3NotesVal").innerText = `${Math.round(c3Amt / 200).toLocaleString()} Notes`;
+        document.getElementById("c3AmtVal").innerText = formatINR(c3Amt);
+        document.getElementById("c4NotesVal").innerText = `${Math.round(c4Amt / 100).toLocaleString()} Notes`;
+        document.getElementById("c4AmtVal").innerText = formatINR(c4Amt);
+      }
+
+      // Update Reject / Retract Bin display
+      const rb = atm.reject_bin || { current_notes: 48, max_notes: 300, pct_full: 16, status: 'NORMAL' };
+      const rbNotesEl = document.getElementById("rejectBinNotesDisplay");
+      const rbBadgeEl = document.getElementById("rejectBinStatusBadge");
+      const rbCardEl = document.getElementById("rejectBinCard");
+      if (rbNotesEl) rbNotesEl.innerText = `${rb.current_notes} / ${rb.max_notes} notes (${rb.pct_full}%)`;
+      if (rbBadgeEl) {
+        rbBadgeEl.innerText = rb.status;
+        rbBadgeEl.style.background = rb.status !== 'NORMAL' ? '#FEE2E2' : '#F1F5F9';
+        rbBadgeEl.style.color = rb.status !== 'NORMAL' ? '#991B1B' : '#64748B';
+      }
+      if (rbCardEl) {
+        rbCardEl.style.borderColor = rb.status !== 'NORMAL' ? '#F87171' : '#E2E8F0';
+        rbCardEl.style.background = rb.status !== 'NORMAL' ? '#FEF2F2' : '#F8FAFC';
+      }
+
+      // Update CRM Collection Module
+      const crmCard = document.getElementById("crmCollectionCard");
+      const devBadge = document.getElementById("singleAtmDeviceBadge");
+      if (devBadge) devBadge.innerText = atm.device_type ? `${atm.device_type} Machine` : (atm.is_crm ? 'CRM Machine' : 'Cash Dispenser');
+      if (crmCard) {
+        if (atm.is_crm && atm.crm_collection_bin) {
+          crmCard.style.display = "block";
+          const col = atm.crm_collection_bin;
+          document.getElementById("crmCollectionNotesDisplay").innerText = `${col.current_notes} / ${col.max_notes} notes (${col.pct_full}%)`;
+          const colBadge = document.getElementById("crmCollectionBadge");
+          if (colBadge) {
+            colBadge.innerText = col.status;
+            colBadge.style.background = col.status !== 'NORMAL' ? '#FEF3C7' : '#F1F5F9';
+            colBadge.style.color = col.status !== 'NORMAL' ? '#92400E' : '#64748B';
+          }
+        } else {
+          crmCard.style.display = "none";
+        }
+      }
+
+      // Update Average Ticket Size
+      const ts = atm.avg_ticket_size || { daily: 3000, weekly: 3000, monthly: 3000 };
+      if (document.getElementById("ticketDailyVal")) document.getElementById("ticketDailyVal").innerText = formatINR(ts.daily);
+      if (document.getElementById("ticketWeeklyVal")) document.getElementById("ticketWeeklyVal").innerText = formatINR(ts.weekly);
+      if (document.getElementById("ticketMonthlyVal")) document.getElementById("ticketMonthlyVal").innerText = formatINR(ts.monthly);
+
+      // Update Quantiles
+      const qf = atm.quantile_forecast || {};
+      if (document.getElementById("qfP50Val")) document.getElementById("qfP50Val").innerText = formatINR(qf.p50_demand || 2800000);
+      if (document.getElementById("qfP80Val")) document.getElementById("qfP80Val").innerText = formatINR(qf.p80_demand || 3200000);
+      if (document.getElementById("qfP95Val")) document.getElementById("qfP95Val").innerText = formatINR(qf.p95_demand || 3600000);
+
+      // Update Past 3 Cycles Grid
+      const pastCycles = atm.last_3_cycles_efficacy || [];
+      const pastGrid = document.getElementById("pastCyclesGrid");
+      if (pastGrid) {
+        pastGrid.innerHTML = pastCycles.map(c => `
+          <div style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:6px; padding:6px 8px;">
+            <div style="font-size:9.5px; font-weight:700; color:#334155;">${c.cycle_label}</div>
+            <div style="font-size:11px; font-weight:700; color:#0F172A; margin:2px 0;">${c.effectiveness_pct}% Accuracy</div>
+            <div style="font-size:9px; color:#64748B;">Pred: ${formatINR(c.predicted_demand)} | Act: ${formatINR(c.actual_demand)}</div>
+            <div style="font-size:9px; color:${c.stockout_hours > 0 ? '#DC2626' : '#166534'}; margin-top:2px;">
+              ${c.stockout_hours > 0 ? `⚠️ ${c.stockout_hours}h stockout` : 'Zero stockouts'} · ${c.cra_sla_status}
+            </div>
+          </div>
+        `).join("");
+      }
+
+      const ratingBadge = document.getElementById("cycleEfficacyRatingBadge");
+      if (ratingBadge) {
+        const rating = atm.overall_cycle_rating || 'OPTIMAL';
+        ratingBadge.innerText = `${rating} Cycle Mgmt`;
+        ratingBadge.style.background = rating === 'OPTIMAL' ? '#DCFCE7' : (rating === 'VOLATILE' ? '#FEE2E2' : '#FEF3C7');
+        ratingBadge.style.color = rating === 'OPTIMAL' ? '#166534' : (rating === 'VOLATILE' ? '#991B1B' : '#92400E');
+      }
 
       const postRefill = Math.min(cap, vaultCash + netIndent);
       const postPct = Math.min(100, Math.round((postRefill / cap) * 100));
