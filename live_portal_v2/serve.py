@@ -49,6 +49,14 @@ class IterationTwoHandler(SimpleHTTPRequestHandler):
             self.path = "/index.html"
             return super().do_GET()
 
+        if parsed.path == "/api/health":
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self._send_cors_headers()
+            self.end_headers()
+            self.wfile.write(json.dumps({"status": "ok", "service": "Cash Intelligence Portal v2", "version": "2.0.0"}).encode("utf-8"))
+            return
+
         if parsed.path == "/api/data":
             data = masters_mgr.compute_fleet_replenishment()
             self.send_response(200)

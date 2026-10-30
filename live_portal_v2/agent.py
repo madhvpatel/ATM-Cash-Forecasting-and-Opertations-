@@ -538,6 +538,141 @@ def explain_mathematical_derivation(terminal_id: str = "1") -> str:
     )
 
 
+@tool
+def execute_inter_atm_sweep_tool(donor_terminal_id: str = "4", recipient_terminal_id: str = "3", amount_rupees: float = 700000.0) -> str:
+    """Execute an Inter-ATM corridor cash sweep transferring surplus cash from donor to starving ATM, avoiding emergency CIT run."""
+    try:
+        res = masters_mgr.execute_inter_atm_sweep(donor_id=donor_terminal_id, recipient_id=recipient_terminal_id, amount=amount_rupees, actor="Chief Treasury Officer (Copilot)")
+        rec = res["sweep_record"]
+        sav = rec.get("estimated_savings", {})
+        return (
+            f"⚡ **Inter-ATM Cash Sweep Executed Successfully**:\n"
+            f"- Transfer: **₹{rec['transfer_amount']:,.0f}** from **ATM {rec['donor_terminal_id']} ({rec['donor_site_name']})** ➔ **ATM {rec['recipient_terminal_id']} ({rec['recipient_site_name']})**\n"
+            f"- Corridor: **{rec['corridor']}**\n"
+            f"- Avoided Emergency CIT Cost: **₹{sav.get('avoided_emergency_cit', 3500):,.0f}**\n"
+            f"- Avoided Downtime SLA Penalty: **₹{sav.get('avoided_stockout_penalty', 10000):,.0f}**\n"
+            f"- Net Treasury Benefit: **₹{sav.get('net_benefit', 12000):,.0f}**\n"
+            f"- Status: **{rec['status']}** (Record ID: `{rec['sweep_id']}`)"
+        )
+    except Exception as e:
+        return f"Error executing Inter-ATM sweep: {e}"
+
+
+@tool
+def clear_reject_bin_tool(terminal_id: str = "5") -> str:
+    """Clear/empty the purge reject bin counter to 0 notes, unblocking dispenser hardware after mispicks/rejects."""
+    try:
+        res = masters_mgr.execute_clear_reject_bin(terminal_id=terminal_id, actor="Field Custodian Technician (Copilot)")
+        return (
+            f"🧹 **Purge Reject Bin Emptied & Reset**:\n"
+            f"- Terminal: **ATM {res['terminal_id']}**\n"
+            f"- Notes in Reject Bin: **0 / 300 notes (0.0% Saturation — NORMAL)**\n"
+            f"- Hardware Sensor Lockout: **CLEARED (Dispenser Online)**\n"
+            f"- Audit Timestamp: **{res['cleared_at']}**"
+        )
+    except Exception as e:
+        return f"Error clearing reject bin: {e}"
+
+
+@tool
+def explain_downtime_and_anomalies(terminal_id: str = "3") -> str:
+    """Explain downtime risk factors, reject bin saturation, CRA SLA missed visit breaches, threat monitor, and anomaly telemetry for an ATM."""
+    tid = str(terminal_id).replace("ATM-", "").replace("ATM", "").strip()
+    res = masters_mgr.compute_fleet_replenishment()
+    t = res["terminals"].get(tid)
+    if not t:
+        return f"Error: Terminal ID '{terminal_id}' not found."
+
+    score = t.get("downtime_risk_score", 0.0)
+    causes = t.get("downtime_causes", [])
+    meta = t.get("operational_metadata", {})
+    t_code = t.get("terminal_code", f"SYNCRM000{tid}")
+    dev_type = t.get("device_type", "CRM")
+
+    reject_bin = t.get("reject_bin", {})
+    r_cur = reject_bin.get("current_notes", 0)
+    r_max = reject_bin.get("max_capacity_notes", 300)
+    r_pct = reject_bin.get("fill_percentage", 0.0)
+    r_stat = reject_bin.get("status", "NORMAL")
+
+    cra = meta.get("cra_tracking", {})
+    threat = meta.get("threat_monitoring", {})
+    mispick = meta.get("mispick_rate_per_1k", 0.0)
+
+    causes_str = "\n".join([f"  • ⚠️ **{c}**" for c in causes]) if causes else "  • No acute deterministic triggers detected."
+
+    return (
+        f"### 🛡️ Downtime Risk & Disruption Diagnostics: ATM {tid} ({t_code})\n\n"
+        f"- Site: **{t['site_name']}** ({t.get('location_tier', 'Metro')} · **{t.get('location_category', 'Metro Transit')}**)\n"
+        f"- Device Architecture: **{dev_type}** ({'Cash Recycler' if t.get('is_crm') else 'Dispenser Only'})\n"
+        f"- Composite Downtime Risk Score: **{score:.1f}%** ({'🔴 CRITICAL HIGH RISK' if score >= 75 else ('🟡 ELEVATED RISK' if score >= 40 else '🟢 LOW RISK')})\n\n"
+        f"#### **Deterministic Root-Cause Triggers:**\n{causes_str}\n\n"
+        f"#### **Physical & Disruption Telemetry:**\n"
+        f"- **Purge Reject Bin**: **{r_cur} / {r_max} notes** ({r_pct:.1f}% capacity) — Status: `{r_stat}`\n"
+        f"- **CRA Servicing Status**: `{cra.get('status', 'ON_TIME')}` (Window: {cra.get('scheduled_window', 'N/A')}, Delay: {cra.get('delay_hours', 0)} hrs, SLA Breach Penalty: ₹{cra.get('sla_penalty_incurred', 0):,.0f})\n"
+        f"- **Threat & Curfew Monitoring**: Zone: `{threat.get('zone', 'GREEN')}`, Threat Level: `{threat.get('curfew_threat_level', 'LOW')}`, Curfew Active: `{'YES (' + threat.get('active_curfew_hours', '') + ')' if threat.get('has_active_curfew') else 'No curfews active'}`\n"
+        f"- **Dispenser Mispick Velocity**: {mispick} notes / 1,000 dispenses\n"
+        f"- **Usable Ending Cash**: **₹{t['existing_cash']:,.0f}** (~{t.get('dcr_hours', 0)} hours runway)"
+    )
+
+
+@tool
+def explain_atm_performance_and_cycles(terminal_id: str = "1") -> str:
+    """Analyze historical performance, past 3-cycle forecasting efficacy, ticket sizes (day/week/month), and P50/P80/P95 quantile demand projections."""
+    tid = str(terminal_id).replace("ATM-", "").replace("ATM", "").strip()
+    res = masters_mgr.compute_fleet_replenishment()
+    t = res["terminals"].get(tid)
+    if not t:
+        return f"Error: Terminal ID '{terminal_id}' not found."
+
+    perf = t.get("past_cycles_efficacy", {})
+    cycles = perf.get("cycles") if isinstance(perf, dict) and "cycles" in perf else (t.get("last_3_cycles_efficacy") or [])
+    rating = perf.get("cycle_rating") if isinstance(perf, dict) and "cycle_rating" in perf else (t.get("overall_cycle_rating") or "OPTIMAL")
+
+    c_rows = []
+    for c in cycles:
+        c_label = c.get("cycle_label") or c.get("cycle_code", "Cycle")
+        pred_d = c.get("predicted_demand", 0)
+        act_d = c.get("actual_demand", 0)
+        eff = c.get("effectiveness_pct") if "effectiveness_pct" in c else c.get("accuracy_pct", 95.0)
+        res_cash = c.get("ending_residual_cash") if "ending_residual_cash" in c else c.get("residual_ending_cash", 0)
+        stk = c.get("stockout_hours", 0)
+        sla_s = c.get("cra_sla_status") or c.get("cra_on_time_status", "ON_TIME")
+        stat = c.get("cycle_status") or "OPTIMAL"
+        c_rows.append(
+            f"  • **{c_label}**: Predicted ₹{pred_d:,.0f} vs Actual ₹{act_d:,.0f} | "
+            f"Accuracy: **{eff}%** | Residual Ending: ₹{res_cash:,.0f} | Stockout: {stk}h | SLA: `{sla_s}` ({stat})"
+        )
+    cycles_str = "\n".join(c_rows) if c_rows else "  • No historical cycles logged."
+
+    avg_ticket = t.get("avg_ticket_size", {})
+    quant = t.get("quantile_forecast") or t.get("quantiles", {})
+    cassettes = t.get("cassettes", [])
+    cass_str = ", ".join([f"Slot {c['slot']}: {c['current_notes']}/{c['max_notes']} notes (₹{c['denomination']})" for c in cassettes])
+
+    p50_val = quant.get("p50_demand", 0)
+    p80_val = quant.get("p80_demand", 0)
+    p95_val = quant.get("p95_demand", 0)
+    mix = t.get("denomination_weights") or {"₹500": 0.65, "₹200": 0.20, "₹100": 0.15}
+    n500 = int(round((p50_val * mix.get("₹500", 0.65)) / 500))
+    n200 = int(round((p50_val * mix.get("₹200", 0.20)) / 200))
+    n100 = int(round((p50_val * mix.get("₹100", 0.15)) / 100))
+
+    return (
+        f"### 📊 Historical Efficacy & Multi-Quantile Demand: ATM {tid} ({t.get('terminal_code', 'SYNCRM000' + tid)})\n\n"
+        f"- Location Category: **{t.get('location_category', 'Metro Transit')}** ({t.get('location_tier', 'Metro')})\n"
+        f"- Historical Forecast Efficacy Rating: **{rating}** (3-Cycle Avg Accuracy: **{perf.get('avg_accuracy_pct', 94.0):.1f}%**)\n\n"
+        f"#### **Past 3-Cycle Prediction Audit:**\n{cycles_str}\n\n"
+        f"#### **Average Ticket Sizes:**\n"
+        f"- Daily: **₹{avg_ticket.get('daily', 2500):,.0f}** | Weekly: **₹{avg_ticket.get('weekly', 3000):,.0f}** | Monthly: **₹{avg_ticket.get('monthly', 4000):,.0f}**\n\n"
+        f"#### **Plausible Quantile Demand Projections:**\n"
+        f"- **P50 (Expected Baseline)**: **₹{p50_val:,.0f}** (₹500: {n500:,} notes, ₹200: {n200:,} notes, ₹100: {n100:,} notes)\n"
+        f"- **P80 (Surge Buffer)**: **₹{p80_val:,.0f}**\n"
+        f"- **P95 (Peak Stress Scenario)**: **₹{p95_val:,.0f}**\n\n"
+        f"#### **Cassette Physics Configuration:**\n- {cass_str}"
+    )
+
+
 ALL_TOOLS = [
     query_network_status,
     explain_atm,
@@ -550,7 +685,11 @@ ALL_TOOLS = [
     lock_dispatch_manifest,
     explain_model_variables,
     query_holiday_calendar,
-    explain_mathematical_derivation
+    explain_mathematical_derivation,
+    execute_inter_atm_sweep_tool,
+    clear_reject_bin_tool,
+    explain_downtime_and_anomalies,
+    explain_atm_performance_and_cycles
 ]
 TOOL_MAP = {t.name: t for t in ALL_TOOLS}
 
@@ -630,6 +769,22 @@ def create_agent_graph():
                     action_payload["type"] = "indents_approved"
                 elif t_name in ["query_network_status", "get_dispatch_manifest"]:
                     action_payload["type"] = "refresh"
+                elif t_name == "execute_inter_atm_sweep_tool":
+                    action_payload["type"] = "sweep_executed"
+                elif t_name == "clear_reject_bin_tool":
+                    tid = str(t_args.get("terminal_id", "5")).replace("ATM-", "").replace("ATM", "").strip()
+                    action_payload["type"] = "reject_bin_cleared"
+                    action_payload["terminal_id"] = tid
+                elif t_name == "explain_downtime_and_anomalies":
+                    tid = str(t_args.get("terminal_id", "3")).replace("ATM-", "").replace("ATM", "").strip()
+                    action_payload["type"] = "highlight_terminal"
+                    action_payload["terminal_id"] = tid
+                    action_payload["visual_aid"] = {"type": "downtime_diagnostics", "terminal_id": tid}
+                elif t_name == "explain_atm_performance_and_cycles":
+                    tid = str(t_args.get("terminal_id", "1")).replace("ATM-", "").replace("ATM", "").strip()
+                    action_payload["type"] = "highlight_terminal"
+                    action_payload["terminal_id"] = tid
+                    action_payload["visual_aid"] = {"type": "cycle_efficacy", "terminal_id": tid}
 
         return {"messages": tool_msgs, "action_payload": action_payload}
 
@@ -772,6 +927,28 @@ def handle_slash_command(cmd_text: str, context: Dict[str, Any]) -> Dict[str, An
         res = explain_mathematical_derivation.invoke({"terminal_id": tid})
         return {"reply": res, "action_payload": {"type": "highlight_terminal", "terminal_id": tid, "visual_aid": {"type": "math_derivation", "terminal_id": tid}}}
 
+    elif cmd in ["/sweep", "/rebalance"]:
+        donor = arg1 or "4"
+        recipient = arg2 or "3"
+        amt = 700000.0
+        res = execute_inter_atm_sweep_tool.invoke({"donor_terminal_id": donor, "recipient_terminal_id": recipient, "amount_rupees": amt})
+        return {"reply": res, "action_payload": {"type": "sweep_executed"}}
+
+    elif cmd in ["/clear-bin", "/empty-bin"]:
+        tid = arg1 or str(context.get("active_terminal", "5"))
+        res = clear_reject_bin_tool.invoke({"terminal_id": tid})
+        return {"reply": res, "action_payload": {"type": "reject_bin_cleared", "terminal_id": tid}}
+
+    elif cmd in ["/downtime", "/anomaly", "/threat"]:
+        tid = arg1 or str(context.get("active_terminal", "3"))
+        res = explain_downtime_and_anomalies.invoke({"terminal_id": tid})
+        return {"reply": res, "action_payload": {"type": "highlight_terminal", "terminal_id": tid, "visual_aid": {"type": "downtime_diagnostics", "terminal_id": tid}}}
+
+    elif cmd in ["/cycles", "/performance", "/quantiles"]:
+        tid = arg1 or str(context.get("active_terminal", "1"))
+        res = explain_atm_performance_and_cycles.invoke({"terminal_id": tid})
+        return {"reply": res, "action_payload": {"type": "highlight_terminal", "terminal_id": tid, "visual_aid": {"type": "cycle_efficacy", "terminal_id": tid}}}
+
     elif cmd in ["/save", "/commit"]:
         res = masters_mgr.save_overrides()
         return {"reply": "💾 **Changes Committed to Production Disk** (`config_overrides.json`). All batch scripts and live APIs now reflect these parameters.", "action_payload": {"type": "saved"}}
@@ -786,6 +963,10 @@ def handle_slash_command(cmd_text: str, context: Dict[str, Any]) -> Dict[str, An
                 "**Available AI Slash Commands**:\n"
                 "- `/status` — View 30-second network health HUD & indent totals\n"
                 "- `/explain [atm_id]` — Facts, observations & demand drivers for an ATM\n"
+                "- `/downtime [atm_id]` — Inspect downtime triggers, CRA breach, threat & anomaly metrics\n"
+                "- `/cycles [atm_id]` — Inspect past 3-cycle forecasting efficacy, ticket sizes & P50/P80/P95 quantiles\n"
+                "- `/sweep [donor] [recipient]` — Execute corridor inter-ATM cash surplus rebalancing\n"
+                "- `/clear-bin [atm_id]` — Clear purge reject bin and reset sensor lockout\n"
                 "- `/variables [atm_id]` — 30 ML model features, relative importance weights & lags\n"
                 "- `/holidays [atm_id]` — Verified RBI bank holidays & payday calendar for cycle\n"
                 "- `/formula [atm_id]` — Exact 6-step mathematical derivation of indent\n"
@@ -844,6 +1025,46 @@ def deterministic_nlp_dispatch(query: str, context: Dict[str, Any], quota_exceed
         return {
             "reply": adjust_indent.invoke({"terminal_id": target_tid, "new_indent": amt, "reason": reason_txt}) + banner,
             "action_payload": {"type": "master_updated", "terminal_id": target_tid}
+        }
+
+    # 0b. Inter-ATM Sweep / Corridor Rebalancing
+    if any(k in q for k in ["sweep", "rebalance", "surplus cash", "transfer cash", "corridor rebalance", "move cash"]):
+        m_trans = re.search(r"from\s*(?:atm[- ]?)?(\d+).*?to\s*(?:atm[- ]?)?(\d+)", q)
+        donor = m_trans.group(1) if m_trans else "4"
+        recipient = m_trans.group(2) if m_trans else "3"
+        m_amt = re.search(r"₹?\s*(\d+(?:\.\d+)?)\s*(lakhs?|l|cr)?", q)
+        amt = 700000.0
+        if m_amt:
+            val_num = float(m_amt.group(1))
+            u = (m_amt.group(2) or "").lower()
+            if "cr" in u: amt = val_num * 10000000.0
+            elif "l" in u or val_num < 100.0: amt = val_num * 100000.0
+            elif val_num >= 10000.0: amt = val_num
+        return {
+            "reply": execute_inter_atm_sweep_tool.invoke({"donor_terminal_id": donor, "recipient_terminal_id": recipient, "amount_rupees": amt}) + banner,
+            "action_payload": {"type": "sweep_executed"}
+        }
+
+    # 0c. Clear / Empty Reject Bin
+    if any(k in q for k in ["clear reject", "empty reject", "reset reject", "purge reject", "reject bin"]):
+        target = active_tid if active_tid != "1" else "5"
+        return {
+            "reply": clear_reject_bin_tool.invoke({"terminal_id": target}) + banner,
+            "action_payload": {"type": "reject_bin_cleared", "terminal_id": target}
+        }
+
+    # 0d. Downtime Risk Factors, CRA SLA Breach & Anomaly Telemetry
+    if any(k in q for k in ["downtime", "anomaly", "anomalies", "risk score", "cra miss", "missed visit", "sla breach", "threat", "curfew", "mispick"]):
+        return {
+            "reply": explain_downtime_and_anomalies.invoke({"terminal_id": active_tid}) + banner,
+            "action_payload": {"type": "highlight_terminal", "terminal_id": active_tid, "visual_aid": {"type": "downtime_diagnostics", "terminal_id": active_tid}}
+        }
+
+    # 0e. Historical Performance, Past Cycles, Ticket Sizes & Quantiles
+    if any(k in q for k in ["cycle", "cycles", "efficacy", "accuracy rate", "historical performance", "ticket size", "p50", "p80", "p95", "quantile", "quantiles"]):
+        return {
+            "reply": explain_atm_performance_and_cycles.invoke({"terminal_id": active_tid}) + banner,
+            "action_payload": {"type": "highlight_terminal", "terminal_id": active_tid, "visual_aid": {"type": "cycle_efficacy", "terminal_id": active_tid}}
         }
 
     # Digital Manifest / Chest Pull Slip
@@ -973,6 +1194,10 @@ Specialized Domain Tools:
 6. `simulate_scenario(terminal_id, custom_indent, delay_hours)`: Runs What-If simulation with custom indents or delay hours.
 7. `get_dispatch_manifest()` and `lock_dispatch_manifest(checker_name, notes)`: For digital manifest inspection and cryptographic signoff.
 8. `update_master_parameter(category, key, value)`: Updates economic parameters live.
+9. `execute_inter_atm_sweep_tool(donor_terminal_id, recipient_terminal_id, amount_rupees)`: Executes an inter-ATM cash surplus sweep between nearby ATMs along a corridor to alleviate an imminent cashout without incurring emergency CIT fees.
+10. `clear_reject_bin_tool(terminal_id)`: Clears the purge reject bin counter to 0 notes and unblocks hardware sensor lockout after note jams or reject threshold saturation.
+11. `explain_downtime_and_anomalies(terminal_id)`: Explains composite downtime risk %, reject bin status, CRA SLA missed visit breaches, curfews/threat levels, and mechanical mispick rates.
+12. `explain_atm_performance_and_cycles(terminal_id)`: Explains past 3-cycle forecasting efficacy (accuracy %, residual ending cash, stockouts), average ticket sizes (daily/weekly/monthly), and multi-quantile demand projections (P50, P80, P95).
 
 Guidelines for Answers:
 - Format all currency amounts clearly in Indian Rupees (₹) with Indian numbering (e.g., ₹26,04,800 or ₹26.0 Lakhs, ₹2.13 Cr).

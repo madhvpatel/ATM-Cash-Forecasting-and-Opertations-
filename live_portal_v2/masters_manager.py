@@ -1512,6 +1512,11 @@ class MastersManager:
                     "p80_demand": p80_cycle_demand,
                     "p95_demand": p95_cycle_demand
                 },
+                "quantiles": {
+                    "p50_demand": p50_cycle_demand,
+                    "p80_demand": p80_cycle_demand,
+                    "p95_demand": p95_cycle_demand
+                },
 
                 # Surplus & Balancing
                 "is_surplus_eligible": is_surplus_eligible,
@@ -1520,6 +1525,11 @@ class MastersManager:
                 # Cycle Efficacy
                 "last_3_cycles_efficacy": past_cycle_metrics,
                 "overall_cycle_rating": overall_cycle_rating,
+                "past_cycles_efficacy": {
+                    "cycles": past_cycle_metrics,
+                    "cycle_rating": overall_cycle_rating,
+                    "avg_accuracy_pct": round(sum(c.get("effectiveness_pct", 94.0) for c in past_cycle_metrics) / max(1, len(past_cycle_metrics)), 1)
+                },
 
                 # Schedule & Amend Tracking
                 "schedule_status": schedule_status,
@@ -1715,6 +1725,7 @@ class MastersManager:
             "terminals": recomputed_terminals,
             "critical_queue": critical_queue,
             "inter_atm_rebalancing_proposals": inter_atm_rebalancing_proposals,
+            "rebalancing_proposals": inter_atm_rebalancing_proposals,
             "executed_sweeps": self.executed_sweeps,
             "corridors": self.raw_bundle.get("corridors", []),
             "portfolio": self.raw_bundle.get("portfolio", {}),
