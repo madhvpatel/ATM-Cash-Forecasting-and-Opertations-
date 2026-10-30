@@ -1012,9 +1012,10 @@ class MastersManager:
         for tid, base_t in terminals_data.items():
             t_cfg = self.terminal_configs.get(tid, {})
             meta = TERMINAL_OPERATIONAL_METADATA.get(tid, {})
+            meta = TERMINAL_OPERATIONAL_METADATA.get(tid, {})
             capacity = float(t_cfg.get("capacity", base_t.get("capacity", 6000000.0)))
             cycle_days = int(t_cfg.get("cycle_days", 7 if base_t.get("serviced_by") == "CIT" else 3))
-            existing_cash = float(base_t.get("existing_cash", 1500000.0))
+            existing_cash = float(t_cfg.get("existing_cash", meta.get("last_feed", {}).get("end_cash_value", base_t.get("existing_cash", 1500000.0))))
 
             t_city = t_cfg.get("city", base_t.get("city", "MUMBAI")).upper()
             location_tier = meta.get("location_tier", "Metro")
@@ -1646,7 +1647,7 @@ class MastersManager:
         inter_atm_rebalancing_proposals = []
         for c_route, term_list in corridor_groups.items():
             donors = [t for t in term_list if t["is_surplus_eligible"] and t["surplus_removable_amount"] >= float(self.assumptions.get("min_sweep_threshold", 200000.0))]
-            starving = [t for t in term_list if t["urgency_status"] == "CRITICAL" or t["dcr_hours"] < 24]
+            starving = [t for t in term_list if t["urgency_status"] == "CRITICAL" or t["dcr_hours"] < 24 or t["cra_tracking"]["cra_status"] == "MISSED_SLA_BREACH"]
 
             for d in donors:
                 for r in starving:
