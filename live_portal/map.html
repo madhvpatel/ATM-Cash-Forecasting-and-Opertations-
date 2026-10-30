@@ -1,0 +1,1771 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Cash Intelligence GIS Operations Command Center - Expanded Tactical Map View for ATM Replenishment & CIT Cash Corridors">
+  <title>GIS Operations Command Center · Cash Intelligence</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Chart.js for Telemetry Sparkline -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+  <!-- Leaflet.js CSS & JS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+  <!-- Embedded Live Data Bundle -->
+  <script src="portal_data.js"></script>
+
+  <style>
+    :root {
+      --bg-base: #060913;
+      --bg-surface: #0a0f1d;
+      --bg-surface-elevated: #11182c;
+      --bg-card: rgba(13, 21, 38, 0.88);
+      --bg-card-hover: rgba(20, 32, 58, 0.95);
+      --border-subtle: rgba(255, 255, 255, 0.09);
+      --border-focus: rgba(56, 189, 248, 0.6);
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --primary: #38bdf8;
+      --primary-glow: rgba(56, 189, 248, 0.3);
+      --emerald: #10b981;
+      --emerald-glow: rgba(16, 185, 129, 0.3);
+      --amber: #f59e0b;
+      --amber-glow: rgba(245, 158, 11, 0.3);
+      --rose: #f43f5e;
+      --rose-glow: rgba(244, 63, 94, 0.35);
+      --purple: #a855f7;
+      --indigo: #6366f1;
+      --cyan: #06b6d4;
+      --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: var(--bg-base);
+      color: var(--text-main);
+      font-family: var(--font-sans);
+      user-select: none;
+    }
+
+    /* FULLSCREEN LEAFLET MAP */
+    #mapViewport {
+      position: absolute;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 1;
+      background: #060913;
+    }
+
+    /* CUSTOM LEAFLET STYLING FOR DARK / VOYAGER / POSITRON */
+    .leaflet-container {
+      background: #060913 !important;
+      font-family: var(--font-sans) !important;
+    }
+
+    .leaflet-control-zoom {
+      border: 1px solid var(--border-subtle) !important;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5) !important;
+      border-radius: 10px !important;
+      overflow: hidden;
+    }
+
+    .leaflet-control-zoom a {
+      background: rgba(14, 20, 36, 0.9) !important;
+      color: #f8fafc !important;
+      border-bottom: 1px solid var(--border-subtle) !important;
+      backdrop-filter: blur(12px);
+      transition: all 0.2s ease;
+    }
+
+    .leaflet-control-zoom a:hover {
+      background: rgba(56, 189, 248, 0.25) !important;
+      color: #38bdf8 !important;
+    }
+
+    .leaflet-control-attribution {
+      background: rgba(6, 9, 19, 0.8) !important;
+      color: var(--text-dim) !important;
+      backdrop-filter: blur(8px);
+      font-size: 0.68rem !important;
+      border-radius: 6px;
+      margin: 8px !important;
+      padding: 3px 8px !important;
+      border: 1px solid var(--border-subtle);
+    }
+    .leaflet-control-attribution a {
+      color: var(--primary) !important;
+      text-decoration: none;
+    }
+
+    .leaflet-popup-content-wrapper {
+      background: rgba(10, 15, 29, 0.95) !important;
+      color: #f8fafc !important;
+      border: 1px solid var(--border-focus) !important;
+      border-radius: 14px !important;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.7), 0 0 20px rgba(56, 189, 248, 0.2) !important;
+      backdrop-filter: blur(16px);
+      padding: 4px;
+    }
+
+    .leaflet-popup-tip {
+      background: rgba(10, 15, 29, 0.95) !important;
+      border: 1px solid var(--border-focus);
+    }
+
+    .leaflet-tooltip-dark {
+      background: rgba(6, 9, 19, 0.92) !important;
+      color: #f8fafc !important;
+      border: 1px solid rgba(56, 189, 248, 0.4) !important;
+      border-radius: 8px !important;
+      padding: 6px 10px !important;
+      font-size: 0.78rem !important;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.6) !important;
+    }
+
+    /* RADAR & MAP MARKERS */
+    .map-marker {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+      font-weight: 800;
+      color: #fff;
+      cursor: pointer;
+      position: relative;
+      transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s ease;
+    }
+
+    .map-marker:hover {
+      transform: scale(1.28) translateY(-2px);
+      z-index: 1000 !important;
+    }
+
+    .map-marker-red {
+      background: linear-gradient(135deg, #f43f5e, #be123c);
+      box-shadow: 0 0 20px rgba(244, 63, 94, 0.95);
+      border: 2px solid #fff;
+    }
+
+    .map-marker-red::after {
+      content: '';
+      position: absolute;
+      inset: -6px;
+      border-radius: 50%;
+      border: 2px solid #f43f5e;
+      animation: radarPulse 1.6s infinite ease-out;
+      pointer-events: none;
+    }
+
+    .map-marker-amber {
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      box-shadow: 0 0 16px rgba(245, 158, 11, 0.85);
+      border: 2px solid #fff;
+    }
+
+    .map-marker-green {
+      background: linear-gradient(135deg, #10b981, #059669);
+      box-shadow: 0 0 16px rgba(16, 185, 129, 0.85);
+      border: 2px solid #fff;
+    }
+
+    @keyframes radarPulse {
+      0% { transform: scale(0.8); opacity: 1; }
+      100% { transform: scale(2.2); opacity: 0; }
+    }
+
+    /* CIT ARMORED VAN MARKER */
+    .cit-van-marker {
+      background: rgba(14, 20, 36, 0.95);
+      border: 1.5px solid var(--primary);
+      border-radius: 20px;
+      padding: 4px 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: #fff;
+      font-size: 0.72rem;
+      font-weight: 700;
+      box-shadow: 0 0 15px rgba(56, 189, 248, 0.5);
+      white-space: nowrap;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .cit-van-marker:hover {
+      transform: scale(1.15);
+      box-shadow: 0 0 25px rgba(56, 189, 248, 0.8);
+      border-color: #fff;
+    }
+
+    /* FLOATING TOP COMMAND BAR */
+    .top-command-bar {
+      position: absolute;
+      top: 14px;
+      left: 14px;
+      right: 14px;
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      background: rgba(10, 15, 29, 0.88);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--border-subtle);
+      border-radius: 16px;
+      padding: 10px 18px;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.6), 0 0 1px rgba(255,255,255,0.15);
+      transition: all 0.3s ease;
+    }
+
+    .brand-section {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .btn-back {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(56, 189, 248, 0.12);
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      color: #38bdf8;
+      padding: 7px 14px;
+      border-radius: 10px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      text-decoration: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .btn-back:hover {
+      background: rgba(56, 189, 248, 0.25);
+      color: #fff;
+      border-color: #38bdf8;
+      transform: translateX(-2px);
+      box-shadow: 0 0 18px rgba(56, 189, 248, 0.4);
+    }
+
+    .brand-title {
+      font-size: 1.05rem;
+      font-weight: 800;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      letter-spacing: -0.01em;
+    }
+
+    .tag-live {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid rgba(16, 185, 129, 0.4);
+      color: #34d399;
+      font-size: 0.68rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      padding: 3px 8px;
+      border-radius: 999px;
+    }
+
+    .live-pulse {
+      width: 7px;
+      height: 7px;
+      background: #10b981;
+      border-radius: 50%;
+      box-shadow: 0 0 10px #10b981;
+      animation: pulseGreen 1.5s infinite;
+    }
+
+    @keyframes pulseGreen {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(1.3); }
+    }
+
+    /* TELEMETRY METRIC PILLS IN TOP BAR */
+    .top-telemetry-pills {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .telemetry-pill {
+      background: rgba(18, 26, 47, 0.65);
+      border: 1px solid var(--border-subtle);
+      border-radius: 10px;
+      padding: 5px 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.76rem;
+      color: var(--text-muted);
+    }
+    .telemetry-pill strong {
+      color: #fff;
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+    }
+
+    /* TOP BAR ACTIONS */
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-hud {
+      background: rgba(18, 26, 47, 0.7);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-main);
+      padding: 7px 12px;
+      border-radius: 10px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+    }
+    .btn-hud:hover {
+      background: rgba(30, 41, 69, 0.9);
+      border-color: rgba(255, 255, 255, 0.2);
+      color: #fff;
+    }
+    .btn-hud.active {
+      background: rgba(56, 189, 248, 0.2);
+      border-color: #38bdf8;
+      color: #38bdf8;
+      box-shadow: 0 0 12px rgba(56, 189, 248, 0.3);
+    }
+
+    /* LEFT FLOATING CONTROL HUD */
+    .left-control-hud {
+      position: absolute;
+      top: 80px;
+      left: 14px;
+      bottom: 14px;
+      width: 380px;
+      max-width: calc(100vw - 28px);
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      background: var(--bg-card);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid var(--border-subtle);
+      border-radius: 18px;
+      padding: 16px;
+      box-shadow: 0 25px 60px rgba(0,0,0,0.65);
+      transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
+      overflow: hidden;
+    }
+
+    .left-control-hud.collapsed {
+      transform: translateX(-410px);
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    /* TOGGLE BUTTON FOR LEFT HUD */
+    .hud-toggle-btn {
+      position: absolute;
+      top: 80px;
+      left: 14px;
+      z-index: 999;
+      background: rgba(10, 15, 29, 0.9);
+      border: 1px solid var(--border-focus);
+      color: #38bdf8;
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      cursor: pointer;
+      box-shadow: 0 8px 25px rgba(0,0,0,0.5);
+      backdrop-filter: blur(12px);
+      transition: all 0.2s ease;
+    }
+    .hud-toggle-btn:hover {
+      background: rgba(56, 189, 248, 0.3);
+      color: #fff;
+    }
+    .left-control-hud.collapsed + .hud-toggle-btn,
+    .left-control-hud.collapsed ~ .hud-toggle-btn {
+      display: flex;
+    }
+
+    /* SEARCH & FILTER */
+    .search-box {
+      position: relative;
+    }
+    .search-input {
+      width: 100%;
+      background: rgba(8, 12, 23, 0.85);
+      border: 1px solid var(--border-subtle);
+      border-radius: 10px;
+      padding: 9px 12px 9px 34px;
+      color: #fff;
+      font-size: 0.82rem;
+      font-family: var(--font-sans);
+      outline: none;
+      transition: all 0.2s ease;
+    }
+    .search-input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 15px rgba(56, 189, 248, 0.25);
+    }
+    .search-icon {
+      position: absolute;
+      left: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-dim);
+      font-size: 0.85rem;
+      pointer-events: none;
+    }
+
+    /* FILTER CHIPS */
+    .filter-chips {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+    }
+    .chip {
+      background: rgba(18, 26, 47, 0.7);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 4px 10px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.15s ease;
+    }
+    .chip:hover {
+      border-color: rgba(255, 255, 255, 0.2);
+      color: #fff;
+    }
+    .chip.active {
+      background: rgba(56, 189, 248, 0.18);
+      border-color: var(--primary);
+      color: #38bdf8;
+      font-weight: 700;
+    }
+
+    /* SECTION TABS INSIDE LEFT HUD */
+    .hud-tabs {
+      display: flex;
+      background: rgba(8, 12, 23, 0.7);
+      border-radius: 10px;
+      padding: 3px;
+      border: 1px solid var(--border-subtle);
+    }
+    .hud-tab-btn {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 6px 10px;
+      font-size: 0.74rem;
+      font-weight: 700;
+      border-radius: 7px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .hud-tab-btn.active {
+      background: rgba(56, 189, 248, 0.2);
+      color: #fff;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+
+    /* SCROLLABLE LIST OF ATMS & CORRIDORS */
+    .hud-scroll-area {
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding-right: 4px;
+    }
+    .hud-scroll-area::-webkit-scrollbar {
+      width: 5px;
+    }
+    .hud-scroll-area::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 4px;
+    }
+
+    /* ATM ITEM CARD */
+    .atm-item-card {
+      background: rgba(14, 20, 36, 0.7);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 10px 12px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .atm-item-card:hover {
+      background: var(--bg-card-hover);
+      border-color: rgba(56, 189, 248, 0.4);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 18px rgba(0,0,0,0.4);
+    }
+    .atm-item-card.selected {
+      background: rgba(20, 34, 64, 0.95);
+      border-color: var(--primary);
+      box-shadow: 0 0 16px rgba(56, 189, 248, 0.35);
+    }
+
+    .atm-item-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .atm-item-id {
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+      font-weight: 800;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .urgency-badge {
+      font-size: 0.66rem;
+      font-weight: 800;
+      padding: 2px 7px;
+      border-radius: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .urgency-badge.critical { background: rgba(244, 63, 94, 0.2); color: #fb7185; border: 1px solid rgba(244, 63, 94, 0.4); }
+    .urgency-badge.scheduled { background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); }
+    .urgency-badge.healthy { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4); }
+
+    .atm-item-site {
+      font-size: 0.76rem;
+      color: var(--text-muted);
+      line-height: 1.3;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* VAULT GAUGE BAR */
+    .vault-gauge-container {
+      width: 100%;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 999px;
+      overflow: hidden;
+      position: relative;
+    }
+    .vault-gauge-fill {
+      height: 100%;
+      border-radius: 999px;
+      transition: width 0.4s ease;
+    }
+
+    .atm-item-metrics {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.72rem;
+      font-family: var(--font-mono);
+      color: var(--text-dim);
+    }
+    .atm-item-metrics span strong {
+      color: #e2e8f0;
+    }
+
+    /* CORRIDOR ITEM CARD */
+    .corridor-item-card {
+      background: rgba(14, 20, 36, 0.7);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 12px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .corridor-item-card:hover {
+      background: var(--bg-card-hover);
+      border-color: rgba(56, 189, 248, 0.4);
+      transform: translateY(-1px);
+    }
+    .corridor-item-card.active {
+      border-color: var(--primary);
+      background: rgba(20, 34, 64, 0.95);
+      box-shadow: 0 0 16px rgba(56, 189, 248, 0.35);
+    }
+
+    .corridor-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .corridor-title {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: #fff;
+    }
+    .corridor-pill {
+      font-size: 0.68rem;
+      padding: 2px 7px;
+      border-radius: 6px;
+      background: rgba(56, 189, 248, 0.15);
+      color: #38bdf8;
+      font-weight: 700;
+    }
+
+    /* RIGHT FLOATING TELEMETRY & INDENT INSPECTOR DRAWER */
+    .right-inspector-drawer {
+      position: absolute;
+      top: 80px;
+      right: 14px;
+      bottom: 14px;
+      width: 420px;
+      max-width: calc(100vw - 28px);
+      z-index: 1000;
+      background: var(--bg-card);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid var(--border-subtle);
+      border-radius: 18px;
+      padding: 18px;
+      box-shadow: 0 25px 60px rgba(0,0,0,0.7);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      overflow-y: auto;
+      transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
+    }
+
+    .right-inspector-drawer.hidden {
+      transform: translateX(450px);
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .right-inspector-drawer::-webkit-scrollbar {
+      width: 5px;
+    }
+    .right-inspector-drawer::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 4px;
+    }
+
+    .drawer-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      border-bottom: 1px solid var(--border-subtle);
+      padding-bottom: 12px;
+    }
+
+    .btn-close-drawer {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-muted);
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 1.1rem;
+      transition: all 0.15s ease;
+    }
+    .btn-close-drawer:hover {
+      background: rgba(244, 63, 94, 0.25);
+      color: #fb7185;
+      border-color: #f43f5e;
+    }
+
+    /* INDENT HERO DISPLAY */
+    .indent-hero-card {
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.12), rgba(6, 182, 212, 0.08));
+      border: 1.5px solid rgba(16, 185, 129, 0.4);
+      border-radius: 14px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+    }
+    .indent-hero-label {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #34d399;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .indent-hero-value {
+      font-family: var(--font-mono);
+      font-size: 1.85rem;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: -0.02em;
+    }
+    .indent-hero-sub {
+      font-size: 0.74rem;
+      color: var(--text-muted);
+    }
+
+    /* FORMULA BREAKDOWN GRID */
+    .formula-breakdown-card {
+      background: rgba(10, 15, 29, 0.7);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .formula-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.78rem;
+      padding: 4px 0;
+      border-bottom: 1px dashed rgba(255, 255, 255, 0.06);
+    }
+    .formula-row:last-child {
+      border-bottom: none;
+      padding-top: 6px;
+      font-weight: 700;
+    }
+    .formula-label {
+      color: var(--text-muted);
+    }
+    .formula-val {
+      font-family: var(--font-mono);
+      font-weight: 600;
+      color: #f1f5f9;
+    }
+
+    /* ACTION BUTTONS */
+    .drawer-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: auto;
+    }
+    .btn-action-primary {
+      background: linear-gradient(135deg, #0284c7, #0369a1);
+      border: 1px solid rgba(56, 189, 248, 0.5);
+      color: #fff;
+      padding: 10px 16px;
+      border-radius: 10px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+      box-shadow: 0 6px 20px rgba(2, 132, 199, 0.35);
+    }
+    .btn-action-primary:hover {
+      background: linear-gradient(135deg, #0ea5e9, #0284c7);
+      transform: translateY(-1px);
+      box-shadow: 0 8px 25px rgba(56, 189, 248, 0.5);
+    }
+
+    .btn-action-secondary {
+      background: rgba(18, 26, 47, 0.7);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-main);
+      padding: 9px 14px;
+      border-radius: 10px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+    }
+    .btn-action-secondary:hover {
+      background: rgba(30, 41, 69, 0.85);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    /* TOAST NOTIFICATION */
+    .toast-notification {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: rgba(10, 15, 29, 0.95);
+      border: 1.5px solid var(--emerald);
+      color: #fff;
+      padding: 12px 24px;
+      border-radius: 14px;
+      font-size: 0.84rem;
+      font-weight: 600;
+      box-shadow: 0 15px 40px rgba(0,0,0,0.8), 0 0 25px rgba(16, 185, 129, 0.35);
+      backdrop-filter: blur(16px);
+      z-index: 9999;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .toast-notification.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    /* RESPONSIVE BREAKPOINTS */
+    @media (max-width: 900px) {
+      .top-telemetry-pills { display: none; }
+      .left-control-hud { width: 320px; }
+      .right-inspector-drawer { width: 340px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- FULLSCREEN LEAFLET MAP VIEWPORT -->
+  <div id="mapViewport"></div>
+
+  <!-- FLOATING TOP COMMAND HUD -->
+  <header class="top-command-bar">
+    <div class="brand-section">
+      <a href="index.html" class="btn-back" title="Return to Main CRA Cockpit">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="19" y1="12" x2="5" y2="12"></line>
+          <polyline points="12 19 5 12 12 5"></polyline>
+        </svg>
+        <span>Cockpit</span>
+      </a>
+
+      <div class="brand-title">
+        <span>Maharashtra Cash Corridors</span>
+        <span class="tag-live">
+          <span class="live-pulse"></span>
+          Tactical Command
+        </span>
+      </div>
+    </div>
+
+    <!-- CENTER TELEMETRY SUMMARY -->
+    <div class="top-telemetry-pills">
+      <div class="telemetry-pill">
+        <span>🏧 Fleet:</span>
+        <strong id="topPillAtms">8 ATMs</strong>
+      </div>
+      <div class="telemetry-pill">
+        <span>💵 On-Site Cash:</span>
+        <strong id="topPillCash" style="color: #38bdf8;">₹1.72 Cr</strong>
+      </div>
+      <div class="telemetry-pill">
+        <span>📦 7d Indent Need:</span>
+        <strong id="topPillIndent" style="color: #34d399;">₹3.24 Cr</strong>
+      </div>
+      <div class="telemetry-pill">
+        <span>⚠️ Status:</span>
+        <strong id="topPillStatus">🔴 1 · 🟡 5 · 🟢 2</strong>
+      </div>
+    </div>
+
+    <!-- RIGHT ACTION BUTTONS -->
+    <div class="top-actions">
+      <!-- Basemap Switcher Buttons -->
+      <button class="btn-hud active" id="btnThemeDark" onclick="switchBasemap('dark')" title="CARTO Dark Matter (Night Ops)">
+        <span>🌙 Dark</span>
+      </button>
+      <button class="btn-hud" id="btnThemeVoyager" onclick="switchBasemap('voyager')" title="CARTO Voyager (Transit Detail)">
+        <span>🧭 Voyager</span>
+      </button>
+      <button class="btn-hud" id="btnThemeLight" onclick="switchBasemap('light')" title="CARTO Positron (High Contrast)">
+        <span>☀️ Light</span>
+      </button>
+
+      <button class="btn-hud" onclick="resetMaharashtraView()" title="Fit entire Maharashtra network">
+        <span>🗺️ Fit All</span>
+      </button>
+
+      <button class="btn-hud" onclick="toggleHUDs()" id="btnToggleHUD" title="Toggle Floating UI Panels for clear view">
+        <span>👁️ HUD</span>
+      </button>
+
+      <button class="btn-hud" onclick="toggleFullscreen()" title="Toggle Browser Fullscreen">
+        <span id="fullscreenIcon">⛶</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- LEFT FLOATING CONTROL HUD -->
+  <aside class="left-control-hud" id="leftControlHud">
+    <!-- SEARCH & FILTER -->
+    <div class="search-box">
+      <span class="search-icon">🔍</span>
+      <input type="text" class="search-input" id="atmSearchInput" placeholder="Search ATM, site, route, or city..." oninput="onFilterChanged()">
+    </div>
+
+    <!-- URGENCY FILTER CHIPS -->
+    <div class="filter-chips">
+      <div class="chip active" onclick="setFilterUrgency('ALL', this)">All (8)</div>
+      <div class="chip" onclick="setFilterUrgency('CRITICAL', this)">🔴 Critical (1)</div>
+      <div class="chip" onclick="setFilterUrgency('SCHEDULED', this)">🟡 Sched (5)</div>
+      <div class="chip" onclick="setFilterUrgency('HEALTHY', this)">🟢 Healthy (2)</div>
+    </div>
+
+    <!-- TABS: ATMS VS CORRIDORS -->
+    <div class="hud-tabs">
+      <button class="hud-tab-btn active" id="tabBtnAtms" onclick="switchLeftTab('atms')">🏧 Monitored ATMs (8)</button>
+      <button class="hud-tab-btn" id="tabBtnCorridors" onclick="switchLeftTab('corridors')">🚚 CIT Corridors (4)</button>
+    </div>
+
+    <!-- SCROLLABLE LIST OF ATMS -->
+    <div class="hud-scroll-area" id="atmListContainer">
+      <!-- Dynamically generated ATM cards -->
+    </div>
+
+    <!-- SCROLLABLE LIST OF CORRIDORS (HIDDEN INITIALLY) -->
+    <div class="hud-scroll-area" id="corridorListContainer" style="display: none;">
+      <!-- Dynamically generated Corridor cards -->
+    </div>
+  </aside>
+
+  <!-- TOGGLE BUTTON IF LEFT HUD IS COLLAPSED -->
+  <button class="hud-toggle-btn" id="leftHudOpenBtn" onclick="toggleLeftHud(true)" title="Open ATM Navigator">
+    📑
+  </button>
+
+  <!-- RIGHT FLOATING TELEMETRY & INDENT INSPECTOR DRAWER -->
+  <aside class="right-inspector-drawer hidden" id="rightInspectorDrawer">
+    <div class="drawer-header">
+      <div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <h2 style="font-size: 1.15rem; font-weight: 800; color: #fff;" id="inspTitle">ATM 1 · Dadar</h2>
+          <span class="urgency-badge scheduled" id="inspStatusBadge">🟡 Scheduled</span>
+        </div>
+        <p style="font-size: 0.78rem; color: var(--text-muted); margin-top: 3px;" id="inspSubtitle">Mumbai Railway Station Concourse · Route 1</p>
+      </div>
+      <button class="btn-close-drawer" onclick="closeInspectorDrawer()" title="Close Inspector (Esc)">✕</button>
+    </div>
+
+    <!-- NET INDENT RECOMMENDATION HERO -->
+    <div class="indent-hero-card">
+      <div class="indent-hero-label">
+        <span>Recommended Net Top-Up Indent</span>
+        <span style="font-family: var(--font-mono); font-size: 0.76rem;" id="inspCycleLabel">Cycle 1 (Aug 25 - Aug 31)</span>
+      </div>
+      <div class="indent-hero-value" id="inspNetIndentVal">₹58,95,200</div>
+      <div class="indent-hero-sub" id="inspNetIndentFormulaDesc">Calculated to cover 7-day predicted demand + 99% SLA safety buffer after existing cash deduction.</div>
+    </div>
+
+    <!-- VAULT CAPACITY BAR & TELEMETRY -->
+    <div style="background: rgba(10, 15, 29, 0.7); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 8px;">
+      <div style="display: flex; justify-content: space-between; font-size: 0.78rem;">
+        <span style="color: var(--text-muted);">Vault Fill Level:</span>
+        <span style="font-family: var(--font-mono); font-weight: 700; color: #38bdf8;" id="inspVaultPercent">30.6% Utilized</span>
+      </div>
+      <div class="vault-gauge-container" style="height: 8px;">
+        <div class="vault-gauge-fill" id="inspVaultGaugeFill" style="width: 30.6%; background: #f59e0b;"></div>
+      </div>
+      <div style="display: flex; justify-content: space-between; font-size: 0.74rem; font-family: var(--font-mono); color: var(--text-dim); margin-top: 2px;">
+        <span>On-Site: <strong style="color: #fff;" id="inspExistingCashVal">₹26.05 L</strong></span>
+        <span>Vault Cap: <strong style="color: #fff;" id="inspCapacityVal">₹85.00 L</strong></span>
+      </div>
+    </div>
+
+    <!-- EXPLAINABLE DECISION FORMULA BREAKDOWN -->
+    <div class="formula-breakdown-card">
+      <div style="font-size: 0.76rem; font-weight: 700; color: #fff; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px;">
+        Transparent Decision Equation
+      </div>
+      <div class="formula-row">
+        <span class="formula-label">(+) 7-Day Predicted Demand</span>
+        <span class="formula-val" id="inspFormDemand" style="color: #38bdf8;">₹76,86,504</span>
+      </div>
+      <div class="formula-row">
+        <span class="formula-label">(+) 99% SLA Safety Buffer</span>
+        <span class="formula-val" id="inspFormBuffer" style="color: #a855f7;">₹11,47,647</span>
+      </div>
+      <div class="formula-row">
+        <span class="formula-label">(=) Gross Indent Target</span>
+        <span class="formula-val" id="inspFormGross">₹85,00,000 (Cap)</span>
+      </div>
+      <div class="formula-row">
+        <span class="formula-label">(-) Current Cash in Vault</span>
+        <span class="formula-val" id="inspFormCash" style="color: #f43f5e;">- ₹26,04,800</span>
+      </div>
+      <div class="formula-row" style="border-top: 1px solid rgba(255,255,255,0.12); padding-top: 6px;">
+        <span class="formula-label" style="color: #fff; font-weight: 700;">(=) Net Top-Up Dispatch Indent</span>
+        <span class="formula-val" id="inspFormNet" style="color: #34d399; font-weight: 800; font-size: 0.92rem;">₹58,95,200</span>
+      </div>
+    </div>
+
+    <!-- 31-DAY HOLDOUT DEMAND FORECAST MINI-CHART -->
+    <div style="background: rgba(10, 15, 29, 0.7); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 8px;">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <span style="font-size: 0.76rem; font-weight: 700; color: #fff; text-transform: uppercase; letter-spacing: 0.05em;">31-Day Demand Velocity</span>
+        <span style="font-size: 0.72rem; color: var(--text-dim);" id="inspChartSub">Holdout Month</span>
+      </div>
+      <div style="height: 120px; width: 100%; position: relative;">
+        <canvas id="inspDemandChart"></canvas>
+      </div>
+    </div>
+
+    <!-- DISPATCH LOGISTICS SPEC -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 0.74rem;">
+      <div style="background: rgba(10, 15, 29, 0.6); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 8px;">
+        <div style="color: var(--text-dim);">Assigned Transit Corridor</div>
+        <div style="font-weight: 700; color: #fff; margin-top: 2px;" id="inspCorridorName">Mumbai Route 1</div>
+      </div>
+      <div style="background: rgba(10, 15, 29, 0.6); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 8px;">
+        <div style="color: var(--text-dim);">Days of Cash Remaining</div>
+        <div style="font-weight: 700; color: #f59e0b; margin-top: 2px;" id="inspDcrVal">2.37 Days</div>
+      </div>
+    </div>
+
+    <!-- ACTION BUTTONS -->
+    <div class="drawer-actions">
+      <button class="btn-action-primary" onclick="confirmDispatchIndents()">
+        <span>🚚 Approve & Dispatch CIT Indent</span>
+      </button>
+      <div style="display: flex; gap: 8px;">
+        <button class="btn-action-secondary" style="flex: 1;" onclick="openDeepDiveCockpit()">
+          <span>📊 Open Cockpit</span>
+        </button>
+        <button class="btn-action-secondary" style="flex: 1;" onclick="copyIndentSlip()">
+          <span>📋 Copy Slip</span>
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- TOAST NOTIFICATION -->
+  <div class="toast-notification" id="toastNotice">
+    <span style="font-size: 1.2rem;">✅</span>
+    <span id="toastMsg">CIT Dispatch Indent Confirmed!</span>
+  </div>
+
+  <script>
+    // --- GLOBAL GIS STATE ---
+    const DATA = window.LIVE_PORTAL_DATA || {};
+    const cartoKey = (DATA && DATA.metadata && DATA.metadata.carto_api_key) || 'cb1_4shp_1_67853029428fcaa9c51011a8';
+
+    let map = null;
+    let baseLayers = {};
+    let currentBasemap = 'dark';
+    let markers = {};
+    let corridorLayers = {};
+    let vanMarkers = [];
+    let selectedTerminalId = null;
+    let selectedCorridorId = null;
+    let currentUrgencyFilter = 'ALL';
+    let miniChartInstance = null;
+    let isHUDVisible = true;
+
+    // --- INITIALIZATION ---
+    window.addEventListener('DOMContentLoaded', () => {
+      initMap();
+      populateTopTelemetry();
+      renderAtmList();
+      renderCorridorList();
+      handleUrlParams();
+      setupKeyboardShortcuts();
+    });
+
+    // --- INIT LEAFLET MAP ---
+    function initMap() {
+      map = L.map('mapViewport', {
+        zoomControl: false,
+        attributionControl: true,
+        center: [19.75, 75.71],
+        zoom: 7,
+        minZoom: 5,
+        maxZoom: 18
+      });
+
+      // Zoom control in bottom right
+      L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+      // CARTO Basemaps with User Authenticated Key
+      baseLayers.dark = L.tileLayer(`https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png?key=${cartoKey}`, {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions" target="_blank">CARTO</a>',
+        subdomains: 'abcd',
+        maxZoom: 19
+      });
+
+      baseLayers.voyager = L.tileLayer(`https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png?key=${cartoKey}`, {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions" target="_blank">CARTO</a>',
+        subdomains: 'abcd',
+        maxZoom: 19
+      });
+
+      baseLayers.light = L.tileLayer(`https://{s}.basemaps.cartocdn.com/rastertiles/light_all/{z}/{x}/{y}{r}.png?key=${cartoKey}`, {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions" target="_blank">CARTO</a>',
+        subdomains: 'abcd',
+        maxZoom: 19
+      });
+
+      // Add default dark matter layer
+      baseLayers.dark.addTo(map);
+
+      // Render Corridors and Polylines
+      renderCorridorsOnMap();
+
+      // Render ATM Markers
+      renderAtmMarkersOnMap();
+
+      // Fit network to screen bounds
+      resetMaharashtraView();
+    }
+
+    // --- SWITCH BASEMAP ---
+    function switchBasemap(theme) {
+      if (!baseLayers[theme] || theme === currentBasemap) return;
+      map.removeLayer(baseLayers[currentBasemap]);
+      baseLayers[theme].addTo(map);
+      currentBasemap = theme;
+
+      document.querySelectorAll('#btnThemeDark, #btnThemeVoyager, #btnThemeLight').forEach(btn => btn.classList.remove('active'));
+      if (theme === 'dark') document.getElementById('btnThemeDark').classList.add('active');
+      if (theme === 'voyager') document.getElementById('btnThemeVoyager').classList.add('active');
+      if (theme === 'light') document.getElementById('btnThemeLight').classList.add('active');
+    }
+
+    // --- CORRIDOR POLYLINES ON MAP ---
+    function renderCorridorsOnMap() {
+      const corridors = DATA.corridors || [];
+      const corridorColors = {
+        'MUMBAI_CORRIDOR': '#06b6d4', // Cyan
+        'PUNE_CORRIDOR': '#a855f7',   // Purple
+        'NAGPUR_CORRIDOR': '#f59e0b', // Amber
+        'NASHIK_CORRIDOR': '#10b981'  // Emerald
+      };
+
+      corridors.forEach(c => {
+        const strokeColor = corridorColors[c.id] || '#38bdf8';
+
+        // Outer glow line
+        const glowLine = L.polyline(c.coordinates, {
+          color: strokeColor,
+          weight: 7,
+          opacity: 0.25,
+          lineCap: 'round'
+        }).addTo(map);
+
+        // Core dashed polyline
+        const polyline = L.polyline(c.coordinates, {
+          color: strokeColor,
+          weight: 3.5,
+          opacity: 0.9,
+          dashArray: '8, 8'
+        }).addTo(map);
+
+        polyline.bindTooltip(`
+          <div style="font-family: var(--font-sans); font-size: 0.8rem;">
+            <strong style="color: #fff;">${c.name}</strong><br>
+            <span style="color: var(--text-dim);">Connecting ATMs: ${c.terminals.join(' & ')}</span>
+          </div>
+        `, { sticky: true, className: 'leaflet-tooltip-dark' });
+
+        polyline.on('click', () => {
+          focusCorridor(c.id);
+        });
+
+        corridorLayers[c.id] = { polyline, glowLine, meta: c };
+
+        // Add Armored CIT Van Marker at Corridor Midpoint
+        if (c.coordinates.length >= 2) {
+          const midLat = (c.coordinates[0][0] + c.coordinates[1][0]) / 2;
+          const midLng = (c.coordinates[0][1] + c.coordinates[1][1]) / 2;
+          const vanIcon = L.divIcon({
+            className: 'cit-van-marker',
+            html: `<span>🚚 CIT-${c.city.slice(0, 3)}-01</span>`,
+            iconSize: [110, 26],
+            iconAnchor: [55, 13]
+          });
+          const vanMarker = L.marker([midLat, midLng], { icon: vanIcon }).addTo(map);
+          vanMarker.bindTooltip(`<strong>Armored CIT Van · ${c.name}</strong><br>Status: Scheduled Daily Run<br>Security: Armed Escort GPS Active`, {
+            className: 'leaflet-tooltip-dark'
+          });
+          vanMarkers.push(vanMarker);
+        }
+      });
+    }
+
+    // --- ATM MARKERS ON MAP ---
+    function renderAtmMarkersOnMap() {
+      const terminals = DATA.terminals || {};
+
+      Object.keys(terminals).forEach(tid => {
+        const t = terminals[tid];
+        const colorClass = t.urgency_status === 'CRITICAL' ? 'map-marker-red' : (t.urgency_status === 'SCHEDULED' ? 'map-marker-amber' : 'map-marker-green');
+
+        const customIcon = L.divIcon({
+          className: `map-marker ${colorClass}`,
+          html: `<span>${t.terminal_id}</span>`,
+          iconSize: [32, 32],
+          iconAnchor: [16, 16],
+          popupAnchor: [0, -16]
+        });
+
+        const marker = L.marker([t.lat, t.lng], { icon: customIcon }).addTo(map);
+
+        const popupHtml = `
+          <div style="min-width: 220px; padding: 4px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <strong style="color: #fff; font-size: 0.95rem;">ATM ${t.terminal_id} · ${t.city}</strong>
+              <span class="urgency-badge ${t.urgency_status.toLowerCase()}">${t.status_label}</span>
+            </div>
+            <div style="font-size: 0.78rem; color: #94a3b8; margin-bottom: 8px;">${t.site_name}</div>
+            <div style="font-family: var(--font-mono); font-size: 0.8rem; display: flex; flex-direction: column; gap: 4px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 6px;">
+              <div style="display: flex; justify-content: space-between;">
+                <span style="color: #94a3b8;">Existing Cash:</span>
+                <strong style="color: #38bdf8;">₹${(t.existing_cash / 1e5).toFixed(2)} L</strong>
+              </div>
+              <div style="display: flex; justify-content: space-between;">
+                <span style="color: #94a3b8;">Net Indent:</span>
+                <strong style="color: #34d399;">₹${(t.c1_net_indent / 1e5).toFixed(2)} L</strong>
+              </div>
+              <div style="display: flex; justify-content: space-between;">
+                <span style="color: #94a3b8;">Days Remaining:</span>
+                <strong style="color: #f59e0b;">${t.dcr_days}d</strong>
+              </div>
+            </div>
+            <button onclick="inspectATM('${t.terminal_id}')" style="width: 100%; margin-top: 10px; background: linear-gradient(135deg, #0284c7, #0369a1); color: #fff; border: 1px solid #38bdf8; border-radius: 8px; padding: 7px; font-weight: 700; font-size: 0.78rem; cursor: pointer;">
+              ⚡ Inspect Telemetry & Indent
+            </button>
+          </div>
+        `;
+
+        marker.bindPopup(popupHtml);
+
+        marker.on('click', () => {
+          inspectATM(t.terminal_id);
+        });
+
+        markers[tid] = marker;
+      });
+    }
+
+    // --- POPULATE TOP COMMAND TELEMETRY ---
+    function populateTopTelemetry() {
+      const summary = DATA.fleet_summary || {};
+      document.getElementById('topPillAtms').innerText = `${summary.total_terminals || 8} Monitored ATMs`;
+      document.getElementById('topPillCash').innerText = `₹${((summary.total_existing_cash || 17212400) / 1e7).toFixed(2)} Cr`;
+      document.getElementById('topPillIndent').innerText = `₹${((summary.total_c1_net_indent || 32432371) / 1e7).toFixed(2)} Cr`;
+      document.getElementById('topPillStatus').innerText = `🔴 ${summary.critical_count || 1} · 🟡 ${summary.scheduled_count || 5} · 🟢 ${summary.healthy_count || 2}`;
+    }
+
+    // --- RENDER ATM LIST IN LEFT HUD ---
+    function renderAtmList() {
+      const container = document.getElementById('atmListContainer');
+      const terminals = DATA.terminals || {};
+      const searchVal = (document.getElementById('atmSearchInput').value || '').toLowerCase().trim();
+
+      container.innerHTML = '';
+
+      Object.keys(terminals).forEach(tid => {
+        const t = terminals[tid];
+
+        // Search filter
+        if (searchVal) {
+          const matchId = t.terminal_id.toString().includes(searchVal);
+          const matchCode = t.terminal_code.toLowerCase().includes(searchVal);
+          const matchName = t.site_name.toLowerCase().includes(searchVal);
+          const matchCity = t.city.toLowerCase().includes(searchVal);
+          if (!matchId && !matchCode && !matchName && !matchCity) return;
+        }
+
+        // Urgency filter
+        if (currentUrgencyFilter !== 'ALL' && t.urgency_status !== currentUrgencyFilter) {
+          return;
+        }
+
+        const pct = Math.min(100, Math.round((t.existing_cash / t.capacity) * 100));
+        const color = t.urgency_status === 'CRITICAL' ? '#f43f5e' : (t.urgency_status === 'SCHEDULED' ? '#f59e0b' : '#10b981');
+
+        const card = document.createElement('div');
+        card.className = `atm-item-card ${selectedTerminalId === t.terminal_id.toString() ? 'selected' : ''}`;
+        card.id = `atm-card-${t.terminal_id}`;
+        card.onclick = () => inspectATM(t.terminal_id);
+
+        card.innerHTML = `
+          <div class="atm-item-header">
+            <div class="atm-item-id">
+              <span style="color: ${color};">●</span>
+              <span>ATM ${t.terminal_id} · ${t.city}</span>
+            </div>
+            <span class="urgency-badge ${t.urgency_status.toLowerCase()}">${t.dcr_days}d Left</span>
+          </div>
+
+          <div class="atm-item-site">${t.site_name}</div>
+
+          <div class="vault-gauge-container">
+            <div class="vault-gauge-fill" style="width: ${pct}%; background: ${color};"></div>
+          </div>
+
+          <div class="atm-item-metrics">
+            <span>Cash: <strong>₹${(t.existing_cash / 1e5).toFixed(1)}L</strong> (${pct}%)</span>
+            <span>Indent: <strong style="color: #34d399;">₹${(t.c1_net_indent / 1e5).toFixed(1)}L</strong></span>
+          </div>
+        `;
+
+        container.appendChild(card);
+      });
+
+      if (container.children.length === 0) {
+        container.innerHTML = `
+          <div style="padding: 24px 10px; text-align: center; color: var(--text-dim); font-size: 0.8rem;">
+            No ATMs match the selected criteria.
+          </div>
+        `;
+      }
+    }
+
+    // --- RENDER CORRIDOR LIST IN LEFT HUD ---
+    function renderCorridorList() {
+      const container = document.getElementById('corridorListContainer');
+      const corridors = DATA.corridors || [];
+      container.innerHTML = '';
+
+      corridors.forEach(c => {
+        const card = document.createElement('div');
+        card.className = `corridor-item-card ${selectedCorridorId === c.id ? 'active' : ''}`;
+        card.id = `corridor-card-${c.id}`;
+        card.onclick = () => focusCorridor(c.id);
+
+        card.innerHTML = `
+          <div class="corridor-header">
+            <span class="corridor-title">${c.name}</span>
+            <span class="corridor-pill">${c.city}</span>
+          </div>
+          <div style="font-size: 0.74rem; color: var(--text-muted);">
+            Connecting <strong>ATM ${c.terminals[0]}</strong> & <strong>ATM ${c.terminals[1]}</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 0.72rem; color: var(--text-dim); font-family: var(--font-mono); margin-top: 4px;">
+            <span>🚚 Armored CIT Link</span>
+            <span style="color: #38bdf8;">Click to Fly & Trace ➔</span>
+          </div>
+        `;
+
+        container.appendChild(card);
+      });
+    }
+
+    // --- SWITCH LEFT HUD TABS ---
+    function switchLeftTab(tab) {
+      const btnAtms = document.getElementById('tabBtnAtms');
+      const btnCorridors = document.getElementById('tabBtnCorridors');
+      const listAtms = document.getElementById('atmListContainer');
+      const listCorridors = document.getElementById('corridorListContainer');
+
+      if (tab === 'atms') {
+        btnAtms.classList.add('active');
+        btnCorridors.classList.remove('active');
+        listAtms.style.display = 'flex';
+        listCorridors.style.display = 'none';
+      } else {
+        btnCorridors.classList.add('active');
+        btnAtms.classList.remove('active');
+        listCorridors.style.display = 'flex';
+        listAtms.style.display = 'none';
+      }
+    }
+
+    // --- FILTER CHANGED ---
+    function onFilterChanged() {
+      renderAtmList();
+    }
+
+    // --- SET FILTER URGENCY ---
+    function setFilterUrgency(urgency, elem) {
+      currentUrgencyFilter = urgency;
+      document.querySelectorAll('.filter-chips .chip').forEach(c => c.classList.remove('active'));
+      elem.classList.add('active');
+      renderAtmList();
+    }
+
+    // --- INSPECT ATM TELEMETRY & NET INDENT ---
+    function inspectATM(tid) {
+      tid = tid.toString();
+      selectedTerminalId = tid;
+      selectedCorridorId = null;
+
+      const terminals = DATA.terminals || {};
+      const t = terminals[tid];
+      if (!t) return;
+
+      // Update card highlighting in list
+      document.querySelectorAll('.atm-item-card').forEach(c => c.classList.remove('selected'));
+      const activeCard = document.getElementById(`atm-card-${tid}`);
+      if (activeCard) activeCard.classList.add('selected');
+
+      // Pan & Zoom Map to ATM
+      map.flyTo([t.lat, t.lng], 13.5, {
+        animate: true,
+        duration: 1.2
+      });
+
+      // Open Marker Popup
+      if (markers[tid]) {
+        markers[tid].openPopup();
+      }
+
+      // Populate Inspector Drawer
+      document.getElementById('inspTitle').innerText = `ATM ${t.terminal_id} · ${t.city}`;
+      document.getElementById('inspSubtitle').innerText = `${t.site_name} · ${t.address || ''}`;
+
+      const statusBadge = document.getElementById('inspStatusBadge');
+      statusBadge.className = `urgency-badge ${t.urgency_status.toLowerCase()}`;
+      statusBadge.innerText = t.status_label;
+
+      // Net Indent Hero
+      document.getElementById('inspNetIndentVal').innerText = `₹${Number(t.c1_net_indent).toLocaleString('en-IN')}`;
+
+      // Vault Utilization
+      const pct = Math.min(100, ((t.existing_cash / t.capacity) * 100)).toFixed(1);
+      document.getElementById('inspVaultPercent').innerText = `${pct}% Utilized`;
+      document.getElementById('inspVaultGaugeFill').style.width = `${pct}%`;
+      document.getElementById('inspVaultGaugeFill').style.background = t.status_color || '#38bdf8';
+      document.getElementById('inspExistingCashVal').innerText = `₹${(t.existing_cash / 1e5).toFixed(2)} L`;
+      document.getElementById('inspCapacityVal').innerText = `₹${(t.capacity / 1e5).toFixed(2)} L`;
+
+      // Formula breakdown
+      document.getElementById('inspFormDemand').innerText = `+ ₹${Number(t.c1_pred_demand).toLocaleString('en-IN')}`;
+      document.getElementById('inspFormBuffer').innerText = `+ ₹${Number(t.c1_safety_buffer).toLocaleString('en-IN')}`;
+      document.getElementById('inspFormGross').innerText = `= ₹${Number(t.c1_gross_target).toLocaleString('en-IN')}`;
+      document.getElementById('inspFormCash').innerText = `- ₹${Number(t.existing_cash).toLocaleString('en-IN')}`;
+      document.getElementById('inspFormNet').innerText = `= ₹${Number(t.c1_net_indent).toLocaleString('en-IN')}`;
+
+      // Logistics
+      document.getElementById('inspCorridorName').innerText = t.corridor_name || 'Assigned Transit Link';
+      document.getElementById('inspDcrVal').innerText = `${t.dcr_days} Days Remaining`;
+
+      // Render 31-day Mini Chart
+      renderMiniChart(t);
+
+      // Open drawer
+      const drawer = document.getElementById('rightInspectorDrawer');
+      drawer.classList.remove('hidden');
+
+      // Update URL hash
+      history.replaceState(null, '', `?atm=${tid}`);
+    }
+
+    // --- CLOSE INSPECTOR DRAWER ---
+    function closeInspectorDrawer() {
+      document.getElementById('rightInspectorDrawer').classList.add('hidden');
+      selectedTerminalId = null;
+      document.querySelectorAll('.atm-item-card').forEach(c => c.classList.remove('selected'));
+    }
+
+    // --- FOCUS ON CORRIDOR ---
+    function focusCorridor(corridorId) {
+      selectedCorridorId = corridorId;
+      const c = (DATA.corridors || []).find(item => item.id === corridorId);
+      if (!c) return;
+
+      // Update list highlighting
+      document.querySelectorAll('.corridor-item-card').forEach(card => card.classList.remove('active'));
+      const activeCard = document.getElementById(`corridor-card-${corridorId}`);
+      if (activeCard) activeCard.classList.add('active');
+
+      // Fit bounds with comfortable padding
+      const bounds = L.latLngBounds(c.coordinates);
+      map.fitBounds(bounds, {
+        paddingTopLeft: [400, 100],
+        paddingBottomRight: [440, 100],
+        maxZoom: 14,
+        animate: true,
+        duration: 1.2
+      });
+
+      // Pulse the polyline
+      if (corridorLayers[corridorId]) {
+        const poly = corridorLayers[corridorId].polyline;
+        poly.setStyle({ weight: 6, opacity: 1 });
+        setTimeout(() => {
+          poly.setStyle({ weight: 3.5, opacity: 0.9 });
+        }, 1500);
+      }
+
+      showToast(`📍 Focused on ${c.name} (Connecting ATMs ${c.terminals.join(' & ')})`);
+    }
+
+    // --- RESET VIEW TO ENTIRE MAHARASHTRA ---
+    function resetMaharashtraView() {
+      const terminals = DATA.terminals || {};
+      const coords = Object.values(terminals).map(t => [t.lat, t.lng]);
+      if (coords.length > 0) {
+        const bounds = L.latLngBounds(coords);
+        map.fitBounds(bounds, {
+          paddingTopLeft: [400, 90],
+          paddingBottomRight: [440, 90],
+          animate: true,
+          duration: 1.0
+        });
+      } else {
+        map.setView([19.75, 75.71], 7);
+      }
+    }
+
+    // --- RENDER MINI SPARKLINE CHART ---
+    function renderMiniChart(terminal) {
+      const ctx = document.getElementById('inspDemandChart');
+      if (!ctx) return;
+
+      if (miniChartInstance) {
+        miniChartInstance.destroy();
+      }
+
+      const preds = (terminal.daily_preds && terminal.daily_preds.pure_exogenous) ||
+                    (terminal.daily_preds && terminal.daily_preds.strategy_b) || [];
+      const actuals = terminal.actual_demands || [];
+      const dates = terminal.dates || [];
+      const labels = dates.map(d => d.slice(5)); // 'MM-DD'
+
+      miniChartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: 'Holdout Forecast',
+              data: preds,
+              borderColor: '#38bdf8',
+              backgroundColor: 'rgba(56, 189, 248, 0.1)',
+              borderWidth: 2,
+              fill: true,
+              pointRadius: 0,
+              pointHoverRadius: 4,
+              tension: 0.3
+            },
+            {
+              label: 'Actual Ground Truth',
+              data: actuals,
+              borderColor: 'rgba(255, 255, 255, 0.3)',
+              borderWidth: 1.5,
+              borderDash: [3, 3],
+              pointRadius: 0,
+              fill: false,
+              tension: 0.3
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: 'rgba(6, 9, 19, 0.95)',
+              titleColor: '#fff',
+              bodyColor: '#38bdf8',
+              borderColor: 'rgba(56, 189, 248, 0.4)',
+              borderWidth: 1,
+              padding: 8,
+              callbacks: {
+                label: (c) => `${c.dataset.label}: ₹${Number(c.raw).toLocaleString('en-IN')}`
+              }
+            }
+          },
+          scales: {
+            x: {
+              display: false
+            },
+            y: {
+              display: false
+            }
+          }
+        }
+      });
+    }
+
+    // --- ACTIONS IN DRAWER ---
+    function openDeepDiveCockpit() {
+      if (!selectedTerminalId) return;
+      window.location.href = `index.html?atm=${selectedTerminalId}`;
+    }
+
+    function copyIndentSlip() {
+      if (!selectedTerminalId) return;
+      const t = (DATA.terminals || {})[selectedTerminalId];
+      if (!t) return;
+
+      const text = `
+=== CASH INTELLIGENCE REPLENISHMENT INDENT SLIP ===
+ATM Terminal ID : ${t.terminal_id} (${t.terminal_code})
+Location        : ${t.site_name}, ${t.city}
+Assigned Route  : ${t.corridor_name}
+Cutoff Date     : ${DATA.metadata.cutoff_date}
+Cycle 1 Dates   : 2026-08-25 to 2026-08-31 (7 Days)
+---------------------------------------------------
+(+) 7d Pred Demand   : ₹${Number(t.c1_pred_demand).toLocaleString('en-IN')}
+(+) 99% Safety Buffer: ₹${Number(t.c1_safety_buffer).toLocaleString('en-IN')}
+(=) Gross Load Target: ₹${Number(t.c1_gross_target).toLocaleString('en-IN')}
+(-) Current Cash     : ₹${Number(t.existing_cash).toLocaleString('en-IN')}
+===================================================
+NET CASH INDENT      : ₹${Number(t.c1_net_indent).toLocaleString('en-IN')}
+Urgency Status       : ${t.urgency_status} (${t.dcr_days} Days Remaining)
+===================================================
+`.trim();
+
+      navigator.clipboard.writeText(text).then(() => {
+        showToast('📋 Replenishment Indent Slip copied to clipboard!');
+      }).catch(() => {
+        showToast('Indent copied!');
+      });
+    }
+
+    function confirmDispatchIndents() {
+      if (!selectedTerminalId) return;
+      const t = (DATA.terminals || {})[selectedTerminalId];
+      if (!t) return;
+
+      const code = 'DSP-' + Math.floor(100000 + Math.random() * 900000);
+      showToast(`🚚 Armored CIT Run Dispatched for ATM ${t.terminal_id}! Indent: ₹${(t.c1_net_indent / 1e5).toFixed(2)}L (Ref: ${code})`);
+    }
+
+    // --- TOGGLE HUDS ---
+    function toggleHUDs() {
+      const leftHud = document.getElementById('leftControlHud');
+      const rightDrawer = document.getElementById('rightInspectorDrawer');
+      const btn = document.getElementById('btnToggleHUD');
+
+      isHUDVisible = !isHUDVisible;
+
+      if (!isHUDVisible) {
+        leftHud.classList.add('collapsed');
+        rightDrawer.classList.add('hidden');
+        btn.classList.remove('active');
+        showToast('HUD hidden for unobstructed map view');
+      } else {
+        leftHud.classList.remove('collapsed');
+        if (selectedTerminalId) rightDrawer.classList.remove('hidden');
+        btn.classList.add('active');
+      }
+    }
+
+    function toggleLeftHud(open) {
+      const leftHud = document.getElementById('leftControlHud');
+      if (open) {
+        leftHud.classList.remove('collapsed');
+      } else {
+        leftHud.classList.add('collapsed');
+      }
+    }
+
+    // --- FULLSCREEN TOGGLE ---
+    function toggleFullscreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().then(() => {
+          document.getElementById('fullscreenIcon').innerText = '✕';
+          showToast('Entered Fullscreen Mode');
+        }).catch(() => {});
+      } else {
+        document.exitFullscreen().then(() => {
+          document.getElementById('fullscreenIcon').innerText = '⛶';
+        }).catch(() => {});
+      }
+    }
+
+    // --- TOAST DISPLAY ---
+    let toastTimer = null;
+    function showToast(msg) {
+      const toast = document.getElementById('toastNotice');
+      const text = document.getElementById('toastMsg');
+      text.innerText = msg;
+      toast.classList.add('show');
+
+      if (toastTimer) clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => {
+        toast.classList.remove('show');
+      }, 3500);
+    }
+
+    // --- HANDLE URL PARAMS ---
+    function handleUrlParams() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const atmParam = urlParams.get('atm');
+      const corridorParam = urlParams.get('corridor');
+
+      if (atmParam && DATA.terminals && DATA.terminals[atmParam]) {
+        setTimeout(() => inspectATM(atmParam), 400);
+      } else if (corridorParam) {
+        setTimeout(() => focusCorridor(corridorParam), 400);
+      }
+    }
+
+    // --- KEYBOARD SHORTCUTS ---
+    function setupKeyboardShortcuts() {
+      window.addEventListener('keydown', (e) => {
+        if (e.target.tagName === 'INPUT') return;
+
+        // Escape: close drawer
+        if (e.key === 'Escape') {
+          closeInspectorDrawer();
+        }
+        // F: Fullscreen
+        if (e.key === 'f' || e.key === 'F') {
+          toggleFullscreen();
+        }
+        // R: Reset view
+        if (e.key === 'r' || e.key === 'R') {
+          resetMaharashtraView();
+        }
+        // H: Toggle HUDs
+        if (e.key === 'h' || e.key === 'H') {
+          toggleHUDs();
+        }
+        // 1 to 8: Jump to ATM
+        if (e.key >= '1' && e.key <= '8') {
+          inspectATM(e.key);
+        }
+      });
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,6 @@
+scenario,mape_%,wape_%,bias_%,interpretation
+Random 25% Masking (Uniform),5.02,4.95,-0.44,Unbiased Estimator (±2% error)
+Random 50% Masking (Uniform),8.43,8.29,0.53,Unbiased Estimator (±2% error)
+Peak Commute (18:00-22:00) Missing,13.04,12.98,-12.84,Severe Under-estimation (missed peak hours)
+Morning Rush (08:00-12:00) Missing,10.21,10.59,-10.05,Severe Under-estimation (missed peak hours)
+Off-Peak Night (00:00-04:00) Missing,17.64,17.81,17.81,Severe Over-estimation (missed quiet hours)

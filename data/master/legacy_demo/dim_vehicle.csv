@@ -1,0 +1,2 @@
+vehicle_id,cra_id,vehicle_code,vehicle_type,cash_capacity,max_stops,shift_start,shift_end,status
+301,1,CIT-MUM-01,Armoured van,12000000,6,08:00,15:00,Available

@@ -1,0 +1,818 @@
+{
+  "files": [
+    {
+      "path": "feature_registry.csv",
+      "bytes": 5628,
+      "sha256": "beb4eb60ba2d29a81ac1be8146a9bf46c5e4a5ef31ec857992b8f8122603da7b",
+      "dataset": "cash_files",
+      "columns": [
+        "feature",
+        "definition",
+        "grain",
+        "status",
+        "source",
+        "availability",
+        "missing_behavior",
+        "schema_version"
+      ],
+      "rows": 30
+    },
+    {
+      "path": "master/cash_files/dim_calendar.csv",
+      "bytes": 22678,
+      "sha256": "f30222d0ea6a97f98ae8b981a90740ca4fcbced5e55847e9009a8a966c541649",
+      "dataset": "cash_files",
+      "columns": [
+        "calendar_date",
+        "day_of_week",
+        "month",
+        "quarter",
+        "is_weekend",
+        "is_payday",
+        "is_holiday",
+        "days_to_month_end",
+        "is_month_start",
+        "is_month_end"
+      ],
+      "rows": 754
+    },
+    {
+      "path": "master/cash_files/holiday_calendar.csv",
+      "bytes": 347163,
+      "sha256": "1b6fbd0573963ddbc0478b8eb1b5f48140d7358d581c8cfe47c53db4495839b1",
+      "dataset": "cash_files",
+      "columns": [
+        "calendar_date",
+        "region",
+        "holiday_name",
+        "holiday_type",
+        "source_id",
+        "source_url",
+        "retrieved_at",
+        "known_at",
+        "evidence_mode"
+      ],
+      "rows": 1729
+    },
+    {
+      "path": "master/cash_files/holiday_coverage.csv",
+      "bytes": 70552,
+      "sha256": "882cd817d629ac3e87be78e357bf0b56c41b7afb4f0602ed0631b91886eb5e47",
+      "dataset": "cash_files",
+      "columns": [
+        "region",
+        "period",
+        "status",
+        "source_id",
+        "retrieved_at",
+        "known_at"
+      ],
+      "rows": 986
+    },
+    {
+      "path": "master/cash_files/holidays.csv",
+      "bytes": 183,
+      "sha256": "06024c8aeecd2b148e390c807dd2e0898820dd0a6dab8911faf61b66cde91e70",
+      "dataset": "cash_files",
+      "columns": [
+        "calendar_date",
+        "holiday_name"
+      ],
+      "rows": 6
+    },
+    {
+      "path": "master/cash_files/local_events.csv",
+      "bytes": 85,
+      "sha256": "8e16ef119ddaebb374e4eaaa9999824250d88b7689ce8ffa4fd4af0cfb7dbdfc",
+      "dataset": "cash_files",
+      "columns": [
+        "event_id",
+        "city",
+        "start_date",
+        "end_date",
+        "event_type",
+        "source_url",
+        "known_at",
+        "verification_status"
+      ],
+      "rows": 0
+    },
+    {
+      "path": "master/cash_files/payday_rules.csv",
+      "bytes": 203,
+      "sha256": "5009b4ae966d0605d312975fc95f8c005b5565ddb97586abbf1cd911a1f49bce",
+      "dataset": "cash_files",
+      "columns": [
+        "rule_id",
+        "scope",
+        "days",
+        "adjustment_policy",
+        "verification_status",
+        "effective_from",
+        "effective_to"
+      ],
+      "rows": 1
+    },
+    {
+      "path": "master/cash_files/paydays.csv",
+      "bytes": 986,
+      "sha256": "200c6e93e5b383b660d2e35e5c2d9c7a6b82e765804a9d5b734670611f8c2135",
+      "dataset": "cash_files",
+      "columns": [
+        "calendar_date",
+        "is_payday"
+      ],
+      "rows": 74
+    },
+    {
+      "path": "master/cash_files/terminal_geography.csv",
+      "bytes": 12393,
+      "sha256": "eaf52c7ae894649188828d1e418fdb9e5c3398241af5d79b605cd7345f37a0b9",
+      "dataset": "cash_files",
+      "columns": [
+        "terminal_id",
+        "city",
+        "state",
+        "rbi_region",
+        "timezone",
+        "effective_from",
+        "effective_to",
+        "mapping_status",
+        "source"
+      ],
+      "rows": 100
+    },
+    {
+      "path": "master/cash_files/terminal_metadata.csv",
+      "bytes": 6483,
+      "sha256": "b58fb34c92ebc1595731681664a46479b116412728657adef3501040730a8af5",
+      "dataset": "cash_files",
+      "columns": [
+        "terminal_id",
+        "terminal_code",
+        "city",
+        "location",
+        "site_type"
+      ],
+      "rows": 100
+    },
+    {
+      "path": "master/cash_files/terminal_profile.csv",
+      "bytes": 5526,
+      "sha256": "a1b894ef213b090aa287f0e0d81b155702269bb65922d13144384f73d8b4e9b6",
+      "dataset": "cash_files",
+      "columns": [
+        "terminal_id",
+        "city",
+        "location",
+        "verified_site_type",
+        "device_type",
+        "capacity_amount",
+        "verification_status"
+      ],
+      "rows": 100
+    },
+    {
+      "path": "master/legacy_demo/dim_calendar.csv",
+      "bytes": 22882,
+      "sha256": "346d9431918e546edce850f84f853f45a80521b6f301356129f5cefe90f8240a",
+      "dataset": "legacy_demo",
+      "columns": [
+        "calendar_date",
+        "day_of_week",
+        "month",
+        "quarter",
+        "is_weekend",
+        "is_payday",
+        "is_holiday",
+        "days_to_month_end",
+        "is_month_start",
+        "is_month_end"
+      ],
+      "rows": 761
+    },
+    {
+      "path": "master/legacy_demo/dim_cassette_configuration.csv",
+      "bytes": 966,
+      "sha256": "77d10f8046587222253960ffbb37c542663ccc6e65524a7f5b10ef2b94a5be84",
+      "dataset": "legacy_demo",
+      "columns": [
+        "cassette_config_id",
+        "terminal_id",
+        "cassette_id",
+        "denomination",
+        "cassette_type",
+        "max_note_count",
+        "max_amount"
+      ],
+      "rows": 24
+    },
+    {
+      "path": "master/legacy_demo/dim_cra.csv",
+      "bytes": 141,
+      "sha256": "aeeee098c210e9c3634c0beb3ce050be52720d839595c670310cdbf5008deeea",
+      "dataset": "legacy_demo",
+      "columns": [
+        "cra_id",
+        "cra_code",
+        "cra_name",
+        "operator_name",
+        "status"
+      ],
+      "rows": 1
+    },
+    {
+      "path": "master/legacy_demo/dim_crm_module.csv",
+      "bytes": 351,
+      "sha256": "5c2dd0836815af7f89e3cc4927f7e0f44877d2e2bc8082998347b4d81d37994d",
+      "dataset": "legacy_demo",
+      "columns": [
+        "module_id",
+        "terminal_id",
+        "module_type",
+        "purpose",
+        "can_dispense",
+        "max_note_count"
+      ],
+      "rows": 3
+    },
+    {
+      "path": "master/legacy_demo/dim_location.csv",
+      "bytes": 688,
+      "sha256": "bd2f9ec1cfa867c9ca1405ec35e2e870f8204ccced7ca1b771a04cff003bae0d",
+      "dataset": "legacy_demo",
+      "columns": [
+        "location_id",
+        "region_id",
+        "location_name",
+        "location_type",
+        "latitude",
+        "longitude",
+        "address_line",
+        "pincode"
+      ],
+      "rows": 7
+    },
+    {
+      "path": "master/legacy_demo/dim_region.csv",
+      "bytes": 131,
+      "sha256": "6843cc64453b008442a7fadd1ecfe3a1bc956d3d6fd9799c0b4582cf90525eb0",
+      "dataset": "legacy_demo",
+      "columns": [
+        "region_id",
+        "cra_id",
+        "region_code",
+        "region_name",
+        "service_radius_km",
+        "timezone"
+      ],
+      "rows": 1
+    },
+    {
+      "path": "master/legacy_demo/dim_terminal.csv",
+      "bytes": 747,
+      "sha256": "7df1dc3bd9fa3b5b8557db263bb6c6c80bd5facb55afaba8fb6c5d88eb5bb8ac",
+      "dataset": "legacy_demo",
+      "columns": [
+        "terminal_id",
+        "terminal_code",
+        "terminal_type",
+        "is_crm",
+        "cra_id",
+        "region_id",
+        "location_id",
+        "site_type",
+        "operating_model",
+        "ownership",
+        "status",
+        "installation_date",
+        "service_window_start",
+        "service_window_end"
+      ],
+      "rows": 6
+    },
+    {
+      "path": "master/legacy_demo/dim_vault.csv",
+      "bytes": 173,
+      "sha256": "3d8996c6cc64faa422e81e0357b632269503b5956e209b4fc25622496222fa7b",
+      "dataset": "legacy_demo",
+      "columns": [
+        "vault_id",
+        "cra_id",
+        "region_id",
+        "location_id",
+        "vault_code",
+        "vault_name",
+        "cash_capacity",
+        "dispatch_cutoff",
+        "status"
+      ],
+      "rows": 1
+    },
+    {
+      "path": "master/legacy_demo/dim_vehicle.csv",
+      "bytes": 160,
+      "sha256": "29dd1258ae94b1ca97697549a1d3ac69d0b53dc0c62b5285f36f65fd479170a6",
+      "dataset": "legacy_demo",
+      "columns": [
+        "vehicle_id",
+        "cra_id",
+        "vehicle_code",
+        "vehicle_type",
+        "cash_capacity",
+        "max_stops",
+        "shift_start",
+        "shift_end",
+        "status"
+      ],
+      "rows": 1
+    },
+    {
+      "path": "processed/availability_daily.csv",
+      "bytes": 107,
+      "sha256": "b43deba78c5f1dc6ca9503d95cc0d3044e14247493c019a0c1296a6aca1bc8d1",
+      "dataset": "cash_files",
+      "columns": [
+        "terminal_id",
+        "calendar_date",
+        "uptime_pct",
+        "requested_amount",
+        "dispensed_amount",
+        "failed_amount",
+        "source_id",
+        "observed_at"
+      ],
+      "rows": 0
+    },
+    {
+      "path": "processed/daily_cash_out.csv",
+      "bytes": 5980833,
+      "sha256": "f6a3206b9cdc3585a2b2c518a98abacc28bc334fef7cfd7c7626996c8dda0dda",
+      "dataset": "cash_files",
+      "columns": [
+        "terminal_id",
+        "transaction_date",
+        "denomination",
+        "withdrawal_requested_amount",
+        "amount_dispensed",
+        "net_demand",
+        "is_recycler",
+        "target_semantics"
+      ],
+      "rows": 75400
+    },
+    {
+      "path": "processed/demand_features.csv",
+      "bytes": 9165280,
+      "sha256": "2b57c8b7212793ccaef66d7f082aad345d64326cae0c2b3d4bf83340c920086b",
+      "dataset": "cash_files",
+      "columns": [
+        "terminal_id",
+        "transaction_date",
+        "denomination",
+        "net_demand",
+        "day_of_week",
+        "month",
+        "quarter",
+        "is_weekend",
+        "is_payday",
+        "is_holiday",
+        "days_to_month_end",
+        "is_month_start",
+        "is_month_end",
+        "lag_1",
+        "lag_7",
+        "lag_14",
+        "rolling_mean_7",
+        "rolling_mean_14",
+        "rolling_std_7"
+      ],
+      "rows": 74000
+    },
+    {
+      "path": "processed/demand_features.manifest.json",
+      "bytes": 962,
+      "sha256": "48b55479a471d7a227d425cd6d024a914a428ad95c5fbbf37608ce3ba322751a",
+      "dataset": "cash_files"
+    },
+    {
+      "path": "processed/inventory_checkpoint_quality.csv",
+      "bytes": 8549913,
+      "sha256": "cb164b29d9a310a0531c16a2f93ddd2ca1f5108b816fd01718f5d701676dee80",
+      "dataset": "cash_files",
+      "columns": [
+        "terminal_id",
+        "calendar_date",
+        "snapshot_count",
+        "zero_balance_snapshot_count",
+        "minimum_reported_end_cash",
+        "maximum_reported_end_cash",
+        "source_kind",
+        "interpretation"
+      ],
+      "rows": 75400
+    },
+    {
+      "path": "raw/ATM_Raw_15Min_XLSX_CashFiles_PART1_20240901_20250131/ATM_CashFiles_15Min_XLSX_20240901_20240930.tar.gz",
+      "bytes": 27351760,
+      "sha256": "d00202e050df034426b79cda9bf67985c729c28ae3b8f12338de31c7c3bc7cd6",
+      "dataset": "cash_files"
+    },
+    {
+      "path": "raw/ATM_Raw_15Min_XLSX_CashFiles_PART1_20240901_20250131/ATM_CashFiles_15Min_XLSX_20241001_20241031.tar.gz",
+      "bytes": 28544243,
+      "sha256": "237ebee46c34b8cef3fd58eb96cea4012832d890cdc0e5d65bc8632914158f81",
+      "dataset": "cash_files"
+    },
+    {
+      "path": "raw/ATM_Raw_15Min_XLSX_CashFiles_PART1_20240901_20250131/ATM_CashFiles_15Min_XLSX_20241101_20241130.tar.gz",
+      "bytes": 27167259,
+      "sha256": "5156e74f1a5ab9d2c6ee7e55d74f08c6ee33b799c202184f8da093c8a0554df9",
+      "dataset": "cash_files"
+    },
+    {
+      "path": "raw/ATM_Raw_15Min_XLSX_CashFiles_PART1_20240901_20250131/ATM_CashFiles_15Min_XLSX_20241201_20241231.tar.gz",
+      "bytes": 28165612,
+      "sha256": "a004b00e16ed1a0d2ee49e62c4d445f998c93d1a24e25bda60b6b99f70f5dfbb",
+      "dataset": "cash_files"
+    },
+    {
+      "path": "raw/ATM_Raw_15Min_XLSX_CashFiles_PART1_20240901_20250131/ATM_CashFiles_15Min_XLSX_20250101_20250131.tar.gz",
+      "bytes": 28441273,
+      "sha256": "fcc523d21abd517c266cf4e03c58d78968cc3daf6cd346048935bffe58d6cde3",
+      "dataset": "cash_files"
+    },
+    {
+      "path": "raw/ATM_Raw_15Min_XLSX_CashFiles_PART1_20240901_20250131/README_XLSX_CashFiles.txt",
+      "bytes": 586,
+      "sha256": "7b44afce97698912fbe1cb7afd682291863f6b42ffcf2e85bbe5775cda309ac1",
+      "dataset": "cash_files"
+    },
+    {
+      "path": "raw/ATM_Raw_15Min_XLSX_CashFiles_PART2_20250201_20250630/ATM_CashFiles_15Min_XLSX_20250201_20250228.tar.gz",
+      "bytes": 25471889,
+      "sha256": "b8bfc9b596c0c225a1662a53460e685e1a70ae40f6b47a47789b877dca7ae68b",
+      "dataset": "cash_files"
+    },
+    {
+      "path": "raw/ATM_Raw_15Min_XLSX_CashFiles_PART2_20250201_20250630/ATM_CashFiles_15Min_XLSX_20250301_20250331.tar.gz",
+      "bytes": 28306209,
+      "sha256": "7b3f3d2e942247627ec1c06aeff86ca13dfd75493452c22b6646baafd871ac1b",
+      "dataset": "cash_files"
+    },
+    {
+      "path": "raw/ATM_Raw_15Min_XLSX_CashFiles_PART2_20250201_20250630/ATM_CashFiles_15Min_XLSX_20250401_20250430.tar.gz",
+      "bytes": 27515152,
+      "sha256": "fdbbbc7d34571b3b66313c625b394db634c3bdd0c598d082fd3cdde7f28b2c53",
+      "dataset": "cash_files"
+    },
+    {
+      "path": "raw/ATM_Raw_15Min_XLSX_CashFiles_PART2_20250201_20250630/ATM_CashFiles_15Min_XLSX_20250501_20250531.tar.gz",
+      "bytes": 28356532,
+      "sha256": "986d2364dc42cc5eb804e1b49ff2c794850c766d4154d0a1bf1fa526482f6aab",
+      "dataset": "cash_files"
+    },
+    {
+      "path": "raw/ATM_Raw_15Min_XLSX_CashFiles_PART2_20250201_20250630/ATM_CashFiles_15Min_XLSX_20250601_20250630.tar.gz",
+      "bytes": 27388223,
+      "sha256": "7fbfaf9e8feeb5e871366e770f2603b374081a1783d64796fc8f3133b8832e72",
+      "dataset": "cash_files"
+    },
+    {
+      "path": "raw/ATM_Raw_15Min_XLSX_CashFiles_PART2_20250201_20250630/README_XLSX_CashFiles.txt",
+      "bytes": 586,
+      "sha256": "913cf500b81ee4872f3bbac9dc016cb3f4f71a531eb642b83aedbb93ab25e9a1",
+      "dataset": "cash_files"
+    },
+    {
+      "path": "raw/ATM_Raw_15Min_XLSX_CashFiles_PART3_20250701_20251130/ATM_CashFiles_15Min_XLSX_20250701_20250731.tar.gz",
+      "bytes": 28248869,
+      "sha256": "4fdef55992c19a908f9be47401c7248e36c021cc5c8f712d763b9c634288f84e",
+      "dataset": "cash_files"
+    },
+    {
+      "path": "raw/ATM_Raw_15Min_XLSX_CashFiles_PART3_20250701_20251130/ATM_CashFiles_15Min_XLSX_20250801_20250831.tar.gz",
+      "bytes": 28209006,
+      "sha256": "9c519e72e18977d9ef61321feaca7d2797bfc8e4c51fa16de638f73bdf37c755",
+      "dataset": "cash_files"
+    },
+    {
+      "path": "raw/ATM_Raw_15Min_XLSX_CashFiles_PART3_20250701_20251130/ATM_CashFiles_15Min_XLSX_20250901_20250930.tar.gz",
+      "bytes": 27373268,
+      "sha256": "ee3b765a742ab03bbd5943c99b2127f544bc063e0fb285f8e3b298d7fa985b58",
+      "dataset": "cash_files"
+    },
+    {
+      "path": "raw/ATM_Raw_15Min_XLSX_CashFiles_PART3_20250701_20251130/ATM_CashFiles_15Min_XLSX_20251001_20251031.tar.gz",
+      "bytes": 28338399,
+      "sha256": "2372c0d11ad5cc8aef33e65c453bfab40ec5086a5cd7acfd041a167643188db7",
+      "dataset": "cash_files"
+    },
+    {
+      "path": "raw/ATM_Raw_15Min_XLSX_CashFiles_PART3_20250701_20251130/ATM_CashFiles_15Min_XLSX_20251101_20251130.tar.gz",
+      "bytes": 27341747,
+      "sha256": "07c9e96ab1e4e4d401461baa607653c25c3206ca30177805707f65048ffb2016",
+      "dataset": "cash_files"
+    },
+    {
+      "path": "raw/ATM_Raw_15Min_XLSX_CashFiles_PART3_20250701_20251130/README_XLSX_CashFiles.txt",
+      "bytes": 586,
+      "sha256": "555fef4f8f355c31f976bb16021f23783f9c11fc6a9b54dfcb811771bc937658",
+      "dataset": "cash_files"
+    },
+    {
+      "path": "raw/ATM_Raw_15Min_XLSX_CashFiles_PART4_20251201_20260430/ATM_CashFiles_15Min_XLSX_20251201_20251231.tar.gz",
+      "bytes": 28346825,
+      "sha256": "7504ee4a872caeb9bce0bad09639c0b60effbe00978af11e7437afb522e9a02c",
+      "dataset": "cash_files"
+    },
+    {
+      "path": "raw/ATM_Raw_15Min_XLSX_CashFiles_PART4_20251201_20260430/ATM_CashFiles_15Min_XLSX_20260101_20260131.tar.gz",
+      "bytes": 28347083,
+      "sha256": "a757f983f80d29bc195dc85145f0d55f38658aff03f5f9fad0f8df142664686f",
+      "dataset": "cash_files"
+    },
+    {
+      "path": "raw/ATM_Raw_15Min_XLSX_CashFiles_PART4_20251201_20260430/ATM_CashFiles_15Min_XLSX_20260201_20260228.tar.gz",
+      "bytes": 25504543,
+      "sha256": "68455a397ea94560c38d41903382380428ec2603ad6fc09fd5ba54bb215550f1",
+      "dataset": "cash_files"
+    },
+    {
+      "path": "raw/ATM_Raw_15Min_XLSX_CashFiles_PART4_20251201_20260430/ATM_CashFiles_15Min_XLSX_20260301_20260331.tar.gz",
+      "bytes": 28089683,
+      "sha256": "556191d31736144e1b607063012b50ab187b25243903e4186e07aae7e4d4e52f",
+      "dataset": "cash_files"
+    },
+    {
+      "path": "raw/ATM_Raw_15Min_XLSX_CashFiles_PART4_20251201_20260430/ATM_CashFiles_15Min_XLSX_20260401_20260430.tar.gz",
+      "bytes": 27196329,
+      "sha256": "cd160a21a999e72d46b32ec30f48db522b2ef38d6c0170cb58ae9cf8569858a5",
+      "dataset": "cash_files"
+    },
+    {
+      "path": "raw/ATM_Raw_15Min_XLSX_CashFiles_PART4_20251201_20260430/README_XLSX_CashFiles.txt",
+      "bytes": 586,
+      "sha256": "f4d0f2e30c2f429b7ad0a2e4aeb6dfc7e0a2381b61cc1b3df6be641c09d0cf78",
+      "dataset": "cash_files"
+    },
+    {
+      "path": "raw/ATM_Raw_15Min_XLSX_CashFiles_PART5_20260501_20260924/ATM_CashFiles_15Min_XLSX_20260501_20260531.tar.gz",
+      "bytes": 28210357,
+      "sha256": "d93059f0202bc4cfadbac70edca1bf5439045bd8bebc1372ebf65c1784fd154a",
+      "dataset": "cash_files"
+    },
+    {
+      "path": "raw/ATM_Raw_15Min_XLSX_CashFiles_PART5_20260501_20260924/ATM_CashFiles_15Min_XLSX_20260601_20260630.tar.gz",
+      "bytes": 27683673,
+      "sha256": "cd1b6c296e8b7c2815a28105cbe99a7f7caad4aef0a9ea71fc82689cc2d32add",
+      "dataset": "cash_files"
+    },
+    {
+      "path": "raw/ATM_Raw_15Min_XLSX_CashFiles_PART5_20260501_20260924/ATM_CashFiles_15Min_XLSX_20260701_20260731.tar.gz",
+      "bytes": 28466949,
+      "sha256": "cb709e676a28145fd80d688007f55507a57d9652e72161c979a1972afa88033d",
+      "dataset": "cash_files"
+    },
+    {
+      "path": "raw/ATM_Raw_15Min_XLSX_CashFiles_PART5_20260501_20260924/ATM_CashFiles_15Min_XLSX_20260801_20260831.tar.gz",
+      "bytes": 28276280,
+      "sha256": "5c498e00d393ee04cf2dba7d2c520c33da8ee1a70baee9c87f2f9ac9a644d038",
+      "dataset": "cash_files"
+    },
+    {
+      "path": "raw/ATM_Raw_15Min_XLSX_CashFiles_PART5_20260501_20260924/ATM_CashFiles_15Min_XLSX_20260901_20260924.tar.gz",
+      "bytes": 21879621,
+      "sha256": "15ae682a9afe03b78108f9d705ac3aed1b2dabfb0735320699ad227078a6f634",
+      "dataset": "cash_files"
+    },
+    {
+      "path": "raw/ATM_Raw_15Min_XLSX_CashFiles_PART5_20260501_20260924/README_XLSX_CashFiles.txt",
+      "bytes": 586,
+      "sha256": "7301fb25aa0aa133b30802c6fc06729a85a1ea452c96a74ef7d49910d3e8a3fb",
+      "dataset": "cash_files"
+    },
+    {
+      "path": "raw/reference/rbi/2024-08.html",
+      "bytes": 114913,
+      "sha256": "146d07dba706a64fdd340031898f0e6839af9838fce10b7637deaa4ff03a354e",
+      "dataset": "cash_files"
+    },
+    {
+      "path": "raw/reference/rbi/2024-09.html",
+      "bytes": 115781,
+      "sha256": "6271c5c0637b48ed7c8aa11b0cb48dee07926a966c91883488a56e2c294f5d1f",
+      "dataset": "cash_files"
+    },
+    {
+      "path": "raw/reference/rbi/2024-10.html",
+      "bytes": 149045,
+      "sha256": "bdcb95b9ab3a2cacfa3792707be00ff348c00bf2e65065931867b9d761ba3269",
+      "dataset": "cash_files"
+    },
+    {
+      "path": "raw/reference/rbi/2024-11.html",
+      "bytes": 120588,
+      "sha256": "dd90bc7ebdea6b95a84bbfdd2f78440f611aa4b124a116ab5d92bfacf5cb4149",
+      "dataset": "cash_files"
+    },
+    {
+      "path": "raw/reference/rbi/2024-12.html",
+      "bytes": 119000,
+      "sha256": "3e6dad25dfa1aceacd90c05d8a252f454bf4479f75dea35275611861f501ed3c",
+      "dataset": "cash_files"
+    },
+    {
+      "path": "raw/reference/rbi/2025-01.html",
+      "bytes": 104624,
+      "sha256": "79b7ce1ab7791056232aae2d46c287506fc8331f5a9c86f7daaa1ff8ea40f17f",
+      "dataset": "cash_files"
+    },
+    {
+      "path": "raw/reference/rbi/2025-02.html",
+      "bytes": 107683,
+      "sha256": "122f98b4567a8a1c27257bf067d17bd3d10387ab9a9c1c0ecfb3a04bf9cd091d",
+      "dataset": "cash_files"
+    },
+    {
+      "path": "raw/reference/rbi/2025-03.html",
+      "bytes": 119302,
+      "sha256": "08d9775451dcef9abb32ced222cda7a5c6f804487bd627024e5bccbd16d793e7",
+      "dataset": "cash_files"
+    },
+    {
+      "path": "raw/reference/rbi/2025-04.html",
+      "bytes": 141003,
+      "sha256": "a779297ed03d0bbab3bb6d30dc2df9133618ae7c63f431729654382852c2a392",
+      "dataset": "cash_files"
+    },
+    {
+      "path": "raw/reference/rbi/2025-05.html",
+      "bytes": 100927,
+      "sha256": "1ba1a1f955fc3463489f372416ccc6d27f3a56902a1b5484ba91c6fcf21f439c",
+      "dataset": "cash_files"
+    },
+    {
+      "path": "raw/reference/rbi/2025-06.html",
+      "bytes": 96272,
+      "sha256": "7d7e0ca147cd0e0212cd615b438b0e42ec3209cdd47fffeee9115135e3e0e85f",
+      "dataset": "cash_files"
+    },
+    {
+      "path": "raw/reference/rbi/2025-07.html",
+      "bytes": 97323,
+      "sha256": "6f41d9ea51452c72c0ccdcf032ce37f19644d1f9d90ac4cb7213e4d50ed7f940",
+      "dataset": "cash_files"
+    },
+    {
+      "path": "raw/reference/rbi/2025-08.html",
+      "bytes": 123257,
+      "sha256": "5d1875c349cc804b543a6e24dc1e31bb08b10937dd979126423a08b63900c138",
+      "dataset": "cash_files"
+    },
+    {
+      "path": "raw/reference/rbi/2025-09.html",
+      "bytes": 116353,
+      "sha256": "39540da9460ee5b9565c090b237eb88cd3b5dad87567037f45c213d1246ab741",
+      "dataset": "cash_files"
+    },
+    {
+      "path": "raw/reference/rbi/2025-10.html",
+      "bytes": 153623,
+      "sha256": "d37565d7ba8d0bb9a1e30cffe944ce56aececb09aca9b3d6dcac804f6bd05e38",
+      "dataset": "cash_files"
+    },
+    {
+      "path": "raw/reference/rbi/2025-11.html",
+      "bytes": 98728,
+      "sha256": "5c5beddf0a62bd73637c5593a13f6299eba80cedd980ce3248e9b813ba00affe",
+      "dataset": "cash_files"
+    },
+    {
+      "path": "raw/reference/rbi/2025-12.html",
+      "bytes": 133469,
+      "sha256": "f227509542cd3b37d444f3fde2456451f06ddf5c4a83ebeab2af291cc49fc7c8",
+      "dataset": "cash_files"
+    },
+    {
+      "path": "raw/reference/rbi/2026-01.html",
+      "bytes": 122646,
+      "sha256": "63780bdc91eb67697d8df1cf03d4926a21c392cf28d4fb22532800b1371f4349",
+      "dataset": "cash_files"
+    },
+    {
+      "path": "raw/reference/rbi/2026-02.html",
+      "bytes": 86354,
+      "sha256": "89963412a7179d4517db38d493a15796ab3a5578ea3c7c6b5ad9459fc3d48076",
+      "dataset": "cash_files"
+    },
+    {
+      "path": "raw/reference/rbi/2026-03.html",
+      "bytes": 146103,
+      "sha256": "14a9443d6aca3b22b7d6b89da71f2730f64e45eb0ccb8a1954bb88262fd99997",
+      "dataset": "cash_files"
+    },
+    {
+      "path": "raw/reference/rbi/2026-04.html",
+      "bytes": 140413,
+      "sha256": "499953d5dae73f43ae974625cbfbd643b58316f5ca3f4747a01a69e5ff876d4b",
+      "dataset": "cash_files"
+    },
+    {
+      "path": "raw/reference/rbi/2026-05.html",
+      "bytes": 111742,
+      "sha256": "0f5d9b5f930fafb1dd9e206908470ee80e0db8eea0c06329fc78229121b84e80",
+      "dataset": "cash_files"
+    },
+    {
+      "path": "raw/reference/rbi/2026-06.html",
+      "bytes": 94682,
+      "sha256": "85ab9cf1bf5d5a47142c53b51bada4817f2ce8354619de9ea8f8b18bded88172",
+      "dataset": "cash_files"
+    },
+    {
+      "path": "raw/reference/rbi/2026-07.html",
+      "bytes": 92059,
+      "sha256": "8e632ddfcb2f9ef7f72ac985f9ff227b5c191f188160a62e079260102a77e5d2",
+      "dataset": "cash_files"
+    },
+    {
+      "path": "raw/reference/rbi/2026-08.html",
+      "bytes": 119420,
+      "sha256": "253d66ce867e128874cefd7270310b26107c19130d6dd6f1b8867fe27736e2de",
+      "dataset": "cash_files"
+    },
+    {
+      "path": "raw/reference/rbi/2026-09.html",
+      "bytes": 114835,
+      "sha256": "8ff3fb43a1f9bc79e52a9d67764a704162899044a6c5512eb46f268040a1c772",
+      "dataset": "cash_files"
+    },
+    {
+      "path": "raw/reference/rbi/2026-10.html",
+      "bytes": 137081,
+      "sha256": "a282d8e5e80502552bf910cd6d776e67224921afe7271f64e4f622c8ba393bd7",
+      "dataset": "cash_files"
+    },
+    {
+      "path": "raw/reference/rbi/2026-11.html",
+      "bytes": 113310,
+      "sha256": "4691cb2aa315660abf1ff1834cd2a570a5bc75f1de432808a89ebd262dd34977",
+      "dataset": "cash_files"
+    },
+    {
+      "path": "raw/reference/rbi/2026-12.html",
+      "bytes": 121977,
+      "sha256": "daa22f4e1191f6e070422cdb6ce209b73d58bf5365a67c69e42550f53b0a9905",
+      "dataset": "cash_files"
+    },
+    {
+      "path": "raw/reference/rbi/sources.json",
+      "bytes": 29799,
+      "sha256": "97dd891b164add041724d1ca87bd0e675e4552ecffc39bc3f02b29965701905c",
+      "dataset": "cash_files"
+    },
+    {
+      "path": "raw_audit.json",
+      "bytes": 345,
+      "sha256": "f9144c3e166400497f0a47b26bea8fbcf9140107268070fb3482817baac418f5",
+      "dataset": "cash_files"
+    },
+    {
+      "path": "reference_coverage.json",
+      "bytes": 861,
+      "sha256": "ff1e3a0c2718b38788651080a4ec551f329a431e2760a05a428f715647c03e46",
+      "dataset": "cash_files"
+    },
+    {
+      "path": "reference_source_config.json",
+      "bytes": 93,
+      "sha256": "acade186531f1f5c23b266eef67b4c2737ebdaf02914d06af64d4c0b7b1d5b83",
+      "dataset": "cash_files"
+    },
+    {
+      "path": "references/02eaad1680b577b10dd03a933084bbadd8f04c5f952c738789fdd99615293635.json",
+      "bytes": 222729,
+      "sha256": "748627787bda4013235863d6f742c596d16e93bbbdd90fe85d9ad9c60edf3d5b",
+      "dataset": "cash_files"
+    },
+    {
+      "path": "references/a46260c83a4453c0c59d87158c0613f6bd5dfadf363550ad743026896f3f19dd.json",
+      "bytes": 1201594,
+      "sha256": "7e8b0be336f8eeda9443e1954ffe9438fb1a9c437b5190da87ddd7e6b6950d76",
+      "dataset": "cash_files"
+    },
+    {
+      "path": "references/cf34245f17c450a2702cc0e1662623477660fe790502d6e039cbb93bbd230e11.json",
+      "bytes": 1201623,
+      "sha256": "66b91308297cd75c33cc893c0e98b3f9db857173fb689ea4b656c883dded72e6",
+      "dataset": "cash_files"
+    },
+    {
+      "path": "references/current.json",
+      "bytes": 319,
+      "sha256": "8d497e81a47cf404be4d8be1b564b105f5d39a11a16756aeb961901a795913f7",
+      "dataset": "cash_files"
+    }
+  ]
+}

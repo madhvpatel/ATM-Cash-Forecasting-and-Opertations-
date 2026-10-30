@@ -1,0 +1,27 @@
+state,atm_count,city_count,rbi_regions
+Maharashtra,8,4,Mumbai | Nagpur
+Uttar Pradesh,8,4,Kanpur | Lucknow
+Andhra Pradesh,6,3,Vijayawada
+Gujarat,6,3,Ahmedabad
+Kerala,6,3,Kochi | Thiruvananthapuram
+Tamil Nadu,6,3,Chennai
+Jammu and Kashmir,4,2,Jammu | Srinagar
+Jharkhand,4,2,Ranchi
+Karnataka,4,2,Bengaluru
+Madhya Pradesh,4,2,Bhopal
+Odisha,4,2,Bhubaneswar
+Punjab,4,2,Chandigarh
+Rajasthan,4,2,Jaipur
+Telangana,4,2,Hyderabad
+Uttarakhand,4,2,Dehradun
+West Bengal,4,2,Kolkata
+Assam,2,1,Guwahati
+Bihar,2,1,Patna
+Chandigarh,2,1,Chandigarh
+Chhattisgarh,2,1,Raipur
+Delhi,2,1,New Delhi
+Goa,2,1,Panaji
+Haryana,2,1,Chandigarh
+Himachal Pradesh,2,1,Shimla
+Meghalaya,2,1,Shillong
+Tripura,2,1,Agartala

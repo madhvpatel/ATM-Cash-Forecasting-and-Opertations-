@@ -1,0 +1,21 @@
+{
+  "atm_id": "SYNATM0001",
+  "location": "MUMBAI - RAILWAY STATION CONCOURSE",
+  "rows": 238539,
+  "days": 754,
+  "approved_withdrawals": 174147,
+  "reversals": 2119,
+  "other_rows": 62273,
+  "cash_effect_equals_observed_demand": true,
+  "max_daily_gap_inr": 0,
+  "note_mix_value_share_of_approved": {
+    "500": 0.839,
+    "200": 0.073,
+    "100": 0.089
+  },
+  "not_in_this_file": [
+    "Customer age, gender, income",
+    "Full PAN",
+    "CIT route, vendor, cassette capacity, downtime"
+  ]
+}

@@ -1,0 +1,2 @@
+rule_id,scope,days,adjustment_policy,verification_status,effective_from,effective_to
+legacy-payday-v1,all,"1,15,last_weekday",month-end rolls backward over weekends only,assumption,2024-09-01,2026-12-28

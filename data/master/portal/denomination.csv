@@ -1,0 +1,2 @@
+denomination_code,currency,meaning,observed_note_mix,population,source,note
+100,INR,rounding_unit,no,cash_files,data/processed/daily_cash_out.csv,"Every primary demand row carries denomination 100. That value is a rounding unit, not a count of 100-rupee notes."

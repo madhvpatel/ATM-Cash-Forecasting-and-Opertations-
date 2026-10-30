@@ -1,0 +1,30 @@
+applies_to,field,meaning,basis,fleet_master
+SYNATM0001 mock extract only,txn_id,Synthetic id,assigned,no
+SYNATM0001 mock extract only,txn_ts,Switch response time,hour profile from this ATM's February 2025 cash-out,no
+SYNATM0001 mock extract only,business_date,ATM business date,observed,no
+SYNATM0001 mock extract only,atm_id,ATM id,observed,no
+SYNATM0001 mock extract only,terminal_id,Numeric id in the panel,observed,no
+SYNATM0001 mock extract only,location,Site text,observed,no
+SYNATM0001 mock extract only,mti,"0210 response, or 0430 reversal",assigned,no
+SYNATM0001 mock extract only,stan,"Trace number, restarts each day",assigned,no
+SYNATM0001 mock extract only,rrn,Retrieval reference,assigned,no
+SYNATM0001 mock extract only,proc_code,"010000 withdrawal, 310000 balance, 380000 mini statement",assigned,no
+SYNATM0001 mock extract only,txn_type,"CWD, INQ, MINI, REV",assigned,no
+SYNATM0001 mock extract only,response_code,"00 approved, 05, 51, 55, 82, 91",declines are assumed rates,no
+SYNATM0001 mock extract only,response_text,Meaning of the response code,assigned,no
+SYNATM0001 mock extract only,requested_amount,Amount requested,approved rows partition observed cash-out,no
+SYNATM0001 mock extract only,dispensed_amount,"Amount paid, zero on a decline",daily total is observed,no
+SYNATM0001 mock extract only,cash_effect,Signed rupees leaving the ATM,sums to observed daily cash-out,no
+SYNATM0001 mock extract only,currency,INR,assigned,no
+SYNATM0001 mock extract only,notes_500,Count of ₹500 notes,split aimed at the February hopper mix,no
+SYNATM0001 mock extract only,notes_200,Count of ₹200 notes,split aimed at the February hopper mix,no
+SYNATM0001 mock extract only,notes_100,Count of ₹100 notes,split aimed at the February hopper mix,no
+SYNATM0001 mock extract only,card_token,Stand-in for a masked PAN,"assigned, not a real card",no
+SYNATM0001 mock extract only,card_type,"debit, credit, or prepaid",assumed mix,no
+SYNATM0001 mock extract only,on_us,Issuer is the ATM owner,assumed,no
+SYNATM0001 mock extract only,account_type,SAV or CUR,assumed,no
+SYNATM0001 mock extract only,acquirer_id,Fictional acquirer ACQ-SYN,assigned,no
+SYNATM0001 mock extract only,issuer_id,Fictional issuer,assigned,no
+SYNATM0001 mock extract only,mcc,6011 ATM,assigned,no
+SYNATM0001 mock extract only,reversal_of,txn_id reversed,assigned,no
+SYNATM0001 mock extract only,source,mock_switch_extract,label,no

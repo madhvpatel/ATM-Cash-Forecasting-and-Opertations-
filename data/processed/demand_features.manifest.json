@@ -1,0 +1,31 @@
+{
+  "dataset_kind": "cash_files",
+  "target": "net_demand = synthetic Cash_Out proxy",
+  "grain": "ATM/date; denomination=100 is a rounding unit",
+  "calendar_reference_sha256": "02eaad1680b577b10dd03a933084bbadd8f04c5f952c738789fdd99615293635",
+  "calendar_evidence_mode": "deterministic",
+  "source_sha256": "f6a3206b9cdc3585a2b2c518a98abacc28bc334fef7cfd7c7626996c8dda0dda",
+  "features_sha256": "2b57c8b7212793ccaef66d7f082aad345d64326cae0c2b3d4bf83340c920086b",
+  "feature_columns": [
+    "day_of_week",
+    "month",
+    "quarter",
+    "is_weekend",
+    "is_payday",
+    "is_holiday",
+    "days_to_month_end",
+    "is_month_start",
+    "is_month_end",
+    "lag_1",
+    "lag_7",
+    "lag_14",
+    "rolling_mean_7",
+    "rolling_mean_14",
+    "rolling_std_7"
+  ],
+  "rows": 74000,
+  "warmup_days_per_terminal": 14,
+  "historical_feature_cutoff": "strictly before each transaction_date",
+  "future_actual_demand_is_not_an_input": true,
+  "live_ready": false
+}

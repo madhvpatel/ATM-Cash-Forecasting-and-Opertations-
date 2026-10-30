@@ -1,0 +1,2 @@
+vault_id,cra_id,region_id,location_id,vault_code,vault_name,cash_capacity,dispatch_cutoff,status
+201,1,11,5001,VLT-DADAR-01,Dadar Regional Cash Centre,51000000,07:30,Active

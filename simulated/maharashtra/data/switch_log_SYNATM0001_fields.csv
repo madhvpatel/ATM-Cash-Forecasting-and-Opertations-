@@ -1,0 +1,30 @@
+field,meaning,basis
+txn_id,Synthetic id,assigned
+txn_ts,Switch response time,hour profile from this ATM's February 2025 cash-out
+business_date,ATM business date,observed
+atm_id,ATM id,observed
+terminal_id,Numeric id in the panel,observed
+location,Site text,observed
+mti,"0210 response, or 0430 reversal",assigned
+stan,"Trace number, restarts each day",assigned
+rrn,Retrieval reference,assigned
+proc_code,"010000 withdrawal, 310000 balance, 380000 mini statement",assigned
+txn_type,"CWD, INQ, MINI, REV",assigned
+response_code,"00 approved, 05, 51, 55, 82, 91",declines are assumed rates
+response_text,Meaning of the response code,assigned
+requested_amount,Amount requested,approved rows partition observed cash-out
+dispensed_amount,"Amount paid, zero on a decline",daily total is observed
+cash_effect,Signed rupees leaving the ATM,sums to observed daily cash-out
+currency,INR,assigned
+notes_500,Count of ₹500 notes,split aimed at the February hopper mix
+notes_200,Count of ₹200 notes,split aimed at the February hopper mix
+notes_100,Count of ₹100 notes,split aimed at the February hopper mix
+card_token,Stand-in for a masked PAN,"assigned, not a real card"
+card_type,"debit, credit, or prepaid",assumed mix
+on_us,Issuer is the ATM owner,assumed
+account_type,SAV or CUR,assumed
+acquirer_id,Fictional acquirer ACQ-SYN,assigned
+issuer_id,Fictional issuer,assigned
+mcc,6011 ATM,assigned
+reversal_of,txn_id reversed,assigned
+source,mock_switch_extract,label

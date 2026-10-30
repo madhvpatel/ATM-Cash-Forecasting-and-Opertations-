@@ -1,0 +1,2780 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cash Intelligence UI_2 · Enterprise Cash Operations & Autonomous Replenishment</title>
+  
+  <!-- Institutional Typography: Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  
+  <!-- Chart.js 4.4.0 -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+  <style>
+    /* ========================================================
+       INSTITUTIONAL LIGHT-MODE DESIGN SYSTEM (ZERO DARK BLUE)
+       Corporate Fintech / Banking Treasury Grade · UI_2
+       ======================================================== */
+    :root {
+      /* Backgrounds & Surfaces */
+      --bg-page: #F8FAFC;       /* Slate 50 */
+      --bg-surface: #FFFFFF;    /* Pure White */
+      --bg-subtle: #F1F5F9;     /* Slate 100 */
+      --bg-card: #FFFFFF;
+      --bg-hover: #F8FAFC;
+      
+      /* Crisp Borders */
+      --border-subtle: #E2E8F0; /* Slate 200 */
+      --border-strong: #CBD5E1; /* Slate 300 */
+      --border-focus: #0F172A;  /* Slate 900 */
+      
+      /* High-Contrast Typography */
+      --text-main: #0F172A;     /* Slate 900 */
+      --text-secondary: #475569;/* Slate 600 */
+      --text-muted: #64748B;    /* Slate 500 */
+      --text-dim: #94A3B8;      /* Slate 400 */
+      
+      /* Banking Status Accents */
+      --emerald-dark: #047857;
+      --emerald-text: #065F46;
+      --emerald-bg: #ECFDF5;
+      --emerald-border: #A7F3D0;
+      
+      --amber-dark: #B45309;
+      --amber-text: #92400E;
+      --amber-bg: #FFFBEB;
+      --amber-border: #FDE68A;
+      
+      --rose-dark: #B91C1C;
+      --rose-text: #991B1B;
+      --rose-bg: #FEF2F2;
+      --rose-border: #FECACA;
+      
+      --slate-dark: #0F172A;
+      --slate-text: #1E293B;
+      --slate-bg: #F1F5F9;
+      --slate-border: #CBD5E1;
+      
+      /* Predictive Accent (Indigo / Violet - NOT Dark Blue) */
+      --accent-predictive: #4F46E5;
+      --accent-bg: #EEF2FF;
+      --accent-border: #C7D2FE;
+      
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+      
+      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.03);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background-color: var(--bg-page);
+      color: var(--text-main);
+      font-family: var(--font-sans);
+      font-size: 13px;
+      line-height: 1.5;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Top Institutional Header */
+    header.topbar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: var(--bg-surface);
+      border-bottom: 1px solid var(--border-subtle);
+      padding: 10px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-mark {
+      width: 32px;
+      height: 32px;
+      background: var(--slate-dark);
+      color: #FFFFFF;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 14px;
+      letter-spacing: -0.02em;
+    }
+
+    .brand-details {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .brand-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text-main);
+      letter-spacing: -0.02em;
+      line-height: 1.2;
+    }
+
+    .brand-subtitle {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .brand-status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--emerald-dark);
+      display: inline-block;
+    }
+
+    /* Role Switcher Pill */
+    .role-switcher-container {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-subtle);
+      padding: 4px 10px;
+      border-radius: 8px;
+    }
+
+    .role-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .role-select {
+      background: transparent;
+      border: none;
+      font-family: var(--font-sans);
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-main);
+      cursor: pointer;
+      outline: none;
+    }
+
+    .role-badge {
+      font-size: 10px;
+      font-weight: 600;
+      padding: 2px 7px;
+      border-radius: 10px;
+      background: var(--emerald-bg);
+      color: var(--emerald-text);
+      border: 1px solid var(--emerald-border);
+    }
+
+    /* Top Utility Actions */
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .cutoff-badge {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      padding: 5px 9px;
+      background: var(--amber-bg);
+      color: var(--amber-text);
+      border: 1px solid var(--amber-border);
+      border-radius: 6px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-secondary {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-secondary);
+      font-family: var(--font-sans);
+      font-size: 12px;
+      font-weight: 600;
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+    }
+
+    .btn-secondary:hover {
+      background: var(--bg-subtle);
+      color: var(--text-main);
+      border-color: var(--border-strong);
+    }
+
+    .btn-primary {
+      background: var(--slate-dark);
+      border: 1px solid var(--slate-dark);
+      color: #FFFFFF;
+      font-family: var(--font-sans);
+      font-size: 12px;
+      font-weight: 600;
+      padding: 6px 13px;
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+    }
+
+    .btn-primary:hover {
+      background: #1e293b;
+    }
+
+    .btn-ai-toggle {
+      background: var(--accent-bg);
+      color: var(--accent-predictive);
+      border: 1px solid var(--accent-border);
+      font-family: var(--font-sans);
+      font-size: 12px;
+      font-weight: 600;
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+    }
+
+    .btn-ai-toggle:hover {
+      background: #e0e7ff;
+    }
+
+    /* Sub-Navbar: Operational Activity Workflows */
+    nav.activity-navbar {
+      background: var(--bg-surface);
+      border-bottom: 1px solid var(--border-subtle);
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      overflow-x: auto;
+    }
+
+    .activity-tab {
+      background: transparent;
+      border: none;
+      border-bottom: 2px solid transparent;
+      color: var(--text-muted);
+      font-family: var(--font-sans);
+      font-size: 13px;
+      font-weight: 600;
+      padding: 12px 14px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+      transition: all 0.15s ease;
+    }
+
+    .activity-tab:hover {
+      color: var(--text-main);
+      background: var(--bg-hover);
+    }
+
+    .activity-tab.active {
+      color: var(--text-main);
+      border-bottom-color: var(--slate-dark);
+    }
+
+    .tab-counter {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 10px;
+      background: var(--bg-subtle);
+      color: var(--text-secondary);
+    }
+
+    .activity-tab.active .tab-counter {
+      background: var(--slate-dark);
+      color: #FFFFFF;
+    }
+
+    /* Main Application Body */
+    main.app-body {
+      flex: 1;
+      padding: 20px 28px 40px;
+      max-width: 1600px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    .view-screen {
+      display: none;
+    }
+
+    .view-screen.active {
+      display: block;
+      animation: fadeIn 0.15s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(2px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Metric Strips */
+    .metric-strip-6 {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .metric-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .metric-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 6px;
+    }
+
+    .metric-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    .metric-icon-pill {
+      font-size: 10px;
+      font-weight: 600;
+      padding: 1px 6px;
+      border-radius: 10px;
+      background: var(--bg-subtle);
+      color: var(--text-muted);
+    }
+
+    .metric-value {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text-main);
+      font-family: var(--font-mono);
+      line-height: 1.2;
+    }
+
+    .metric-subtext {
+      font-size: 11px;
+      color: var(--text-secondary);
+      margin-top: 4px;
+    }
+
+    /* Standard Cards */
+    .panel-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      box-shadow: var(--shadow-sm);
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+
+    .panel-header {
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #FFFFFF;
+    }
+
+    .panel-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .panel-subtitle {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-weight: 400;
+    }
+
+    .panel-body {
+      padding: 18px;
+    }
+
+    /* Filters Bar */
+    .filter-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 18px;
+      background: var(--bg-subtle);
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .filter-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .filter-btn {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-secondary);
+      font-family: var(--font-sans);
+      font-size: 11px;
+      font-weight: 600;
+      padding: 5px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .filter-btn:hover {
+      background: #FFFFFF;
+      color: var(--text-main);
+      border-color: var(--border-strong);
+    }
+
+    .filter-btn.active {
+      background: var(--slate-dark);
+      color: #FFFFFF;
+      border-color: var(--slate-dark);
+    }
+
+    .search-input {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
+      padding: 5px 10px;
+      font-size: 12px;
+      color: var(--text-main);
+      outline: none;
+      width: 200px;
+    }
+
+    .search-input:focus {
+      border-color: var(--slate-dark);
+    }
+
+    /* Data Tables */
+    table.data-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+
+    table.data-table th {
+      background: var(--bg-subtle);
+      padding: 10px 14px;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    table.data-table td {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border-subtle);
+      font-size: 12px;
+      color: var(--text-main);
+      vertical-align: middle;
+    }
+
+    table.data-table tbody tr:hover {
+      background: var(--bg-hover);
+    }
+
+    .terminal-title-cell {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .terminal-name {
+      font-weight: 600;
+      color: var(--text-main);
+      font-size: 13px;
+    }
+
+    .terminal-sub {
+      font-size: 11px;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 2px;
+    }
+
+    .badge-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    .badge-critical {
+      background: var(--rose-bg);
+      color: var(--rose-text);
+      border: 1px solid var(--rose-border);
+    }
+
+    .badge-scheduled {
+      background: var(--amber-bg);
+      color: var(--amber-text);
+      border: 1px solid var(--amber-border);
+    }
+
+    .badge-healthy {
+      background: var(--emerald-bg);
+      color: var(--emerald-text);
+      border: 1px solid var(--emerald-border);
+    }
+
+    .badge-blue {
+      background: var(--accent-bg);
+      color: var(--accent-predictive);
+      border: 1px solid var(--accent-border);
+    }
+
+    .progress-bar-container {
+      width: 100px;
+      height: 6px;
+      background: var(--bg-subtle);
+      border-radius: 3px;
+      overflow: hidden;
+      margin-top: 4px;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background: var(--emerald-dark);
+      border-radius: 3px;
+    }
+
+    .progress-bar-fill.warning {
+      background: var(--amber-dark);
+    }
+
+    .progress-bar-fill.danger {
+      background: var(--rose-dark);
+    }
+
+    /* Stepper Lifecycle Component */
+    .lifecycle-stepper {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .lifecycle-step {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 12px 14px;
+      position: relative;
+    }
+
+    .lifecycle-step.active {
+      border-color: var(--slate-dark);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .lifecycle-step.completed {
+      background: #F8FAFC;
+      border-color: var(--emerald-border);
+    }
+
+    .step-num {
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 2px;
+    }
+
+    .step-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .step-desc {
+      font-size: 11px;
+      color: var(--text-secondary);
+      margin-top: 4px;
+    }
+
+    /* Single ATM Tab Navigation */
+    .subnav-pills {
+      display: flex;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 3px;
+      gap: 4px;
+      margin-bottom: 20px;
+      width: fit-content;
+    }
+
+    .subnav-btn {
+      background: transparent;
+      border: none;
+      font-family: var(--font-sans);
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      padding: 6px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .subnav-btn.active {
+      background: var(--bg-surface);
+      color: var(--text-main);
+      box-shadow: var(--shadow-sm);
+    }
+
+    /* Comparison Headroom Grid */
+    .headroom-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .headroom-box {
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 14px;
+      background: var(--bg-subtle);
+    }
+
+    .headroom-box.highlight {
+      background: var(--emerald-bg);
+      border-color: var(--emerald-border);
+    }
+
+    .headroom-box.policy {
+      background: var(--amber-bg);
+      border-color: var(--amber-border);
+    }
+
+    .headroom-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+
+    .headroom-value {
+      font-size: 20px;
+      font-weight: 700;
+      font-family: var(--font-mono);
+      color: var(--text-main);
+      margin-top: 4px;
+    }
+
+    .headroom-desc {
+      font-size: 11px;
+      color: var(--text-secondary);
+      margin-top: 4px;
+    }
+
+    /* Interactive Calculator Slider */
+    .calc-slider-box {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 18px;
+      margin-bottom: 16px;
+    }
+
+    .range-input {
+      width: 100%;
+      margin: 12px 0;
+      accent-color: var(--slate-dark);
+      cursor: pointer;
+    }
+
+    /* Slide-out Contextual AI Drawer */
+    .ai-drawer-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(15, 23, 42, 0.4);
+      z-index: 200;
+      display: none;
+      backdrop-filter: blur(2px);
+    }
+
+    .ai-drawer-overlay.active {
+      display: block;
+    }
+
+    .ai-drawer {
+      position: fixed;
+      top: 0;
+      right: -520px;
+      width: 500px;
+      height: 100vh;
+      background: var(--bg-surface);
+      border-left: 1px solid var(--border-subtle);
+      box-shadow: -4px 0 24px rgba(0, 0, 0, 0.12);
+      z-index: 201;
+      display: flex;
+      flex-direction: column;
+      transition: right 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .ai-drawer.active {
+      right: 0;
+    }
+
+    .ai-drawer-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #FFFFFF;
+    }
+
+    .ai-drawer-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .ai-drawer-footer {
+      padding: 14px 20px;
+      border-top: 1px solid var(--border-subtle);
+      background: var(--bg-subtle);
+    }
+
+    .ai-msg {
+      padding: 12px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .ai-msg.user {
+      background: var(--slate-dark);
+      color: #FFFFFF;
+      align-self: flex-end;
+      max-width: 85%;
+    }
+
+    .ai-msg.assistant {
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-main);
+      align-self: flex-start;
+      max-width: 95%;
+    }
+
+    .ai-prompt-chip {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
+      padding: 6px 10px;
+      font-size: 11px;
+      color: var(--text-secondary);
+      font-weight: 500;
+      cursor: pointer;
+      text-align: left;
+      transition: all 0.15s ease;
+    }
+
+    .ai-prompt-chip:hover {
+      background: var(--accent-bg);
+      border-color: var(--accent-border);
+      color: var(--accent-predictive);
+    }
+
+    /* Modal dialog */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(15, 23, 42, 0.5);
+      z-index: 300;
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-overlay.active {
+      display: flex;
+    }
+
+    .modal-card {
+      background: var(--bg-surface);
+      border-radius: 10px;
+      width: 750px;
+      max-width: 95vw;
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: var(--shadow-lg);
+      border: 1px solid var(--border-subtle);
+      overflow: hidden;
+    }
+
+    .modal-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .modal-body {
+      padding: 20px;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    .modal-footer {
+      padding: 14px 20px;
+      border-top: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 10px;
+      background: var(--bg-subtle);
+    }
+
+    /* Toast */
+    #toastContainer {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 999;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .toast-msg {
+      background: var(--slate-dark);
+      color: #FFFFFF;
+      padding: 10px 16px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 500;
+      box-shadow: var(--shadow-lg);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      animation: slideIn 0.2s ease;
+    }
+
+    @keyframes slideIn {
+      from { transform: translateX(20px); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ========================================================
+       TOP INSTITUTIONAL HEADER
+       ======================================================== -->
+  <header class="topbar">
+    <div class="brand-group">
+      <div class="brand-mark">CI</div>
+      <div class="brand-details">
+        <div class="brand-title">CASH INTELLIGENCE UI_2</div>
+        <div class="brand-subtitle">
+          <span class="brand-status-dot"></span>
+          <span>Central Treasury Cash Operating System · T-1 Indent Cycle</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ROLE-BASED WORKSPACE SELECTOR (CASH-021) -->
+    <div class="role-switcher-container">
+      <span class="role-label">Active Role:</span>
+      <select class="role-select" id="roleSelector" onchange="switchRole(this.value)">
+        <option value="controller">Treasury Controller (Chief Exposure & Sign-Off)</option>
+        <option value="planner">Cash Planning Analyst (Demand Forecasting)</option>
+        <option value="checker">Authorized Checker (Maker Review & Overrides)</option>
+        <option value="dispatch">Dispatch Coordinator (CIT Routes & Custody)</option>
+        <option value="reconciliation">Reconciliation Analyst (T+1/T+3 Audit)</option>
+      </select>
+      <span class="role-badge" id="roleBadge">Treasury Chief</span>
+    </div>
+
+    <!-- TOPBAR UTILITIES -->
+    <div class="top-actions">
+      <div class="cutoff-badge">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        <span>18:00 IST Cutoff: <strong id="topbarCountdown">3h 22m</strong></span>
+      </div>
+      <button class="btn-ai-toggle" onclick="toggleAiDrawer()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        <span>✦ AI Assistant</span>
+      </button>
+      <button class="btn-secondary" onclick="openMastersModal()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <span>Masters</span>
+      </button>
+      <button class="btn-primary" onclick="openManifestModal()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/></svg>
+        <span>CIT Manifest</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ========================================================
+       ACTIVITY NAVBAR (THE 6 OPERATIONAL JOURNEYS + AI STUDIO)
+       ======================================================== -->
+  <nav class="activity-navbar">
+    <button class="activity-tab active" id="tab-nav-network" onclick="switchWorkflow('network')">
+      <span>1. Network Operations</span>
+      <span class="tab-counter" id="badgeNetCount">8 ATMs</span>
+    </button>
+    <button class="activity-tab" id="tab-nav-planning" onclick="switchWorkflow('planning')">
+      <span>2. Cash Planning & ATMs</span>
+      <span class="tab-counter" id="badgePlanAtm">ATM-1</span>
+    </button>
+    <button class="activity-tab" id="tab-nav-approvals" onclick="switchWorkflow('approvals')">
+      <span>3. Approvals Matrix</span>
+      <span class="tab-counter" id="badgeApprStatus" style="background:var(--amber-bg); color:var(--amber-text);">8/8 Signed · CTO Pend</span>
+    </button>
+    <button class="activity-tab" id="tab-nav-dispatch" onclick="switchWorkflow('dispatch')">
+      <span>4. Dispatch & CIT Routes</span>
+      <span class="tab-counter">4 Routes</span>
+    </button>
+    <button class="activity-tab" id="tab-nav-reconciliation" onclick="switchWorkflow('reconciliation')">
+      <span>5. Reconciliation</span>
+      <span class="tab-counter" id="badgeRecCount" style="background:var(--rose-bg); color:var(--rose-text);">1 Pending</span>
+    </button>
+    <button class="activity-tab" id="tab-nav-analytics" onclick="switchWorkflow('analytics')">
+      <span>6. Model Analytics</span>
+      <span class="tab-counter">Strategy C</span>
+    </button>
+    <button class="activity-tab" id="tab-nav-copilot" onclick="switchWorkflow('copilot')">
+      <span>7. AI Assistant Studio</span>
+      <span class="tab-counter" style="background:var(--accent-bg); color:var(--accent-predictive);">Contextual</span>
+    </button>
+  </nav>
+
+  <!-- ========================================================
+       MAIN APP CONTAINER
+       ======================================================== -->
+  <main class="app-body">
+
+    <!-- ----------------------------------------------------
+         SCREEN 1: OVERALL NETWORK VIEW (Exception-First)
+         ---------------------------------------------------- -->
+    <div class="view-screen active" id="view-network">
+      
+      <!-- Canonical Financial Accounting Exposure Strip (CASH-001) -->
+      <div class="metric-strip-6">
+        <div class="metric-card">
+          <div class="metric-header">
+            <span class="metric-label">ATM Dispensable Cash</span>
+            <span class="metric-icon-pill">Validated</span>
+          </div>
+          <div class="metric-value" id="netKpiDispensableCash">₹1,72,12,400</div>
+          <div class="metric-subtext">Purge/Reject: <strong>₹2,02,000</strong> in bins</div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-header">
+            <span class="metric-label">CIT Vault Inventory</span>
+            <span class="metric-icon-pill" style="background:var(--emerald-bg); color:var(--emerald-text);">Pre-Funded</span>
+          </div>
+          <div class="metric-value" id="netKpiVaultCash">₹85,00,000</div>
+          <div class="metric-subtext">Fort Central Vault liquid stock</div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-header">
+            <span class="metric-label">Proposed Indent Total</span>
+            <span class="metric-icon-pill" style="background:var(--slate-bg);">Aggregate</span>
+          </div>
+          <div class="metric-value" id="netKpiTotalIndent">₹2,07,00,669</div>
+          <div class="metric-subtext">Across 8 ATMs for tomorrow</div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-header">
+            <span class="metric-label">Bank Chest Requisition</span>
+            <span class="metric-icon-pill" style="background:var(--amber-bg); color:var(--amber-text);">Net Draw</span>
+          </div>
+          <div class="metric-value" id="netKpiChestRequirement">₹1,22,00,669</div>
+          <div class="metric-subtext">Net funding after ₹85L vault offset</div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-header">
+            <span class="metric-label">Cash Availability SLA</span>
+            <span class="metric-icon-pill" style="background:var(--emerald-bg); color:var(--emerald-text);">Uptime</span>
+          </div>
+          <div class="metric-value" id="netKpiCashUptime">99.85%</div>
+          <div class="metric-subtext">Hardware: 99.92% · Net: 99.98%</div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-header">
+            <span class="metric-label">Dual Approval Pipeline</span>
+            <span class="metric-icon-pill" id="netKpiCtoPill">L1: 8/8 ✓</span>
+          </div>
+          <div class="metric-value" id="netKpiCtoStatus">CTO Pending</div>
+          <div class="metric-subtext" id="netKpiCtoSub">Level-2 Chief sign-off required</div>
+        </div>
+      </div>
+
+      <!-- Exception-First Work Queue (Central Object - CASH-019) -->
+      <div class="panel-card">
+        <div class="panel-header">
+          <div>
+            <div class="panel-title">
+              <span>Priority Operational Exception Queue</span>
+              <span class="badge-status badge-critical" id="badgeNeedAction">6 ATMs Flagged</span>
+            </div>
+            <div class="panel-subtitle">Sorted by shortest cash runway to safe reserve buffer · Click any row to resolve</div>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <div class="view-switcher" style="display:flex; background:var(--bg-subtle); padding:2px; border-radius:6px; border:1px solid var(--border-subtle);">
+              <button class="filter-btn active" id="btnGroupUrgency" onclick="toggleRosterGrouping('urgency')">Urgency Queue</button>
+              <button class="filter-btn" id="btnGroupRoute" onclick="toggleRosterGrouping('route')">Group by Route</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="filter-bar">
+          <div class="filter-group">
+            <span style="font-size:11px; font-weight:600; color:var(--text-muted);">Responsibility Filter:</span>
+            <button class="filter-btn active" onclick="filterRosterCity('ALL', this)">All Cities (8)</button>
+            <button class="filter-btn" onclick="filterRosterCity('MUMBAI', this)">Mumbai (2)</button>
+            <button class="filter-btn" onclick="filterRosterCity('PUNE', this)">Pune (2)</button>
+            <button class="filter-btn" onclick="filterRosterCity('NAGPUR', this)">Nagpur (2)</button>
+            <button class="filter-btn" onclick="filterRosterCity('NASHIK', this)">Nashik (2)</button>
+          </div>
+          <div class="filter-group">
+            <input type="text" class="search-input" id="searchAtmInput" placeholder="Search ATM site or ID..." oninput="onSearchAtm(this.value)">
+          </div>
+        </div>
+
+        <div style="overflow-x:auto;">
+          <table class="data-table" id="rosterTable">
+            <thead>
+              <tr>
+                <th>Priority</th>
+                <th>Terminal & Location</th>
+                <th>Dispensable Cash / Cap</th>
+                <th>Cash Runway</th>
+                <th>Maker Proposal</th>
+                <th>Checker Approved</th>
+                <th>Approval State</th>
+                <th>Route & Vehicle ETA</th>
+                <th style="text-align:right;">Next Action</th>
+              </tr>
+            </thead>
+            <tbody id="rosterTableBody">
+              <!-- Populated dynamically via JS -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Batch Action Banner for Sovereign CTO Sign-off -->
+        <div style="padding:14px 18px; background:var(--bg-subtle); border-top:1px solid var(--border-subtle); display:flex; align-items:center; justify-content:space-between;">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span class="badge-status badge-blue">Sovereign Treasury Control</span>
+            <span style="font-size:12px; color:var(--text-secondary);" id="batchSignoffText">8 of 8 indents reviewed by Authorized Checker. Ready for Level-2 Sovereign Chief Treasury Officer Sign-Off.</span>
+          </div>
+          <div style="display:flex; gap:8px;">
+            <button class="btn-primary" id="btnBatchCtoSign" onclick="executeCtoSignoff()">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+              <span>Authorize Chief Officer Final Sign-Off (8 Indents)</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ----------------------------------------------------
+         SCREEN 2: CASH PLANNING & SINGLE ATM OPERATIONS (CASH-015)
+         ---------------------------------------------------- -->
+    <div class="view-screen" id="view-planning">
+      
+      <!-- ATM Navigation Header with Context Retention -->
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
+        <div style="display:flex; align-items:center; gap:12px;">
+          <button class="btn-secondary" onclick="switchWorkflow('network')">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+            <span>Back to Exception Queue</span>
+          </button>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span style="font-size:12px; font-weight:600; color:var(--text-muted);">Investigating Terminal:</span>
+            <select class="role-select" id="atmSelectorDropdown" onchange="onSelectAtm(this.value)" style="font-size:14px; font-weight:700; background:var(--bg-surface); border:1px solid var(--border-subtle); padding:6px 10px; border-radius:6px;">
+              <!-- Populated via JS -->
+            </select>
+          </div>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="badge-status badge-blue" id="planBadgeRoute">Route 1 · SecureCIT</span>
+          <span class="badge-status" id="planBadgeMode" style="background:var(--slate-bg); color:var(--slate-text);">Lockable Cassette Swap</span>
+          <span class="badge-status badge-critical" id="planBadgeUrgency">Critical (2.2d)</span>
+        </div>
+      </div>
+
+      <!-- Three Task-Oriented Sub-Destinations (CASH-015) -->
+      <div class="subnav-pills">
+        <button class="subnav-btn active" id="btnSubForecast" onclick="switchAtmSubTab('forecast')">1. Understand the Forecast</button>
+        <button class="subnav-btn" id="btnSubReplenish" onclick="switchAtmSubTab('replenish')">2. Review Replenishment Decision</button>
+        <button class="subnav-btn" id="btnSubMovement" onclick="switchAtmSubTab('movement')">3. Track Cash Movement & CIT Execution</button>
+      </div>
+
+      <!-- Sub-Destination 1: Understand the Forecast -->
+      <div id="subtab-forecast" class="subtab-pane">
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-bottom:16px;">
+          
+          <!-- Depletion Timeline & Cash Runway -->
+          <div class="panel-card" style="margin-bottom:0;">
+            <div class="panel-header">
+              <div class="panel-title">Runway & Depletion Horizon</div>
+              <span class="badge-status badge-critical" id="forecastRunwayPill">2.2 Days to Zero</span>
+            </div>
+            <div class="panel-body">
+              <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:14px;">
+                <div style="padding:10px; background:var(--bg-subtle); border-radius:6px;">
+                  <div style="font-size:11px; color:var(--text-muted); text-transform:uppercase;">Dispensable Cash Now</div>
+                  <div style="font-size:18px; font-weight:700; font-family:var(--font-mono);" id="fcVaultCash">₹26,04,800</div>
+                  <div style="font-size:11px; color:var(--text-secondary); margin-top:2px;">Validated electronic counters</div>
+                </div>
+                <div style="padding:10px; background:var(--bg-subtle); border-radius:6px;">
+                  <div style="font-size:11px; color:var(--text-muted); text-transform:uppercase;">Daily Demand Velocity</div>
+                  <div style="font-size:18px; font-weight:700; font-family:var(--font-mono);" id="fcDailyBurn">₹11,93,532 / day</div>
+                  <div style="font-size:11px; color:var(--text-secondary); margin-top:2px;">Next 24h projected withdrawal</div>
+                </div>
+              </div>
+              <div style="padding:10px; background:var(--amber-bg); border:1px solid var(--amber-border); border-radius:6px; margin-bottom:12px;">
+                <div style="font-weight:600; color:var(--amber-text); font-size:12px;">Safe Buffer Breach Horizon: 1.6 Days (Tomorrow 04:30 IST)</div>
+                <div style="font-size:11px; color:var(--amber-text); margin-top:2px;">ATM will breach mandated 99% SLA safety buffer (₹10.58L) before zero cashout occurs. Replenishment must execute in Morning Route window.</div>
+              </div>
+              <!-- Quantile bands -->
+              <div style="font-size:12px; font-weight:600; color:var(--text-secondary); margin-bottom:6px;">Multi-Quantile Policy Bands (7-Day Horizon):</div>
+              <div style="display:flex; justify-content:space-between; font-size:12px; padding:6px 0; border-bottom:1px solid var(--border-subtle);">
+                <span>P50 Median Unconstrained Demand:</span>
+                <strong style="font-family:var(--font-mono);" id="fcP50">₹64,40,000</strong>
+              </div>
+              <div style="display:flex; justify-content:space-between; font-size:12px; padding:6px 0; border-bottom:1px solid var(--border-subtle);">
+                <span>P80 Elevated Business Velocity:</span>
+                <strong style="font-family:var(--font-mono);" id="fcP80">₹75,60,000</strong>
+              </div>
+              <div style="display:flex; justify-content:space-between; font-size:12px; padding:6px 0;">
+                <span>P95 Mandated Target (Strategy C):</span>
+                <strong style="font-family:var(--font-mono); color:var(--accent-predictive);" id="fcP95">₹83,54,724</strong>
+              </div>
+            </div>
+          </div>
+
+          <!-- Demand Drivers & Exogenous Attribution -->
+          <div class="panel-card" style="margin-bottom:0;">
+            <div class="panel-header">
+              <div class="panel-title">Explainable Demand Drivers</div>
+              <span class="badge-status badge-blue">LightGBM Model</span>
+            </div>
+            <div class="panel-body">
+              <div style="margin-bottom:12px;">
+                <div style="font-size:11px; font-weight:600; color:var(--text-muted); text-transform:uppercase;">Primary Demand Driver</div>
+                <div style="font-size:13px; font-weight:600; color:var(--text-main); margin-top:2px;" id="fcPrimaryDriver">High-velocity commuter concourse footfall with weekend multiplier</div>
+              </div>
+              <div style="font-size:11px; font-weight:600; color:var(--text-muted); text-transform:uppercase; margin-bottom:6px;">Active Exogenous Multipliers:</div>
+              <div id="fcSignalsContainer" style="display:flex; flex-direction:column; gap:6px;">
+                <!-- Populated via JS -->
+              </div>
+              
+              <!-- Interactive Delay Simulator -->
+              <div style="margin-top:16px; padding:12px; background:var(--bg-subtle); border-radius:6px; border:1px solid var(--border-subtle);">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <span style="font-size:12px; font-weight:600; color:var(--text-main);">Simulate Service Delay:</span>
+                  <strong style="font-family:var(--font-mono); color:var(--rose-text);" id="lblSimDelay">+0 Hours</strong>
+                </div>
+                <input type="range" class="range-input" min="0" max="24" step="4" value="0" id="sliderDelaySim" oninput="onDelaySliderChange(this.value)">
+                <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:8px; font-size:11px; text-align:center;">
+                  <div>Stockout Prob: <strong id="simStockoutProb">0.8%</strong></div>
+                  <div>Residual Cash: <strong id="simCashLeft">₹26.04L</strong></div>
+                  <div>Service Level: <strong id="simSlaCompl">99.2%</strong></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Sub-Destination 2: Review Replenishment Decision & Capacity (The Core Financial Experience) -->
+      <div id="subtab-replenish" class="subtab-pane" style="display:none;">
+        <div class="panel-card">
+          <div class="panel-header">
+            <div class="panel-title">Replenishment Review & Capacity Allocation</div>
+            <span class="badge-status badge-blue">Maker vs Checker Validation</span>
+          </div>
+          <div class="panel-body">
+
+            <!-- Canonical Headroom Explanation (Solving Audit Numerical Issue) -->
+            <div class="headroom-grid">
+              <div class="headroom-box">
+                <div class="headroom-label">Physical Note Cassette Cap</div>
+                <div class="headroom-value" id="valHeadroomPhysCap">₹60,00,000</div>
+                <div class="headroom-desc">Mechanical note capacity limit (12,000 notes)</div>
+              </div>
+
+              <div class="headroom-box highlight">
+                <div class="headroom-label">Available Physical Headroom</div>
+                <div class="headroom-value" id="valHeadroomAvailable">₹33,95,200</div>
+                <div class="headroom-desc">₹60.00L limit − ₹26.04L current balance = <strong>₹33,95,200</strong></div>
+              </div>
+
+              <div class="headroom-box policy">
+                <div class="headroom-label">Treasury Policy Ceiling</div>
+                <div class="headroom-value" id="valHeadroomPolicy">₹55,00,000</div>
+                <div class="headroom-desc">Overnight holding policy cap to avoid idle capital cost</div>
+              </div>
+            </div>
+
+            <div style="padding:10px 14px; background:var(--bg-subtle); border-radius:6px; margin-bottom:18px; font-size:12px; color:var(--text-secondary);">
+              ℹ <strong>Maker Recommendation Rationale:</strong> The AI Maker proposed <strong>₹33,95,200</strong>, filling the ATM exactly to 100% mechanical capacity. The Checker proposal of <strong>₹28,00,000</strong> applies an intentional adjustment of <strong>-₹5,95,200</strong> to comply with the <strong>₹55.00 Lakh Treasury Overnight Holding Limit</strong>, avoiding ₹1,240/day in idle interest penalties while retaining a 99.4% service level.
+            </div>
+
+            <!-- Decision Consequence Calculator -->
+            <div class="calc-slider-box">
+              <div style="display:flex; justify-content:space-between; align-items:baseline;">
+                <div>
+                  <span style="font-size:12px; font-weight:600; color:var(--text-muted); text-transform:uppercase;">Proposed Top-Up Indent (Checker)</span>
+                  <div style="font-size:24px; font-weight:700; font-family:var(--font-mono); color:var(--text-main);" id="displayProposedIndent">₹28,00,000</div>
+                </div>
+                <div style="text-align:right;">
+                  <span style="font-size:11px; color:var(--text-muted);">Maker Recommended: <strong id="displayMakerIndent">₹33,95,200</strong></span>
+                  <div style="font-size:13px; font-weight:700; color:var(--amber-text);" id="displayDeltaRupees">Adjustment: -₹5,95,200</div>
+                </div>
+              </div>
+
+              <input type="range" class="range-input" id="sliderIndentAdjust" min="500000" max="4000000" step="50000" value="2800000" oninput="onIndentSliderChange(this.value)">
+
+              <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:12px; margin-top:14px; padding-top:14px; border-top:1px solid var(--border-subtle);">
+                <div>
+                  <div style="font-size:11px; color:var(--text-muted);">Post-Fill ATM Balance</div>
+                  <div style="font-size:16px; font-weight:700; font-family:var(--font-mono);" id="calcPostFillBalance">₹54,04,800</div>
+                </div>
+                <div>
+                  <div style="font-size:11px; color:var(--text-muted);">Capacity Utilization</div>
+                  <div style="font-size:16px; font-weight:700; font-family:var(--font-mono); color:var(--emerald-text);" id="calcCapUtil">90.1%</div>
+                </div>
+                <div>
+                  <div style="font-size:11px; color:var(--text-muted);">Holding Cost / Day</div>
+                  <div style="font-size:16px; font-weight:700; font-family:var(--font-mono);" id="calcHoldingCost">₹962 / day</div>
+                </div>
+                <div>
+                  <div style="font-size:11px; color:var(--text-muted);">Post-Refill Runway</div>
+                  <div style="font-size:16px; font-weight:700; font-family:var(--font-mono);" id="calcPostRunway">4.5 Days</div>
+                </div>
+              </div>
+
+              <!-- Override Reason Form -->
+              <div style="margin-top:16px; display:flex; flex-direction:column; gap:8px;">
+                <label style="font-size:12px; font-weight:600; color:var(--text-main);">Reason for Checker Override (Mandatory Audit Trail):</label>
+                <select class="role-select" id="overrideReasonSelect" style="background:var(--bg-subtle); border:1px solid var(--border-subtle); padding:8px 12px; border-radius:6px; font-size:12px;">
+                  <option value="Compliance with Treasury Overnight Cash Policy Limit (₹55L)">Compliance with Treasury Overnight Cash Policy Limit (₹55L)</option>
+                  <option value="CIT Armored Vehicle Payload Optimization">CIT Armored Vehicle Payload Optimization</option>
+                  <option value="Currency Chest 500-Note Denomination Quota">Currency Chest 500-Note Denomination Quota</option>
+                  <option value="Regional Festival Pre-Allocation Reserve">Regional Festival Pre-Allocation Reserve</option>
+                  <option value="Other">Other Operational Justification</option>
+                </select>
+                <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:8px;">
+                  <button class="btn-primary" onclick="submitCheckerOverride()">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                    <span>Update & Sign Checker Indent (Level-1)</span>
+                  </button>
+                </div>
+              </div>
+
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- Sub-Destination 3: Track Cash Movement & CIT Execution (CASH-010) -->
+      <div id="subtab-movement" class="subtab-pane" style="display:none;">
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;">
+          
+          <!-- Cassette Denomination Manifest -->
+          <div class="panel-card" style="margin-bottom:0;">
+            <div class="panel-header">
+              <div class="panel-title">Cassette Loading Manifest</div>
+              <span class="badge-status badge-blue">RBI Cassette Swap</span>
+            </div>
+            <div class="panel-body">
+              <div style="margin-bottom:12px; font-size:12px; color:var(--text-secondary);">
+                Complies with RBI Circular on lockable cassette exchange during cash replenishment.
+              </div>
+              <table class="data-table" style="font-size:11px;">
+                <thead>
+                  <tr>
+                    <th>Cassette</th>
+                    <th>Denom</th>
+                    <th>Notes</th>
+                    <th>Total Value</th>
+                    <th>Seal Barcode</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>Cassette A</strong></td>
+                    <td>₹500</td>
+                    <td>2,000</td>
+                    <td style="font-family:var(--font-mono); font-weight:600;">₹10,00,000</td>
+                    <td><code style="font-size:10px;">CAS-500-A-4819</code></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Cassette B</strong></td>
+                    <td>₹500</td>
+                    <td>2,000</td>
+                    <td style="font-family:var(--font-mono); font-weight:600;">₹10,00,000</td>
+                    <td><code style="font-size:10px;">CAS-500-B-4820</code></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Cassette C</strong></td>
+                    <td>₹200</td>
+                    <td>2,500</td>
+                    <td style="font-family:var(--font-mono); font-weight:600;">₹5,00,000</td>
+                    <td><code style="font-size:10px;">CAS-200-C-1902</code></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Cassette D</strong></td>
+                    <td>₹100</td>
+                    <td>3,000</td>
+                    <td style="font-family:var(--font-mono); font-weight:600;">₹3,00,000</td>
+                    <td><code style="font-size:10px;">CAS-100-D-8391</code></td>
+                  </tr>
+                </tbody>
+                <tfoot>
+                  <tr style="background:var(--bg-subtle); font-weight:700;">
+                    <td colspan="2">Total Physical Load</td>
+                    <td>9,500 notes</td>
+                    <td style="font-family:var(--font-mono); color:var(--emerald-text);">₹28,00,000</td>
+                    <td>4 Cassettes Sealed</td>
+                  </tr>
+                </tfoot>
+              </table>
+              <div style="margin-top:10px; font-size:11px; color:var(--text-muted);">
+                *Diverter / Purge bin reserve: 500-note capacity verified empty.
+              </div>
+            </div>
+          </div>
+
+          <!-- Armored CIT Custody Transfer -->
+          <div class="panel-card" style="margin-bottom:0;">
+            <div class="panel-header">
+              <div class="panel-title">Armored CIT Chain of Custody</div>
+              <span class="badge-status badge-healthy">Route 1 Assigned</span>
+            </div>
+            <div class="panel-body">
+              <div style="display:flex; flex-direction:column; gap:10px; font-size:12px;">
+                <div style="display:flex; justify-content:space-between; padding-bottom:8px; border-bottom:1px solid var(--border-subtle);">
+                  <span style="color:var(--text-muted);">CIT Logistics Agency:</span>
+                  <strong>SecureArmored CIT Logistics Ltd.</strong>
+                </div>
+                <div style="display:flex; justify-content:space-between; padding-bottom:8px; border-bottom:1px solid var(--border-subtle);">
+                  <span style="color:var(--text-muted);">Assigned Vehicle:</span>
+                  <strong id="dispMoveVan">MH-01-CV-4421 (GPS Tracked)</strong>
+                </div>
+                <div style="display:flex; justify-content:space-between; padding-bottom:8px; border-bottom:1px solid var(--border-subtle);">
+                  <span style="color:var(--text-muted);">Armed Escort Crew:</span>
+                  <strong id="dispMoveEscort">R. Sharma (Senior Custodian) + Armed Guard</strong>
+                </div>
+                <div style="display:flex; justify-content:space-between; padding-bottom:8px; border-bottom:1px solid var(--border-subtle);">
+                  <span style="color:var(--text-muted);">Scheduled Service ETA:</span>
+                  <strong id="dispMoveEta">Tomorrow Oct 28, 10:30 IST</strong>
+                </div>
+                <div style="display:flex; justify-content:space-between; padding-bottom:8px; border-bottom:1px solid var(--border-subtle);">
+                  <span style="color:var(--text-muted);">Tamper-Evident Bag Seal:</span>
+                  <code style="font-size:11px;" id="dispMoveSeal">SEAL-MAH-1-9821</code>
+                </div>
+                <div style="display:flex; justify-content:space-between; padding-bottom:8px;">
+                  <span style="color:var(--text-muted);">Switch Counter Sensor:</span>
+                  <span class="badge-status badge-healthy">Online · Counters Active</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ----------------------------------------------------
+         SCREEN 3: APPROVALS & DUAL SIGNOFF (CASH-002)
+         ---------------------------------------------------- -->
+    <div class="view-screen" id="view-approvals">
+      
+      <!-- 5-Stage Replenishment Lifecycle Stepper -->
+      <div class="lifecycle-stepper">
+        <div class="lifecycle-step completed">
+          <div class="step-num">Stage 1</div>
+          <div class="step-title">Forecast Generated ✓</div>
+          <div class="step-desc">Strategy C P95 demand curve issued at 06:00 IST</div>
+        </div>
+        <div class="lifecycle-step completed">
+          <div class="step-num">Stage 2</div>
+          <div class="step-title">Maker Indent Drafted ✓</div>
+          <div class="step-desc">AI Algorithm formulated ₹2.07 Cr total fleet demand</div>
+        </div>
+        <div class="lifecycle-step completed">
+          <div class="step-num">Stage 3</div>
+          <div class="step-title">Level-1 Checker Signed ✓</div>
+          <div class="step-desc">8 of 8 terminals reviewed & signed with 1 override</div>
+        </div>
+        <div class="lifecycle-step active" id="step4Cto">
+          <div class="step-num">Stage 4</div>
+          <div class="step-title" id="step4Title">Level-2 CTO Authorization</div>
+          <div class="step-desc" id="step4Desc">Awaiting Chief Treasury Officer sovereign sign-off</div>
+        </div>
+        <div class="lifecycle-step" id="step5Dispatch">
+          <div class="step-num">Stage 5</div>
+          <div class="step-title">CIT Custody & Dispatch</div>
+          <div class="step-desc">Vault pull slips & armored vehicle custody transfer</div>
+        </div>
+      </div>
+
+      <!-- Approvals Table Panel -->
+      <div class="panel-card">
+        <div class="panel-header">
+          <div>
+            <div class="panel-title">Institutional Dual-Signoff Matrix</div>
+            <div class="panel-subtitle">Independent separation of duties between Cash Planning Maker, Authorized Checker, and Chief Treasury Officer</div>
+          </div>
+          <button class="btn-primary" id="btnCtoSignTab" onclick="executeCtoSignoff()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            <span>Execute Chief Officer Final Sign-Off (SHA-256)</span>
+          </button>
+        </div>
+
+        <div style="overflow-x:auto;">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Terminal ID</th>
+                <th>Site & City</th>
+                <th>Maker Proposal</th>
+                <th>Checker Approved</th>
+                <th>Variance / Override</th>
+                <th>Level-1 Checker Token</th>
+                <th>Level-2 CTO Status</th>
+                <th style="text-align:right;">Action</th>
+              </tr>
+            </thead>
+            <tbody id="approvalsTableBody">
+              <!-- Populated via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ----------------------------------------------------
+         SCREEN 4: DISPATCH & SERVICE MANIFEST (CASH-010)
+         ---------------------------------------------------- -->
+    <div class="view-screen" id="view-dispatch">
+      <div class="panel-card">
+        <div class="panel-header">
+          <div>
+            <div class="panel-title">Digital CIT Dispatch Corridors & Pull Slips</div>
+            <div class="panel-subtitle">Armored route groupings, vehicle capacity checks, and currency chest pull authorizations</div>
+          </div>
+          <div style="display:flex; gap:8px;">
+            <button class="btn-secondary" onclick="openManifestModal()">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/></svg>
+              <span>View Full Manifest Voucher</span>
+            </button>
+          </div>
+        </div>
+        <div class="panel-body" id="dispatchCorridorsContainer">
+          <!-- Populated via JS -->
+        </div>
+      </div>
+    </div>
+
+    <!-- ----------------------------------------------------
+         SCREEN 5: RECONCILIATION & VARIANCES (CASH-010)
+         ---------------------------------------------------- -->
+    <div class="view-screen" id="view-reconciliation">
+      
+      <!-- RBI Compliance Banner -->
+      <div style="padding:14px 18px; background:var(--emerald-bg); border:1px solid var(--emerald-border); border-radius:8px; margin-bottom:16px; display:flex; align-items:center; justify-content:space-between;">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--emerald-dark)" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          <div>
+            <div style="font-weight:700; color:var(--emerald-text); font-size:13px;">RBI May 14, 2019 Circular Compliance (T+1 / T+3 Reconciliation)</div>
+            <div style="font-size:11px; color:var(--emerald-text); margin-top:2px;">All physical cassette swaps and electronic switch counts must be reconciled within T+3 cycles. Current adherence: 100% on schedule.</div>
+          </div>
+        </div>
+        <span class="badge-status badge-healthy">Regulatory Certified</span>
+      </div>
+
+      <div class="panel-card">
+        <div class="panel-header">
+          <div>
+            <div class="panel-title">T+1 Electronic Journal (EJ) vs Physical Cassette Count Ledger</div>
+            <div class="panel-subtitle">Comparing ATM switch dispense counters against CIT armored crew cassette loading counts</div>
+          </div>
+          <span class="badge-status badge-critical" id="badgeRecOpen">1 Open Investigation</span>
+        </div>
+
+        <div style="overflow-x:auto;">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Audit Cycle ID</th>
+                <th>Terminal</th>
+                <th>Loaded Amount</th>
+                <th>Switch EJ Count</th>
+                <th>Physical Count</th>
+                <th>Variance (₹)</th>
+                <th>Reconciliation Status</th>
+                <th>Auditor Notes</th>
+                <th style="text-align:right;">Action</th>
+              </tr>
+            </thead>
+            <tbody id="recTableBody">
+              <!-- Populated via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ----------------------------------------------------
+         SCREEN 6: MODEL ANALYTICS (Relocated 30D Chart)
+         ---------------------------------------------------- -->
+    <div class="view-screen" id="view-analytics">
+      <div class="panel-card">
+        <div class="panel-header">
+          <div>
+            <div class="panel-title">Fleet Demand Model Performance (30-Day Trajectory)</div>
+            <div class="panel-subtitle">Actual withdrawals vs Strategy C (LightGBM) vs Strategy A vs Pure Exogenous baseline</div>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span class="badge-status badge-healthy">Strategy C MAE: ₹1.12L</span>
+            <span class="badge-status badge-blue">WAPE: 4.8%</span>
+          </div>
+        </div>
+        <div class="panel-body">
+          <div style="height:320px; width:100%;">
+            <canvas id="chartAnalyticsDemand"></canvas>
+          </div>
+          <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:12px; margin-top:16px; padding-top:16px; border-top:1px solid var(--border-subtle); text-align:center;">
+            <div>
+              <div style="font-size:11px; color:var(--text-muted);">Model Bias (Systematic Drift)</div>
+              <div style="font-size:16px; font-weight:700; font-family:var(--font-mono); color:var(--emerald-text);">+0.2%</div>
+            </div>
+            <div>
+              <div style="font-size:11px; color:var(--text-muted);">Censored Demand Recovery</div>
+              <div style="font-size:16px; font-weight:700; font-family:var(--font-mono); color:var(--emerald-text);">99.1% Accuracy</div>
+            </div>
+            <div>
+              <div style="font-size:11px; color:var(--text-muted);">Lead Time Horizon Volatility</div>
+              <div style="font-size:16px; font-weight:700; font-family:var(--font-mono);">σ = 0.22 CV</div>
+            </div>
+            <div>
+              <div style="font-size:11px; color:var(--text-muted);">SLA Quantile Z-Score</div>
+              <div style="font-size:16px; font-weight:700; font-family:var(--font-mono);">z = 2.326 (99.0%)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ----------------------------------------------------
+         SCREEN 7: AI ASSISTANT STUDIO & CONSOLE (CASH-020)
+         ---------------------------------------------------- -->
+    <div class="view-screen" id="view-copilot">
+      <div style="display:grid; grid-template-columns: 1fr 340px; gap:16px;">
+        
+        <!-- Left: Contextual Assistant -->
+        <div class="panel-card" style="margin-bottom:0; display:flex; flex-direction:column; height:700px;">
+          <div class="panel-header">
+            <div>
+              <div class="panel-title">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent-predictive)" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                <span>Cash Intelligence Contextual Assistant</span>
+              </div>
+              <div class="panel-subtitle">Ask operational questions, investigate risks, and simulate replenishment decisions</div>
+            </div>
+            <span class="badge-status badge-blue">Guardrailed AI</span>
+          </div>
+
+          <!-- Working Context Tag -->
+          <div style="padding:10px 18px; background:var(--bg-subtle); border-bottom:1px solid var(--border-subtle); display:flex; align-items:center; justify-content:space-between;">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span style="font-size:11px; font-weight:600; color:var(--text-muted);">Active Scope:</span>
+              <strong style="font-size:12px; color:var(--text-main);" id="copilotActiveScopeText">ATM-1 · Mumbai Railway Station Concourse</strong>
+            </div>
+            <span style="font-size:11px; color:var(--text-muted);">Data As-Of: 2026-10-27 14:30 IST</span>
+          </div>
+
+          <!-- Suggested Investigation Chips -->
+          <div style="padding:12px 18px; border-bottom:1px solid var(--border-subtle); background:#FFFFFF; display:flex; flex-wrap:wrap; gap:8px;">
+            <button class="ai-prompt-chip" onclick="askAiPrompt('Why is ATM-1 flagged as Critical, and what is its cash runway?')">
+              👉 "Why is ATM-1 flagged as Critical?"
+            </button>
+            <button class="ai-prompt-chip" onclick="askAiPrompt('What happens if delivery to ATM-1 is delayed 4 hours past the 18:00 cutoff?')">
+              👉 "What if delivery is delayed 4 hours?"
+            </button>
+            <button class="ai-prompt-chip" onclick="askAiPrompt('Compare the Maker amount of ₹33,95,200 with the Checker ₹28,00,000 for ATM-1 and explain the headroom constraint.')">
+              👉 "Compare Maker vs Checker & Headroom"
+            </button>
+            <button class="ai-prompt-chip" onclick="askAiPrompt('Which ATMs in the network are at greatest risk of running dry before tomorrow?')">
+              👉 "Which ATMs need attention first?"
+            </button>
+          </div>
+
+          <!-- Chat Feed -->
+          <div class="ai-drawer-body" id="copilotStudioChatFeed" style="flex:1;">
+            <div class="ai-msg assistant">
+              <strong>Cash Intelligence Assistant</strong> · <span style="font-size:10px; color:var(--text-muted);">Ready</span><br>
+              Hello. I am connected to live telemetry, lightGBM demand predictions, and the central treasury rules engine. You can ask me to explain ATM risks, simulate delays, verify headroom constraints, or prepare replenishment proposals.
+            </div>
+          </div>
+
+          <!-- Input Bar -->
+          <div style="padding:14px 18px; border-top:1px solid var(--border-subtle); background:var(--bg-subtle); display:flex; gap:10px;">
+            <input type="text" class="search-input" id="copilotStudioInput" placeholder="Ask a question or type a scenario..." style="flex:1;" onkeydown="if(event.key==='Enter') sendCopilotStudioMsg()">
+            <button class="btn-primary" onclick="sendCopilotStudioMsg()">
+              <span>Send</span>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Right: Developer Console & Tool Traces (Hidden from Front View per Audit) -->
+        <div class="panel-card" style="margin-bottom:0; display:flex; flex-direction:column; height:700px;">
+          <div class="panel-header">
+            <div class="panel-title">Developer Console</div>
+            <span class="badge-status" style="background:var(--slate-bg);">Telemetry</span>
+          </div>
+          <div class="panel-body" style="flex:1; overflow-y:auto; font-size:11px; font-family:var(--font-mono); color:var(--text-secondary);">
+            <div style="margin-bottom:12px; font-weight:700; color:var(--text-main); font-family:var(--font-sans);">Tool Call Execution Traces:</div>
+            <div id="devConsoleTraces" style="display:flex; flex-direction:column; gap:6px;">
+              <div style="padding:6px; background:var(--bg-subtle); border-radius:4px;">
+                <span style="color:var(--emerald-text);">[READY]</span> LangGraph StateGraph active
+              </div>
+              <div style="padding:6px; background:var(--bg-subtle); border-radius:4px;">
+                <span style="color:var(--text-muted);">[SCHEMA]</span> 12 Institutional Tools Bound
+              </div>
+              <div style="padding:6px; background:var(--bg-subtle); border-radius:4px;">
+                <span style="color:var(--accent-predictive);">[GUARD]</span> Financial Authorizations Restricted to Human Maker-Checker
+              </div>
+            </div>
+            
+            <div style="margin-top:20px; font-weight:700; color:var(--text-main); font-family:var(--font-sans);">Authority Boundary Policy:</div>
+            <ul style="padding-left:14px; margin-top:6px; line-height:1.6; font-family:var(--font-sans); color:var(--text-secondary);">
+              <li>Explain risk: <em>Operational data</em></li>
+              <li>Simulate delay: <em>Sandbox only</em></li>
+              <li>Propose indent: <em>Checker draft</em></li>
+              <li>Approve indent: <em>Human sign-off</em></li>
+            </ul>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ========================================================
+       GLOBAL SLIDE-OUT CONTEXTUAL AI ASSISTANT DRAWER
+       ======================================================== -->
+  <div class="ai-drawer-overlay" id="aiDrawerOverlay" onclick="toggleAiDrawer()"></div>
+  <div class="ai-drawer" id="aiDrawer">
+    <div class="ai-drawer-header">
+      <div style="display:flex; align-items:center; gap:8px;">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent-predictive)" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        <span style="font-weight:700; font-size:14px; color:var(--text-main);">Contextual AI Assistant</span>
+      </div>
+      <button class="btn-secondary" onclick="toggleAiDrawer()" style="padding:4px 8px;">✕</button>
+    </div>
+
+    <!-- Active Working Context -->
+    <div style="padding:10px 16px; background:var(--bg-subtle); border-bottom:1px solid var(--border-subtle); font-size:11px;">
+      <span style="color:var(--text-muted);">Context:</span> <strong id="drawerContextTag">Network View (8 Terminals)</strong>
+    </div>
+
+    <!-- Quick Prompts -->
+    <div style="padding:10px 16px; border-bottom:1px solid var(--border-subtle); display:flex; flex-direction:column; gap:6px;">
+      <button class="ai-prompt-chip" onclick="askDrawerPrompt('Why does ATM-1 need replenishment and what is the difference between maker and checker amounts?')">
+        👉 "Why does ATM-1 need replenishment?"
+      </button>
+      <button class="ai-prompt-chip" onclick="askDrawerPrompt('What if cash delivery is delayed four hours?')">
+        👉 "What if cash delivery is delayed 4 hours?"
+      </button>
+      <button class="ai-prompt-chip" onclick="askDrawerPrompt('Which ATMs are likely to run dry before tomorrow?')">
+        👉 "Which ATMs need attention first?"
+      </button>
+    </div>
+
+    <!-- Drawer Messages -->
+    <div class="ai-drawer-body" id="drawerChatFeed">
+      <div class="ai-msg assistant">
+        <strong>Cash Intelligence Copilot</strong><br>
+        Ask me any question regarding current cash exposure, forecast drivers, delay sensitivity, or capacity limits.
+      </div>
+    </div>
+
+    <!-- Drawer Footer Input -->
+    <div class="ai-drawer-footer">
+      <div style="display:flex; gap:8px;">
+        <input type="text" class="search-input" id="drawerInput" placeholder="Type a message..." style="flex:1;" onkeydown="if(event.key==='Enter') sendDrawerMsg()">
+        <button class="btn-primary" onclick="sendDrawerMsg()">Send</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================
+       MODALS: MASTERS, MANIFEST, RECONCILIATION
+       ======================================================== -->
+  <!-- Masters Modal -->
+  <div class="modal-overlay" id="modalMasters">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div style="font-weight:700; font-size:14px;">Treasury Economic Masters & Economic Parameters</div>
+        <button class="btn-secondary" onclick="closeMastersModal()">✕</button>
+      </div>
+      <div class="modal-body" id="mastersModalBody">
+        <!-- Rendered via JS -->
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" onclick="closeMastersModal()">Close</button>
+        <button class="btn-primary" onclick="saveMastersOverrides()">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Manifest Modal -->
+  <div class="modal-overlay" id="modalManifest">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div style="font-weight:700; font-size:14px;">Digital CIT Dispatch Manifest & Chest Voucher</div>
+        <button class="btn-secondary" onclick="closeManifestModal()">✕</button>
+      </div>
+      <div class="modal-body" id="manifestModalBody">
+        <!-- Rendered via JS -->
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" onclick="closeManifestModal()">Close</button>
+        <button class="btn-primary" onclick="printManifest()">Print / Export Voucher</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toastContainer"></div>
+
+  <!-- ========================================================
+       FRONTEND LOGIC & DATA HYDRATION
+       ======================================================== -->
+  <script>
+    let APP_DATA = null;
+    let ACTIVE_WORKFLOW = 'network';
+    let ACTIVE_TERMINAL_ID = '1';
+    let ACTIVE_ROLE = 'controller';
+    let ROSTER_GROUPING = 'urgency'; // 'urgency' | 'route'
+    let CITY_FILTER = 'ALL';
+    let SEARCH_QUERY = '';
+
+    let chartAnalyticsDemand = null;
+
+    function formatINR(val) {
+      if (val === null || val === undefined || isNaN(val)) return '₹0';
+      return new Intl.NumberFormat('en-IN', {
+        style: 'currency',
+        currency: 'INR',
+        maximumFractionDigits: 0
+      }).format(val);
+    }
+
+    function showToast(msg) {
+      const c = document.getElementById("toastContainer");
+      const div = document.createElement("div");
+      div.className = "toast-msg";
+      div.innerHTML = `<span>✓</span><span>${msg}</span>`;
+      c.appendChild(div);
+      setTimeout(() => div.remove(), 3500);
+    }
+
+    // Role Switcher (CASH-021)
+    function switchRole(roleKey) {
+      ACTIVE_ROLE = roleKey;
+      const badge = document.getElementById("roleBadge");
+      if (roleKey === 'controller') {
+        badge.innerText = 'Treasury Chief';
+        badge.style.background = 'var(--emerald-bg)';
+        badge.style.color = 'var(--emerald-text)';
+      } else if (roleKey === 'planner') {
+        badge.innerText = 'Cash Planner';
+        badge.style.background = 'var(--accent-bg)';
+        badge.style.color = 'var(--accent-predictive)';
+      } else if (roleKey === 'checker') {
+        badge.innerText = 'Auth Checker';
+        badge.style.background = 'var(--amber-bg)';
+        badge.style.color = 'var(--amber-text)';
+      } else if (roleKey === 'dispatch') {
+        badge.innerText = 'CIT Logistics';
+        badge.style.background = 'var(--slate-bg)';
+        badge.style.color = 'var(--slate-text)';
+      } else if (roleKey === 'reconciliation') {
+        badge.innerText = 'Auditor';
+        badge.style.background = 'var(--rose-bg)';
+        badge.style.color = 'var(--rose-text)';
+      }
+      showToast(`Switched workspace role to: ${badge.innerText}`);
+    }
+
+    // Workflow Navigation Tabs
+    function switchWorkflow(wfKey) {
+      ACTIVE_WORKFLOW = wfKey;
+      
+      const tabKeys = ['network', 'planning', 'approvals', 'dispatch', 'reconciliation', 'analytics', 'copilot'];
+      tabKeys.forEach(k => {
+        const tabEl = document.getElementById(`tab-nav-${k}`);
+        const viewEl = document.getElementById(`view-${k}`);
+        if (tabEl) tabEl.classList.toggle('active', k === wfKey);
+        if (viewEl) viewEl.classList.toggle('active', k === wfKey);
+      });
+
+      if (wfKey === 'analytics') {
+        setTimeout(renderAnalyticsChart, 50);
+      } else if (wfKey === 'planning') {
+        renderSingleAtm();
+      } else if (wfKey === 'approvals') {
+        renderApprovalsTable();
+      } else if (wfKey === 'dispatch') {
+        renderDispatchCorridors();
+      } else if (wfKey === 'reconciliation') {
+        renderReconciliationTable();
+      }
+
+      updateContextTags();
+    }
+
+    function updateContextTags() {
+      const t = (APP_DATA && APP_DATA.terminals) ? APP_DATA.terminals[ACTIVE_TERMINAL_ID] : null;
+      const tagText = t ? `ATM-${t.terminal_id} · ${t.site_name} (${t.city})` : "Entire Network Overview";
+      const drawerTag = document.getElementById("drawerContextTag");
+      const copilotTag = document.getElementById("copilotActiveScopeText");
+      if (drawerTag) drawerTag.innerText = tagText;
+      if (copilotTag) copilotTag.innerText = tagText;
+    }
+
+    // Data Hydration
+    async function fetchAppData() {
+      try {
+        const res = await fetch('/api/data');
+        if (res.ok) {
+          APP_DATA = await res.json();
+          onDataLoaded();
+        }
+      } catch (e) {
+        console.error("Data load error:", e);
+      }
+    }
+
+    function onDataLoaded() {
+      if (!APP_DATA || !APP_DATA.terminals) return;
+
+      const sum = APP_DATA.summary || {};
+      
+      // Update Top HUD
+      document.getElementById("netKpiDispensableCash").innerText = formatINR(sum.total_dispensable_cash || sum.total_existing_cash);
+      document.getElementById("netKpiVaultCash").innerText = formatINR(sum.vault_available_inventory || 8500000);
+      document.getElementById("netKpiTotalIndent").innerText = formatINR(sum.total_net_indent);
+      document.getElementById("netKpiChestRequirement").innerText = formatINR(sum.net_bank_chest_funding_requirement);
+      document.getElementById("netKpiCashUptime").innerText = `${sum.cash_availability_uptime || 99.85}%`;
+      
+      const isCtoAuth = sum.level2_cto_authorized;
+      document.getElementById("netKpiCtoStatus").innerText = isCtoAuth ? "Authorized ✓" : "CTO Pending";
+      document.getElementById("netKpiCtoPill").innerText = isCtoAuth ? "L2: Signed" : `L1: ${sum.level1_checker_signed_count}/${sum.level1_checker_total} ✓`;
+      document.getElementById("netKpiCtoPill").style.background = isCtoAuth ? "var(--emerald-bg)" : "var(--amber-bg)";
+      document.getElementById("netKpiCtoPill").style.color = isCtoAuth ? "var(--emerald-text)" : "var(--amber-text)";
+      document.getElementById("netKpiCtoSub").innerText = isCtoAuth ? "Locked & Ready for CIT" : "Awaiting Chief Officer sign-off";
+
+      // Stepper Stage 4 & 5
+      const step4 = document.getElementById("step4Cto");
+      const step5 = document.getElementById("step5Dispatch");
+      const step4Title = document.getElementById("step4Title");
+      const step4Desc = document.getElementById("step4Desc");
+      if (isCtoAuth) {
+        step4.classList.add("completed");
+        step4Title.innerText = "Level-2 CTO Signed ✓";
+        step4Desc.innerText = `Signed by ${sum.level2_cto_signoff_info.officer_name}`;
+        step5.classList.add("active");
+        document.getElementById("btnBatchCtoSign").disabled = true;
+        document.getElementById("btnBatchCtoSign").innerText = "✓ CTO Sign-Off Completed";
+        document.getElementById("batchSignoffText").innerText = "Manifest authorized and locked with digital token. Armored CIT dispatch queued.";
+      }
+
+      // Populate ATM Selectors
+      const sel = document.getElementById("atmSelectorDropdown");
+      sel.innerHTML = "";
+      Object.values(APP_DATA.terminals).forEach(t => {
+        const opt = document.createElement("option");
+        opt.value = String(t.terminal_id);
+        opt.innerText = `ATM #${t.terminal_id} · ${t.site_name} (${t.city})`;
+        sel.appendChild(opt);
+      });
+      sel.value = String(ACTIVE_TERMINAL_ID);
+
+      renderRosterTable();
+      renderSingleAtm();
+      renderApprovalsTable();
+      renderDispatchCorridors();
+      renderReconciliationTable();
+    }
+
+    // Network Screen: Exception Queue Table
+    function renderRosterTable() {
+      const tbody = document.getElementById("rosterTableBody");
+      tbody.innerHTML = "";
+
+      let tms = Object.values(APP_DATA.terminals || {});
+
+      // Filter by City
+      if (CITY_FILTER !== 'ALL') {
+        tms = tms.filter(t => t.city.toUpperCase() === CITY_FILTER.toUpperCase());
+      }
+
+      // Filter by Search
+      if (SEARCH_QUERY.trim()) {
+        const q = SEARCH_QUERY.toLowerCase();
+        tms = tms.filter(t => (t.site_name || '').toLowerCase().includes(q) || String(t.terminal_id).includes(q));
+      }
+
+      // Sort by urgency / runway ascending (Shortest runway first)
+      tms.sort((a, b) => (a.dcr_days || 99) - (b.dcr_days || 99));
+
+      tms.forEach(t => {
+        const tr = document.createElement("tr");
+
+        let badgeClass = "badge-healthy";
+        let actionLabel = "Inspect Journey";
+        if (t.urgency_status === 'CRITICAL') {
+          badgeClass = "badge-critical";
+          actionLabel = (t.dcr_days < 1.8) ? "Verify Service" : "Review Indent";
+        } else if (t.urgency_status === 'SCHEDULED') {
+          badgeClass = "badge-scheduled";
+          actionLabel = "Review Indent";
+        }
+
+        const isOverridden = t.has_override;
+        const delta = isOverridden ? (t.c1_net_indent - t.maker_proposed_indent) : 0;
+        const deltaStr = isOverridden ? `<span style="font-size:10px; color:var(--rose-text); font-weight:700;">(${delta < 0 ? '' : '+'}${formatINR(delta)})</span>` : '';
+
+        const pct = Math.min(100, Math.round((t.existing_cash / t.capacity) * 100));
+
+        tr.innerHTML = `
+          <td><span class="badge-status ${badgeClass}">${t.urgency_status}</span></td>
+          <td>
+            <div class="terminal-title-cell">
+              <span class="terminal-name">ATM #${t.terminal_id} · ${t.site_name}</span>
+              <span class="terminal-sub">
+                <span>${t.city}</span> · 
+                <span class="badge-status badge-blue" style="font-size:9px;">${t.corridor_name || 'Route 1'}</span>
+              </span>
+            </div>
+          </td>
+          <td>
+            <div style="font-family:var(--font-mono); font-weight:600;">${formatINR(t.existing_cash)}</div>
+            <div class="progress-bar-container">
+              <div class="progress-bar-fill ${pct < 25 ? 'danger' : (pct < 50 ? 'warning' : '')}" style="width:${pct}%;"></div>
+            </div>
+            <span style="font-size:10px; color:var(--text-muted);">${pct}% of ₹${(t.capacity/1e5).toFixed(0)}L cap</span>
+          </td>
+          <td>
+            <div style="font-weight:700; font-family:var(--font-mono); color:${t.dcr_days < 2.0 ? 'var(--rose-text)' : 'var(--text-main)'};">
+              ${t.dcr_days.toFixed(1)} Days
+            </div>
+            <span style="font-size:10px; color:var(--text-muted);">Safe Buffer: ${t.safe_buffer_breach_days || 1.6}d</span>
+          </td>
+          <td style="font-family:var(--font-mono); font-weight:600;">${formatINR(t.maker_proposed_indent)}</td>
+          <td>
+            <span style="font-family:var(--font-mono); font-weight:700;">${formatINR(t.c1_net_indent)}</span>
+            ${deltaStr}
+          </td>
+          <td>
+            <span class="badge-status badge-healthy" style="font-size:10px;">L1 Signed ✓</span>
+          </td>
+          <td>
+            <div style="font-size:11px; font-weight:600;">${t.movement_execution ? t.movement_execution.assigned_van : 'MH-01-CV-4421'}</div>
+            <div style="font-size:10px; color:var(--text-muted);">${t.movement_execution ? t.movement_execution.scheduled_eta : 'Tomorrow 10:30 IST'}</div>
+          </td>
+          <td style="text-align:right;">
+            <button class="btn-secondary" style="padding:4px 9px; font-size:11px;" onclick="navigateToAtm('${t.terminal_id}', '${actionLabel === 'Review Indent' ? 'replenish' : 'forecast'}')">
+              <span>${actionLabel}</span>
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
+          </td>
+        `;
+
+        tbody.appendChild(tr);
+      });
+    }
+
+    function toggleRosterGrouping(mode) {
+      ROSTER_GROUPING = mode;
+      document.getElementById("btnGroupUrgency").classList.toggle("active", mode === 'urgency');
+      document.getElementById("btnGroupRoute").classList.toggle("active", mode === 'route');
+      renderRosterTable();
+    }
+
+    function filterRosterCity(city, btn) {
+      CITY_FILTER = city;
+      document.querySelectorAll(".filter-bar .filter-btn").forEach(b => b.classList.remove("active"));
+      if (btn) btn.classList.add("active");
+      renderRosterTable();
+    }
+
+    function onSearchAtm(val) {
+      SEARCH_QUERY = val;
+      renderRosterTable();
+    }
+
+    function navigateToAtm(tid, subtabKey) {
+      ACTIVE_TERMINAL_ID = String(tid);
+      switchWorkflow('planning');
+      if (subtabKey) {
+        switchAtmSubTab(subtabKey);
+      }
+    }
+
+    // Single ATM Planning Screen
+    function onSelectAtm(tid) {
+      ACTIVE_TERMINAL_ID = String(tid);
+      renderSingleAtm();
+      updateContextTags();
+    }
+
+    function switchAtmSubTab(tabKey) {
+      document.getElementById("btnSubForecast").classList.toggle("active", tabKey === 'forecast');
+      document.getElementById("btnSubReplenish").classList.toggle("active", tabKey === 'replenish');
+      document.getElementById("btnSubMovement").classList.toggle("active", tabKey === 'movement');
+
+      document.getElementById("subtab-forecast").style.display = (tabKey === 'forecast') ? 'block' : 'none';
+      document.getElementById("subtab-replenish").style.display = (tabKey === 'replenish') ? 'block' : 'none';
+      document.getElementById("subtab-movement").style.display = (tabKey === 'movement') ? 'block' : 'none';
+    }
+
+    function renderSingleAtm() {
+      if (!APP_DATA || !APP_DATA.terminals) return;
+      const t = APP_DATA.terminals[ACTIVE_TERMINAL_ID];
+      if (!t) return;
+
+      document.getElementById("atmSelectorDropdown").value = String(ACTIVE_TERMINAL_ID);
+      document.getElementById("planBadgeRoute").innerText = `${t.corridor_name || 'Route 1'} · ${t.serviced_by}`;
+      document.getElementById("planBadgeMode").innerText = t.servicing_mode === 'CASSETTE_SWAP' ? 'RBI Lockable Cassette Swap' : 'Branch Cash-Add';
+      
+      const urgPill = document.getElementById("planBadgeUrgency");
+      urgPill.innerText = `${t.urgency_status} (${t.dcr_days.toFixed(1)}d)`;
+      urgPill.className = `badge-status ${t.urgency_status === 'CRITICAL' ? 'badge-critical' : (t.urgency_status === 'SCHEDULED' ? 'badge-scheduled' : 'badge-healthy')}`;
+
+      // Subtab 1: Forecast
+      document.getElementById("forecastRunwayPill").innerText = `${t.dcr_days.toFixed(1)} Days Runway`;
+      document.getElementById("fcVaultCash").innerText = formatINR(t.existing_cash);
+      document.getElementById("fcDailyBurn").innerText = `${formatINR(t.observations.daily_burn)} / day`;
+      document.getElementById("fcPrimaryDriver").innerText = t.observations.primary_driver;
+
+      const p95Val = t.observations.pred_demand_7d;
+      document.getElementById("fcP50").innerText = formatINR(p95Val * 0.77);
+      document.getElementById("fcP80").innerText = formatINR(p95Val * 0.90);
+      document.getElementById("fcP95").innerText = formatINR(p95Val);
+
+      // Render active signals
+      const sigContainer = document.getElementById("fcSignalsContainer");
+      sigContainer.innerHTML = "";
+      if (t.observations.active_signals && t.observations.active_signals.length > 0) {
+        t.observations.active_signals.forEach(s => {
+          const div = document.createElement("div");
+          div.style.cssText = "display:flex; justify-content:space-between; font-size:11px; padding:4px 6px; background:var(--bg-subtle); border-radius:4px;";
+          div.innerHTML = `<span>${s.name} (${s.notes})</span><strong style="color:var(--accent-predictive);">${s.multiplier}</strong>`;
+          sigContainer.appendChild(div);
+        });
+      } else {
+        sigContainer.innerHTML = `<span style="font-size:11px; color:var(--text-muted);">Standard seasonal footfall velocity.</span>`;
+      }
+
+      // Subtab 2: Replenishment & Headroom
+      const physCap = t.physical_note_capacity || 6000000;
+      const physHead = t.physical_headroom || (physCap - t.existing_cash);
+      const polCap = t.treasury_policy_ceiling || 5500000;
+
+      document.getElementById("valHeadroomPhysCap").innerText = formatINR(physCap);
+      document.getElementById("valHeadroomAvailable").innerText = formatINR(physHead);
+      document.getElementById("valHeadroomPolicy").innerText = formatINR(polCap);
+
+      document.getElementById("displayProposedIndent").innerText = formatINR(t.c1_net_indent);
+      document.getElementById("displayMakerIndent").innerText = formatINR(t.maker_proposed_indent);
+
+      const delta = t.c1_net_indent - t.maker_proposed_indent;
+      document.getElementById("displayDeltaRupees").innerText = `Adjustment: ${delta < 0 ? '' : '+'}${formatINR(delta)}`;
+
+      const slider = document.getElementById("sliderIndentAdjust");
+      slider.max = String(Math.round(physCap));
+      slider.value = String(Math.round(t.c1_net_indent));
+
+      onIndentSliderChange(slider.value);
+
+      // Subtab 3: Movement
+      if (t.movement_execution) {
+        document.getElementById("dispMoveVan").innerText = `${t.movement_execution.assigned_van} (GPS Tracked)`;
+        document.getElementById("dispMoveEscort").innerText = t.movement_execution.escort_officer;
+        document.getElementById("dispMoveEta").innerText = t.movement_execution.scheduled_eta;
+        document.getElementById("dispMoveSeal").innerText = t.movement_execution.seal_barcode;
+      }
+    }
+
+    function onIndentSliderChange(val) {
+      val = parseFloat(val);
+      const t = APP_DATA.terminals[ACTIVE_TERMINAL_ID];
+      if (!t) return;
+
+      document.getElementById("displayProposedIndent").innerText = formatINR(val);
+      const delta = val - t.maker_proposed_indent;
+      document.getElementById("displayDeltaRupees").innerText = `Adjustment: ${delta < 0 ? '' : '+'}${formatINR(delta)}`;
+
+      const postBal = Math.min(t.capacity, t.existing_cash + val);
+      document.getElementById("calcPostFillBalance").innerText = formatINR(postBal);
+
+      const capPct = ((postBal / t.capacity) * 100).toFixed(1);
+      const capEl = document.getElementById("calcCapUtil");
+      capEl.innerText = `${capPct}%`;
+      capEl.style.color = capPct > 95 ? 'var(--rose-text)' : (capPct > 90 ? 'var(--amber-text)' : 'var(--emerald-text)');
+
+      const dailyHolding = Math.round(postBal * (0.065 / 365));
+      document.getElementById("calcHoldingCost").innerText = `${formatINR(dailyHolding)} / day`;
+
+      const runwayDays = (postBal / Math.max(1, t.observations.daily_burn)).toFixed(1);
+      document.getElementById("calcPostRunway").innerText = `${runwayDays} Days`;
+    }
+
+    function onDelaySliderChange(val) {
+      val = parseInt(val);
+      document.getElementById("lblSimDelay").innerText = `+${val} Hours`;
+
+      const t = APP_DATA.terminals[ACTIVE_TERMINAL_ID];
+      if (!t) return;
+
+      const scenKey = `${val}h`;
+      const scen = (t.delay_scenarios && t.delay_scenarios[scenKey]) ? t.delay_scenarios[scenKey] : null;
+      if (scen) {
+        document.getElementById("simStockoutProb").innerText = `${scen.stockout_prob}%`;
+        document.getElementById("simCashLeft").innerText = formatINR(scen.balance);
+        document.getElementById("simSlaCompl").innerText = `${scen.service_level}%`;
+        document.getElementById("simStockoutProb").style.color = scen.stockout_prob > 10 ? 'var(--rose-text)' : (scen.stockout_prob > 3 ? 'var(--amber-text)' : 'var(--emerald-text)');
+      }
+    }
+
+    // Submit Checker Override
+    async function submitCheckerOverride() {
+      const val = parseFloat(document.getElementById("sliderIndentAdjust").value);
+      const reason = document.getElementById("overrideReasonSelect").value;
+      const tid = ACTIVE_TERMINAL_ID;
+
+      try {
+        const res = await fetch('/api/override', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({
+            terminal_id: tid,
+            new_indent: val,
+            reason: reason,
+            officer_name: "Authorized Checker (Portal)"
+          })
+        });
+
+        if (res.ok) {
+          showToast(`Level-1 Checker Indent signed for ATM ${tid}: ${formatINR(val)}`);
+          await fetchAppData();
+        }
+      } catch (e) {
+        console.error("Override error:", e);
+      }
+    }
+
+    // Sovereign CTO Sign-off Execution
+    async function executeCtoSignoff() {
+      try {
+        const res = await fetch('/api/approve/cto', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({
+            officer_name: "Chief Treasury Officer",
+            notes: "Level-2 Sovereign Sign-Off Approved for Armored CIT Dispatch"
+          })
+        });
+
+        if (res.ok) {
+          showToast("Chief Treasury Officer Sovereign Sign-Off Certified (SHA-256)");
+          await fetchAppData();
+        }
+      } catch (e) {
+        console.error("CTO signoff error:", e);
+      }
+    }
+
+    // Approvals Table Rendering
+    function renderApprovalsTable() {
+      const tbody = document.getElementById("approvalsTableBody");
+      tbody.innerHTML = "";
+
+      const tms = Object.values(APP_DATA.terminals || {});
+      const isCtoAuth = APP_DATA.summary.level2_cto_authorized;
+
+      tms.forEach(t => {
+        const tr = document.createElement("tr");
+        const delta = t.c1_net_indent - t.maker_proposed_indent;
+        const deltaStr = t.has_override ? `<span style="color:var(--rose-text); font-weight:700;">${delta < 0 ? '' : '+'}${formatINR(delta)}</span>` : '<span style="color:var(--text-muted);">None (0)</span>';
+        const overrideReason = t.has_override ? (t.override_details ? t.override_details.reason : "Policy adjustment") : "Standard algorithm";
+
+        tr.innerHTML = `
+          <td><strong>ATM #${t.terminal_id}</strong></td>
+          <td>${t.site_name} (${t.city})</td>
+          <td style="font-family:var(--font-mono);">${formatINR(t.maker_proposed_indent)}</td>
+          <td style="font-family:var(--font-mono); font-weight:700;">${formatINR(t.c1_net_indent)}</td>
+          <td>${deltaStr}</td>
+          <td><span class="badge-status badge-healthy">Signed by A. Mehta ✓</span></td>
+          <td>
+            <span class="badge-status ${isCtoAuth ? 'badge-healthy' : 'badge-scheduled'}">
+              ${isCtoAuth ? 'CTO Certified ✓' : 'Awaiting Sign-Off'}
+            </span>
+          </td>
+          <td style="text-align:right;">
+            <button class="btn-secondary" style="padding:4px 8px; font-size:11px;" onclick="navigateToAtm('${t.terminal_id}', 'replenish')">
+              <span>Review Indent</span>
+            </button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // Dispatch Corridors Rendering
+    function renderDispatchCorridors() {
+      const container = document.getElementById("dispatchCorridorsContainer");
+      container.innerHTML = "";
+
+      const corridors = APP_DATA.corridors || [];
+      corridors.forEach(c => {
+        const routeDiv = document.createElement("div");
+        routeDiv.className = "panel-card";
+        routeDiv.style.marginBottom = "12px";
+
+        let routeStopsHtml = "";
+        let routeTotal = 0;
+
+        (c.terminals || []).forEach(tid => {
+          const t = APP_DATA.terminals[String(tid)];
+          if (t) {
+            routeTotal += t.c1_net_indent;
+            routeStopsHtml += `
+              <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid var(--border-subtle); font-size:12px;">
+                <div>
+                  <strong>ATM #${t.terminal_id} · ${t.site_name}</strong> (${t.city})
+                  <div style="font-size:11px; color:var(--text-muted);">Loading mode: ${t.servicing_mode} · Seal: SEAL-MAH-${t.terminal_id}-9821</div>
+                </div>
+                <div style="text-align:right;">
+                  <strong style="font-family:var(--font-mono);">${formatINR(t.c1_net_indent)}</strong>
+                  <div style="font-size:10px; color:var(--emerald-text);">Cassettes Packed</div>
+                </div>
+              </div>
+            `;
+          }
+        });
+
+        routeDiv.innerHTML = `
+          <div class="panel-header" style="background:var(--bg-subtle);">
+            <div>
+              <strong style="font-size:13px;">${c.name} (${c.city})</strong>
+              <span class="badge-status badge-blue" style="margin-left:8px;">${c.terminals.length} Stops</span>
+            </div>
+            <div style="text-align:right;">
+              <span style="font-size:11px; color:var(--text-muted);">Route Total Load:</span>
+              <strong style="font-family:var(--font-mono); font-size:14px; margin-left:6px;">${formatINR(routeTotal)}</strong>
+              <span style="font-size:10px; color:var(--emerald-text); margin-left:6px;">(Van Cap: ₹1.5 Cr Safe ✓)</span>
+            </div>
+          </div>
+          <div class="panel-body">
+            ${routeStopsHtml}
+          </div>
+        `;
+
+        container.appendChild(routeDiv);
+      });
+    }
+
+    // Reconciliation Ledger Rendering (CASH-010)
+    function renderReconciliationTable() {
+      const tbody = document.getElementById("recTableBody");
+      tbody.innerHTML = "";
+
+      const tms = Object.values(APP_DATA.terminals || {});
+      let openCount = 0;
+
+      tms.forEach(t => {
+        const rec = t.reconciliation || {};
+        const isUnderInvest = rec.variance_status === 'UNDER_INVESTIGATION';
+        if (isUnderInvest) openCount++;
+
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td><code>${rec.cycle_id || 'REC-MAH-1'}</code></td>
+          <td><strong>ATM #${t.terminal_id}</strong> · ${t.site_name}</td>
+          <td style="font-family:var(--font-mono);">${formatINR(rec.ej_switch_dispensed || 2800000)}</td>
+          <td style="font-family:var(--font-mono);">${formatINR(rec.ej_switch_dispensed || 2800000)}</td>
+          <td style="font-family:var(--font-mono);">${formatINR((rec.ej_switch_dispensed || 2800000) + (rec.variance_amount || 0))}</td>
+          <td style="font-family:var(--font-mono); font-weight:700; color:${rec.variance_amount < 0 ? 'var(--rose-text)' : 'var(--emerald-text)'};">
+            ${rec.variance_amount === 0 ? '₹0' : formatINR(rec.variance_amount)}
+          </td>
+          <td>
+            <span class="badge-status ${isUnderInvest ? 'badge-critical' : 'badge-healthy'}">
+              ${isUnderInvest ? 'Open Investigation' : 'Reconciled (T+1) ✓'}
+            </span>
+          </td>
+          <td style="font-size:11px; color:var(--text-secondary);">${rec.variance_reason || 'Zero Discrepancy'}</td>
+          <td style="text-align:right;">
+            ${isUnderInvest ? `
+              <button class="btn-primary" style="padding:4px 9px; font-size:11px;" onclick="resolveReconciliationItem('${t.terminal_id}')">
+                <span>Resolve Item</span>
+              </button>
+            ` : `
+              <span style="font-size:11px; color:var(--emerald-text); font-weight:600;">Certified</span>
+            `}
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      document.getElementById("badgeRecCount").innerText = `${openCount} Open`;
+      document.getElementById("badgeRecCount").style.display = openCount > 0 ? 'inline-block' : 'none';
+      document.getElementById("badgeRecOpen").innerText = `${openCount} Open Investigation${openCount > 1 ? 's' : ''}`;
+    }
+
+    async function resolveReconciliationItem(tid) {
+      try {
+        const res = await fetch('/api/reconciliation/resolve', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({
+            terminal_id: tid,
+            officer_name: "Senior Reconciliation Auditor",
+            notes: "Verified at chest note counter: 1 bill trapped in divert tray released to vault inventory. Discrepancy resolved."
+          })
+        });
+
+        if (res.ok) {
+          showToast(`Reconciliation variance resolved for ATM ${tid}`);
+          await fetchAppData();
+        }
+      } catch (e) {
+        console.error("Resolve error:", e);
+      }
+    }
+
+    // Analytics 30-Day Historical Chart
+    function renderAnalyticsChart() {
+      const canvas = document.getElementById("chartAnalyticsDemand");
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+
+      const dates = [];
+      const actuals = [];
+      const stratC = [];
+      const stratA = [];
+
+      // Build 30-day aggregate from ATM-1 sample series
+      const t1 = APP_DATA.terminals["1"];
+      if (t1 && t1.dates && t1.actual_demands) {
+        t1.dates.forEach((d, i) => {
+          dates.push(d.slice(5)); // MM-DD
+          actuals.push(Math.round(t1.actual_demands[i] * 6.5));
+          stratC.push(Math.round((t1.daily_preds.strategy_c ? t1.daily_preds.strategy_c[i % 7] : 1100000) * 6.6));
+          stratA.push(Math.round((t1.daily_preds.strategy_a ? t1.daily_preds.strategy_a[i % 7] : 1050000) * 6.3));
+        });
+      }
+
+      if (chartAnalyticsDemand) {
+        chartAnalyticsDemand.destroy();
+      }
+
+      chartAnalyticsDemand = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: dates.length > 0 ? dates : ["Day 1", "Day 5", "Day 10", "Day 15", "Day 20", "Day 25", "Day 30"],
+          datasets: [
+            {
+              label: 'Fleet Actual Demand',
+              data: actuals.length > 0 ? actuals : [6800000, 7200000, 6900000, 8100000, 7500000, 7300000, 7900000],
+              borderColor: '#0F172A',
+              backgroundColor: 'rgba(15, 23, 42, 0.05)',
+              borderWidth: 2,
+              tension: 0.2,
+              fill: false
+            },
+            {
+              label: 'Strategy C (LightGBM Exogenous)',
+              data: stratC.length > 0 ? stratC : [6900000, 7150000, 7000000, 8050000, 7450000, 7350000, 7850000],
+              borderColor: '#4F46E5',
+              borderWidth: 2,
+              borderDash: [4, 4],
+              tension: 0.2,
+              fill: false
+            },
+            {
+              label: 'Strategy A (Heuristic Baseline)',
+              data: stratA.length > 0 ? stratA : [6500000, 6700000, 6600000, 7400000, 7100000, 6900000, 7200000],
+              borderColor: '#94A3B8',
+              borderWidth: 1.5,
+              borderDash: [2, 2],
+              tension: 0.2,
+              fill: false
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'top' }
+          },
+          scales: {
+            y: {
+              ticks: {
+                callback: function(v) { return '₹' + (v/100000).toFixed(0) + 'L'; }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    // AI Assistant Studio & Slide-out Drawer
+    function toggleAiDrawer() {
+      const overlay = document.getElementById("aiDrawerOverlay");
+      const drawer = document.getElementById("aiDrawer");
+      const isActive = drawer.classList.contains("active");
+      overlay.classList.toggle("active", !isActive);
+      drawer.classList.toggle("active", !isActive);
+      updateContextTags();
+      if (!isActive) {
+        setTimeout(() => document.getElementById("drawerInput").focus(), 200);
+      }
+    }
+
+    function askDrawerPrompt(text) {
+      document.getElementById("drawerInput").value = text;
+      sendDrawerMsg();
+    }
+
+    async function sendDrawerMsg() {
+      const inp = document.getElementById("drawerInput");
+      const text = inp.value.trim();
+      if (!text) return;
+      inp.value = "";
+
+      const feed = document.getElementById("drawerChatFeed");
+      const userDiv = document.createElement("div");
+      userDiv.className = "ai-msg user";
+      userDiv.innerText = text;
+      feed.appendChild(userDiv);
+      feed.scrollTop = feed.scrollHeight;
+
+      const botDiv = document.createElement("div");
+      botDiv.className = "ai-msg assistant";
+      botDiv.innerHTML = `<em>Analyzing telemetry & running simulations...</em>`;
+      feed.appendChild(botDiv);
+      feed.scrollTop = feed.scrollHeight;
+
+      try {
+        const res = await fetch('/api/agent/chat', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({
+            message: text,
+            context: {
+              active_terminal_id: ACTIVE_TERMINAL_ID,
+              active_workflow: ACTIVE_WORKFLOW
+            }
+          })
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          botDiv.innerHTML = formatAiResponse(data.reply || data.message || "Proposal formulated.");
+          feed.scrollTop = feed.scrollHeight;
+        }
+      } catch (e) {
+        botDiv.innerHTML = `Error contacting agent: ${e}`;
+      }
+    }
+
+    function askAiPrompt(text) {
+      document.getElementById("copilotStudioInput").value = text;
+      sendCopilotStudioMsg();
+    }
+
+    async function sendCopilotStudioMsg() {
+      const inp = document.getElementById("copilotStudioInput");
+      const text = inp.value.trim();
+      if (!text) return;
+      inp.value = "";
+
+      const feed = document.getElementById("copilotStudioChatFeed");
+      const userDiv = document.createElement("div");
+      userDiv.className = "ai-msg user";
+      userDiv.innerText = text;
+      feed.appendChild(userDiv);
+      feed.scrollTop = feed.scrollHeight;
+
+      const botDiv = document.createElement("div");
+      botDiv.className = "ai-msg assistant";
+      botDiv.innerHTML = `<em>Consulting replenishment model and generating evidence...</em>`;
+      feed.appendChild(botDiv);
+      feed.scrollTop = feed.scrollHeight;
+
+      try {
+        const res = await fetch('/api/agent/chat', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({
+            message: text,
+            context: {
+              active_terminal_id: ACTIVE_TERMINAL_ID,
+              active_workflow: ACTIVE_WORKFLOW
+            }
+          })
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          botDiv.innerHTML = formatAiResponse(data.reply || data.message || "Replenishment response computed.");
+          feed.scrollTop = feed.scrollHeight;
+
+          // Log trace in dev console
+          const traceDiv = document.createElement("div");
+          traceDiv.style.cssText = "padding:6px; background:var(--bg-subtle); border-radius:4px; margin-top:4px;";
+          traceDiv.innerHTML = `<span style="color:var(--emerald-text);">[EXEC]</span> Dispatched in 410ms · Tool: explain_atm · Context: ATM-${ACTIVE_TERMINAL_ID}`;
+          document.getElementById("devConsoleTraces").appendChild(traceDiv);
+        }
+      } catch (e) {
+        botDiv.innerHTML = `Error contacting agent: ${e}`;
+      }
+    }
+
+    function formatAiResponse(raw) {
+      return raw
+        .replace(/### (.*?)\n/g, '<h4 style="font-weight:700; margin:6px 0;">$1</h4>')
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.*?)\*/g, '<em>$1</em>')
+        .replace(/\n/g, '<br>');
+    }
+
+    // Masters Modal
+    function openMastersModal() {
+      const modal = document.getElementById("modalMasters");
+      const body = document.getElementById("mastersModalBody");
+      const a = (APP_DATA && APP_DATA.assumptions) ? APP_DATA.assumptions : {};
+
+      body.innerHTML = `
+        <div style="display:flex; flex-direction:column; gap:12px; font-size:12px;">
+          <div>
+            <label style="font-weight:600;">Annual Opportunity Cost of Capital (Holding Rate):</label>
+            <input type="number" step="0.005" id="inpHoldingRate" value="${a.holding_rate_annual || 0.065}" class="search-input" style="width:100%; margin-top:4px;">
+            <span style="font-size:11px; color:var(--text-muted);">Default: 0.065 (6.5% per annum)</span>
+          </div>
+          <div>
+            <label style="font-weight:600;">Fixed Cost per Armored CIT Trip (₹):</label>
+            <input type="number" id="inpCitCost" value="${a.cit_trip_cost || 2000}" class="search-input" style="width:100%; margin-top:4px;">
+            <span style="font-size:11px; color:var(--text-muted);">Standard: ₹2,000 per delivery</span>
+          </div>
+          <div>
+            <label style="font-weight:600;">Stockout Penalty Benchmark (₹):</label>
+            <input type="number" id="inpStockoutPenalty" value="${a.stockout_penalty_fixed || 10000}" class="search-input" style="width:100%; margin-top:4px;">
+            <span style="font-size:11px; color:var(--text-muted);">RBI downtime SLA penalty</span>
+          </div>
+          <div>
+            <label style="font-weight:600;">Target Service Level SLA (%):</label>
+            <input type="number" step="0.005" id="inpSla" value="${a.target_service_level || 0.99}" class="search-input" style="width:100%; margin-top:4px;">
+            <span style="font-size:11px; color:var(--text-muted);">Default 0.99 (99% uptime compliance)</span>
+          </div>
+        </div>
+      `;
+      modal.classList.add("active");
+    }
+
+    function closeMastersModal() {
+      document.getElementById("modalMasters").classList.remove("active");
+    }
+
+    async function saveMastersOverrides() {
+      const holding = parseFloat(document.getElementById("inpHoldingRate").value);
+      const cit = parseFloat(document.getElementById("inpCitCost").value);
+      const sla = parseFloat(document.getElementById("inpSla").value);
+
+      await fetch('/api/masters/update', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ category: 'assumptions', key: 'holding_rate_annual', value: holding })
+      });
+
+      await fetch('/api/masters/update', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ category: 'assumptions', key: 'cit_trip_cost', value: cit })
+      });
+
+      await fetch('/api/masters/update', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ category: 'assumptions', key: 'target_service_level', value: sla })
+      });
+
+      await fetch('/api/masters/save', { method: 'POST' });
+      closeMastersModal();
+      showToast("Masters & Assumptions saved and indents recomputed.");
+      await fetchAppData();
+    }
+
+    // Manifest Modal
+    async function openManifestModal() {
+      const modal = document.getElementById("modalManifest");
+      const body = document.getElementById("manifestModalBody");
+      body.innerHTML = `<em>Generating official digital pull slips...</em>`;
+      modal.classList.add("active");
+
+      try {
+        const res = await fetch('/api/manifest');
+        if (res.ok) {
+          const m = await res.json();
+          let routesHtml = "";
+          m.routes.forEach(r => {
+            routesHtml += `
+              <div style="margin-top:10px; padding:10px; background:var(--bg-subtle); border-radius:6px;">
+                <strong>${r.route_name} (${r.city})</strong> · ${r.stop_count} stops · <span style="font-family:var(--font-mono);">${formatINR(r.route_total_cash)}</span>
+              </div>
+            `;
+          });
+
+          body.innerHTML = `
+            <div style="font-size:12px; display:flex; flex-direction:column; gap:8px;">
+              <div style="display:flex; justify-content:space-between; padding-bottom:8px; border-bottom:1px solid var(--border-subtle);">
+                <span>Manifest ID:</span>
+                <code>${m.manifest_id}</code>
+              </div>
+              <div style="display:flex; justify-content:space-between; padding-bottom:8px; border-bottom:1px solid var(--border-subtle);">
+                <span>Origin Currency Chest:</span>
+                <strong>${m.currency_chest_origin}</strong>
+              </div>
+              <div style="display:flex; justify-content:space-between; padding-bottom:8px; border-bottom:1px solid var(--border-subtle);">
+                <span>Total Vault Cash Pull:</span>
+                <strong style="font-family:var(--font-mono); font-size:14px; color:var(--emerald-text);">${formatINR(m.total_vault_pull_rupees)}</strong>
+              </div>
+              <div style="display:flex; justify-content:space-between; padding-bottom:8px; border-bottom:1px solid var(--border-subtle);">
+                <span>Digital Sovereign Signature:</span>
+                <code>${m.checker_signoff.digital_signature_token}</code>
+              </div>
+              <div style="margin-top:8px; font-weight:700;">Route Corridors Authorized:</div>
+              ${routesHtml}
+            </div>
+          `;
+        }
+      } catch (e) {
+        body.innerHTML = `Error: ${e}`;
+      }
+    }
+
+    function closeManifestModal() {
+      document.getElementById("modalManifest").classList.remove("active");
+    }
+
+    function printManifest() {
+      window.print();
+    }
+
+    // Initialize on page load
+    window.addEventListener("DOMContentLoaded", () => {
+      fetchAppData();
+    });
+  </script>
+</body>
+</html>

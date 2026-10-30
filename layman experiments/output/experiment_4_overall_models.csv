@@ -1,0 +1,11 @@
+Model,Daily_WAPE_%,Daily_Rel_Imp_%,7Day_WAPE_%,7Day_Rel_Imp_%,Bias_%
+Model_A_History_Only,21.75,-16.04,12.13,-29.54,-3.22
+Model_B_History_Calendar,18.74,0.0,9.37,0.0,-2.76
+Model_C_History_Cal_Holidays,18.56,0.97,9.18,2.03,-2.61
+Model_D_History_Cal_Weather,18.71,0.19,9.28,0.89,-2.71
+Model_F_Full_Stack,18.5,1.27,9.08,3.05,-2.58
+Model_F_minus_Weather,18.56,0.97,9.18,2.03,-2.61
+Model_F_minus_Holidays,18.71,0.19,9.28,0.89,-2.71
+Model_F_minus_Calendar,21.55,-14.98,11.71,-25.02,-3.31
+Model_F_minus_History,17.98,4.08,8.77,6.4,-2.13
+Seasonal_Exp3,21.09,-12.51,10.35,-10.46,0.72

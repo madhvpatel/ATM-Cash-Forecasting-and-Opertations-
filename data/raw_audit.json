@@ -1,0 +1,14 @@
+{
+  "archives": 25,
+  "snapshot_files": 72384,
+  "snapshot_rows": 7238400,
+  "days": 754,
+  "terminals": 100,
+  "first_snapshot": "2024-09-01T00:00:00",
+  "last_snapshot": "2026-09-24T23:45:00",
+  "expected_snapshots": 72384,
+  "missing_snapshots": 0,
+  "duplicate_snapshots": 0,
+  "zero_end_cash_rows": 20950,
+  "total_cash_out": 48923752400
+}

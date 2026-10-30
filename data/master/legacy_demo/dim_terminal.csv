@@ -1,0 +1,7 @@
+terminal_id,terminal_code,terminal_type,is_crm,cra_id,region_id,location_id,site_type,operating_model,ownership,status,installation_date,service_window_start,service_window_end
+1001,CRM-MUM-001,CRM,True,1,11,1001,Transit hub,Onsite,Bank,Active,2023-01-15,08:00,11:00
+1002,ATM-MUM-002,ATM,False,1,11,1002,Residential high street,Onsite,Bank,Active,2023-01-15,08:00,12:00
+1003,ATM-PAR-003,ATM,False,1,11,1003,Transit hub,Onsite,Bank,Active,2023-01-15,08:00,10:30
+1004,ATM-WOR-004,ATM,False,1,11,1004,Commercial district,Onsite,Bank,Active,2023-01-15,09:00,13:00
+1005,ATM-MAH-005,ATM,False,1,11,1005,Mixed retail,Onsite,Bank,Active,2023-01-15,08:30,12:30
+1006,ATM-PRB-006,ATM,False,1,11,1006,Office district,Onsite,Bank,Active,2023-01-15,08:00,11:30

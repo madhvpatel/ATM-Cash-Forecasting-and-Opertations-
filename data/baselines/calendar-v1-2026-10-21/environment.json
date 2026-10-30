@@ -1,0 +1,13 @@
+{
+  "python": "3.10.14",
+  "platform": "macOS-15.1-arm64-arm-64bit",
+  "packages": {
+    "numpy": "2.2.6",
+    "pandas": "2.3.3",
+    "scikit-learn": "1.7.2",
+    "lightgbm": "4.7.0",
+    "joblib": "1.5.3",
+    "matplotlib": "3.10.9"
+  },
+  "note": "Recorded during implementation; packages were not installed or changed in this run. LightGBM import unavailable due to native runtime; sklearn fallback used."
+}

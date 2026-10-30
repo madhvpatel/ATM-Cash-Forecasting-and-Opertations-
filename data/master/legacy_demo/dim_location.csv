@@ -1,0 +1,8 @@
+location_id,region_id,location_name,location_type,latitude,longitude,address_line,pincode
+5001,11,Dadar Regional Cash Centre,Vault,19.0212,72.8426,"Naigaon Cross Road, Dadar East",400014
+1001,11,Dadar TT Circle,Terminal,19.0183,72.8444,"Dadar East, Mumbai",400014
+1002,11,Matunga Central,Terminal,19.0274,72.8553,"Lakhamsi Nappu Road, Matunga",400019
+1003,11,Parel Station,Terminal,18.9977,72.8376,"Dr Babasaheb Ambedkar Road, Parel",400012
+1004,11,Worli Naka,Terminal,19.0114,72.8174,"Dr Annie Besant Road, Worli",400018
+1005,11,Mahim Junction,Terminal,19.0402,72.8427,"L J Road, Mahim",400016
+1006,11,Prabhadevi Business Centre,Terminal,19.0148,72.8295,"Sayani Road, Prabhadevi",400025

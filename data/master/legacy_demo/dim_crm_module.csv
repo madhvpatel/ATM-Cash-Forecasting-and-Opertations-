@@ -1,0 +1,4 @@
+module_id,terminal_id,module_type,purpose,can_dispense,max_note_count
+1,1001,Escrow,Temporarily holds presented notes until customer confirmation,False,200
+2,1001,All-in collection,"Stores unfit, unsupported, and overflow accepted notes",False,3000
+3,1001,Reject/retract bin,"Stores suspect, rejected, or retracted notes for reconciliation",False,250

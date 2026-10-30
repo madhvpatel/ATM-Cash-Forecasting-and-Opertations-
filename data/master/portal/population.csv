@@ -1,0 +1,4 @@
+population_id,what,terminal_ids,terminal_count,join_key,do_not_join_with
+cash_files,100 synthetic cash-file ATMs,1-100,100,terminal_id,legacy_demo
+maharashtra_pilot,Maharashtra subset of cash_files used by the simulated study,"1,2,3,4,5,6,7,8",8,terminal_id,legacy_demo
+legacy_demo,Six-terminal operations demo,"1001,1002,1003,1004,1005,1006",6,terminal_id,cash_files

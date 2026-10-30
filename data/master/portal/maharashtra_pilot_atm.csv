@@ -1,0 +1,9 @@
+terminal_id,terminal_code,city,state,rbi_region,location,location_label,weather_series,population
+1,SYNATM0001,MUMBAI,Maharashtra,Mumbai,MUMBAI - RAILWAY STATION CONCOURSE,RAILWAY STATION CONCOURSE,maharashtra_experiment,cash_files
+2,SYNATM0002,MUMBAI,Maharashtra,Mumbai,MUMBAI - AIRPORT TERMINAL,AIRPORT TERMINAL,maharashtra_experiment,cash_files
+3,SYNATM0003,PUNE,Maharashtra,Mumbai,PUNE - CITY CENTRE MALL,CITY CENTRE MALL,maharashtra_experiment,cash_files
+4,SYNATM0004,PUNE,Maharashtra,Mumbai,PUNE - EDUCATION COMPLEX,EDUCATION COMPLEX,maharashtra_experiment,cash_files
+5,SYNATM0005,NAGPUR,Maharashtra,Nagpur,NAGPUR - FUEL PLAZA,FUEL PLAZA,maharashtra_experiment,cash_files
+6,SYNATM0006,NAGPUR,Maharashtra,Nagpur,NAGPUR - BEACH / TOURIST ZONE,BEACH / TOURIST ZONE,maharashtra_experiment,cash_files
+7,SYNATM0007,NASHIK,Maharashtra,Mumbai,NASHIK - METRO STATION CONCOURSE,METRO STATION CONCOURSE,maharashtra_experiment,cash_files
+8,SYNATM0008,NASHIK,Maharashtra,Mumbai,NASHIK - MEDICAL COLLEGE HOSPITAL,MEDICAL COLLEGE HOSPITAL,maharashtra_experiment,cash_files

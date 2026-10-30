@@ -1,0 +1,241 @@
+{
+  "frozen_on": "2026-10-21",
+  "dataset": "cash_files",
+  "purpose": "Pre-change source, reference and reported benchmark baseline; no new accuracy claim",
+  "files": [
+    {
+      "path": "src/atm_cash_forecast/simulation.py",
+      "sha256": "294d80ac4fe4de2ca8573b173195e2b0af551b3e33a0af5d000a8415566e0f07"
+    },
+    {
+      "path": "src/atm_cash_forecast/demand_artifact.py",
+      "sha256": "f7d19428f18ec6d83b4ca91e7914d3454f3e46061931e2378e2fcaf1e31a1421"
+    },
+    {
+      "path": "src/atm_cash_forecast/data_catalog.py",
+      "sha256": "eace81e10cf375460cb6b26637baf7600755630658a9eff55b299f714cde86ee"
+    },
+    {
+      "path": "src/atm_cash_forecast/config.py",
+      "sha256": "798dcf7e97d6a18984df38fac07b8010f88757b0fa6fd3d7c6e4d03d517d7b0b"
+    },
+    {
+      "path": "src/atm_cash_forecast/raw_cash_files.py",
+      "sha256": "51aef6b3ee4bc43b1f24a621b45262b5c8bd9f721d890adadcf2fe7cc3120025"
+    },
+    {
+      "path": "src/atm_cash_forecast/regional.py",
+      "sha256": "e86b0eb33245eb049b50dfe97d1a06f93b6d186f898bb4323cb8e58f026c3192"
+    },
+    {
+      "path": "src/atm_cash_forecast/__init__.py",
+      "sha256": "27810c731a74b4d0d680005061577137dcd96fcc1d3a3ca1aa96be52ced41e74"
+    },
+    {
+      "path": "src/atm_cash_forecast/demand_evaluation.py",
+      "sha256": "d4fe3c78f4e6866f4cbe143a4d3e5ef96ff3312413bab7b782be9fa32941b8a0"
+    },
+    {
+      "path": "src/atm_cash_forecast/features.py",
+      "sha256": "d2aec8ace9e45ffc98e18c9402d9c9a7e033a1daa4c43b32983ab5adc25dd3f8"
+    },
+    {
+      "path": "src/atm_cash_forecast/model.py",
+      "sha256": "3cbb400d65c93052325eb973c6773b5a83f6fcf73e548138804ae9c3a66ceb7d"
+    },
+    {
+      "path": "src/atm_cash_forecast/recommendation.py",
+      "sha256": "d99012803f3097e3291e4a79c80578df213003e3576f12b3c432a799dc7446dd"
+    },
+    {
+      "path": "src/atm_cash_forecast/dashboard.py",
+      "sha256": "01dc3cc02586115a7bb7deacad3fed4b159d0802ed4cb8c779faa4ad158b7a47"
+    },
+    {
+      "path": "src/atm_cash_forecast/calendar.py",
+      "sha256": "cae4cfb2200f4c748bde0c748660c4e828aea389d30cfd1c86edf3cf36115554"
+    },
+    {
+      "path": "src/atm_cash_forecast/cli.py",
+      "sha256": "0b07e887ebc665973b54f8acfa44c40364f1427b287a21bc83dd542540e0b91a"
+    },
+    {
+      "path": "src/atm_cash_forecast/pipeline.py",
+      "sha256": "98e8fd4bc884b7542b8924985b6da350bc93e9e88d39ccd8c04499b571f9f2b7"
+    },
+    {
+      "path": "src/atm_cash_forecast/crm_data.py",
+      "sha256": "c017ba1f5c7cda0995e824a266659da70ea569dd981f36a3bc0b83f9dbe9b06b"
+    },
+    {
+      "path": "src/atm_cash_forecast/provenance.py",
+      "sha256": "b58c5e9dba1c3f7d56a3a0c25310965b0c3c2a3ba825a0767b1e03f2d117d1e5"
+    },
+    {
+      "path": "src/atm_cash_forecast/data.py",
+      "sha256": "fa517dcd91efef10742a906afcc6845dada82af44490fa046f5cf37f3e78ef79"
+    },
+    {
+      "path": "src/atm_cash_forecast/reporting.py",
+      "sha256": "51ab301022ed3bfa086b6e471209c4d08f2475cc072ccf84e906bc2a948d8cd6"
+    },
+    {
+      "path": "data/master/cash_files/terminal_metadata.csv",
+      "sha256": "b58fb34c92ebc1595731681664a46479b116412728657adef3501040730a8af5"
+    },
+    {
+      "path": "data/master/cash_files/dim_calendar.csv",
+      "sha256": "f30222d0ea6a97f98ae8b981a90740ca4fcbced5e55847e9009a8a966c541649"
+    },
+    {
+      "path": "data/master/cash_files/paydays.csv",
+      "sha256": "200c6e93e5b383b660d2e35e5c2d9c7a6b82e765804a9d5b734670611f8c2135"
+    },
+    {
+      "path": "data/master/cash_files/holidays.csv",
+      "sha256": "06024c8aeecd2b148e390c807dd2e0898820dd0a6dab8911faf61b66cde91e70"
+    },
+    {
+      "path": "outputs/raw_cash_experiment/summary.json",
+      "sha256": "df72bf942550761e3aab2378c8b2eee9e0b5a08f6c8b5c04b153142a36963c4a"
+    },
+    {
+      "path": "outputs/raw_cash_experiment/all_model_metrics.csv",
+      "sha256": "2a842a93cafcddc728dd7f383e83f5cb0ce79f95a1862989c54922d2ce8e4b04"
+    },
+    {
+      "path": "scripts/run_raw_cash_experiment.py",
+      "sha256": "f34c351c206ae67f7eec8a73d2c37a8689f366e920680e61914ff3947716430c"
+    },
+    {
+      "path": "data/processed/daily_cash_out.csv",
+      "sha256": "f6a3206b9cdc3585a2b2c518a98abacc28bc334fef7cfd7c7626996c8dda0dda",
+      "stored_in_baseline": false
+    },
+    {
+      "path": "data/raw/ATM_Raw_15Min_XLSX_CashFiles_PART5_20260501_20260924/ATM_CashFiles_15Min_XLSX_20260601_20260630.tar.gz",
+      "sha256": "cd1b6c296e8b7c2815a28105cbe99a7f7caad4aef0a9ea71fc82689cc2d32add",
+      "stored_in_baseline": false
+    },
+    {
+      "path": "data/raw/ATM_Raw_15Min_XLSX_CashFiles_PART5_20260501_20260924/ATM_CashFiles_15Min_XLSX_20260901_20260924.tar.gz",
+      "sha256": "15ae682a9afe03b78108f9d705ac3aed1b2dabfb0735320699ad227078a6f634",
+      "stored_in_baseline": false
+    },
+    {
+      "path": "data/raw/ATM_Raw_15Min_XLSX_CashFiles_PART5_20260501_20260924/ATM_CashFiles_15Min_XLSX_20260501_20260531.tar.gz",
+      "sha256": "d93059f0202bc4cfadbac70edca1bf5439045bd8bebc1372ebf65c1784fd154a",
+      "stored_in_baseline": false
+    },
+    {
+      "path": "data/raw/ATM_Raw_15Min_XLSX_CashFiles_PART5_20260501_20260924/ATM_CashFiles_15Min_XLSX_20260701_20260731.tar.gz",
+      "sha256": "cb709e676a28145fd80d688007f55507a57d9652e72161c979a1972afa88033d",
+      "stored_in_baseline": false
+    },
+    {
+      "path": "data/raw/ATM_Raw_15Min_XLSX_CashFiles_PART5_20260501_20260924/ATM_CashFiles_15Min_XLSX_20260801_20260831.tar.gz",
+      "sha256": "5c498e00d393ee04cf2dba7d2c520c33da8ee1a70baee9c87f2f9ac9a644d038",
+      "stored_in_baseline": false
+    },
+    {
+      "path": "data/raw/ATM_Raw_15Min_XLSX_CashFiles_PART4_20251201_20260430/ATM_CashFiles_15Min_XLSX_20251201_20251231.tar.gz",
+      "sha256": "7504ee4a872caeb9bce0bad09639c0b60effbe00978af11e7437afb522e9a02c",
+      "stored_in_baseline": false
+    },
+    {
+      "path": "data/raw/ATM_Raw_15Min_XLSX_CashFiles_PART4_20251201_20260430/ATM_CashFiles_15Min_XLSX_20260301_20260331.tar.gz",
+      "sha256": "556191d31736144e1b607063012b50ab187b25243903e4186e07aae7e4d4e52f",
+      "stored_in_baseline": false
+    },
+    {
+      "path": "data/raw/ATM_Raw_15Min_XLSX_CashFiles_PART4_20251201_20260430/ATM_CashFiles_15Min_XLSX_20260101_20260131.tar.gz",
+      "sha256": "a757f983f80d29bc195dc85145f0d55f38658aff03f5f9fad0f8df142664686f",
+      "stored_in_baseline": false
+    },
+    {
+      "path": "data/raw/ATM_Raw_15Min_XLSX_CashFiles_PART4_20251201_20260430/ATM_CashFiles_15Min_XLSX_20260201_20260228.tar.gz",
+      "sha256": "68455a397ea94560c38d41903382380428ec2603ad6fc09fd5ba54bb215550f1",
+      "stored_in_baseline": false
+    },
+    {
+      "path": "data/raw/ATM_Raw_15Min_XLSX_CashFiles_PART4_20251201_20260430/ATM_CashFiles_15Min_XLSX_20260401_20260430.tar.gz",
+      "sha256": "cd160a21a999e72d46b32ec30f48db522b2ef38d6c0170cb58ae9cf8569858a5",
+      "stored_in_baseline": false
+    },
+    {
+      "path": "data/raw/ATM_Raw_15Min_XLSX_CashFiles_PART3_20250701_20251130/ATM_CashFiles_15Min_XLSX_20250801_20250831.tar.gz",
+      "sha256": "9c519e72e18977d9ef61321feaca7d2797bfc8e4c51fa16de638f73bdf37c755",
+      "stored_in_baseline": false
+    },
+    {
+      "path": "data/raw/ATM_Raw_15Min_XLSX_CashFiles_PART3_20250701_20251130/ATM_CashFiles_15Min_XLSX_20250701_20250731.tar.gz",
+      "sha256": "4fdef55992c19a908f9be47401c7248e36c021cc5c8f712d763b9c634288f84e",
+      "stored_in_baseline": false
+    },
+    {
+      "path": "data/raw/ATM_Raw_15Min_XLSX_CashFiles_PART3_20250701_20251130/ATM_CashFiles_15Min_XLSX_20251101_20251130.tar.gz",
+      "sha256": "07c9e96ab1e4e4d401461baa607653c25c3206ca30177805707f65048ffb2016",
+      "stored_in_baseline": false
+    },
+    {
+      "path": "data/raw/ATM_Raw_15Min_XLSX_CashFiles_PART3_20250701_20251130/ATM_CashFiles_15Min_XLSX_20250901_20250930.tar.gz",
+      "sha256": "ee3b765a742ab03bbd5943c99b2127f544bc063e0fb285f8e3b298d7fa985b58",
+      "stored_in_baseline": false
+    },
+    {
+      "path": "data/raw/ATM_Raw_15Min_XLSX_CashFiles_PART3_20250701_20251130/ATM_CashFiles_15Min_XLSX_20251001_20251031.tar.gz",
+      "sha256": "2372c0d11ad5cc8aef33e65c453bfab40ec5086a5cd7acfd041a167643188db7",
+      "stored_in_baseline": false
+    },
+    {
+      "path": "data/raw/ATM_Raw_15Min_XLSX_CashFiles_PART2_20250201_20250630/ATM_CashFiles_15Min_XLSX_20250401_20250430.tar.gz",
+      "sha256": "fdbbbc7d34571b3b66313c625b394db634c3bdd0c598d082fd3cdde7f28b2c53",
+      "stored_in_baseline": false
+    },
+    {
+      "path": "data/raw/ATM_Raw_15Min_XLSX_CashFiles_PART2_20250201_20250630/ATM_CashFiles_15Min_XLSX_20250201_20250228.tar.gz",
+      "sha256": "b8bfc9b596c0c225a1662a53460e685e1a70ae40f6b47a47789b877dca7ae68b",
+      "stored_in_baseline": false
+    },
+    {
+      "path": "data/raw/ATM_Raw_15Min_XLSX_CashFiles_PART2_20250201_20250630/ATM_CashFiles_15Min_XLSX_20250301_20250331.tar.gz",
+      "sha256": "7b3f3d2e942247627ec1c06aeff86ca13dfd75493452c22b6646baafd871ac1b",
+      "stored_in_baseline": false
+    },
+    {
+      "path": "data/raw/ATM_Raw_15Min_XLSX_CashFiles_PART2_20250201_20250630/ATM_CashFiles_15Min_XLSX_20250501_20250531.tar.gz",
+      "sha256": "986d2364dc42cc5eb804e1b49ff2c794850c766d4154d0a1bf1fa526482f6aab",
+      "stored_in_baseline": false
+    },
+    {
+      "path": "data/raw/ATM_Raw_15Min_XLSX_CashFiles_PART2_20250201_20250630/ATM_CashFiles_15Min_XLSX_20250601_20250630.tar.gz",
+      "sha256": "7fbfaf9e8feeb5e871366e770f2603b374081a1783d64796fc8f3133b8832e72",
+      "stored_in_baseline": false
+    },
+    {
+      "path": "data/raw/ATM_Raw_15Min_XLSX_CashFiles_PART1_20240901_20250131/ATM_CashFiles_15Min_XLSX_20240901_20240930.tar.gz",
+      "sha256": "d00202e050df034426b79cda9bf67985c729c28ae3b8f12338de31c7c3bc7cd6",
+      "stored_in_baseline": false
+    },
+    {
+      "path": "data/raw/ATM_Raw_15Min_XLSX_CashFiles_PART1_20240901_20250131/ATM_CashFiles_15Min_XLSX_20250101_20250131.tar.gz",
+      "sha256": "fcc523d21abd517c266cf4e03c58d78968cc3daf6cd346048935bffe58d6cde3",
+      "stored_in_baseline": false
+    },
+    {
+      "path": "data/raw/ATM_Raw_15Min_XLSX_CashFiles_PART1_20240901_20250131/ATM_CashFiles_15Min_XLSX_20241001_20241031.tar.gz",
+      "sha256": "237ebee46c34b8cef3fd58eb96cea4012832d890cdc0e5d65bc8632914158f81",
+      "stored_in_baseline": false
+    },
+    {
+      "path": "data/raw/ATM_Raw_15Min_XLSX_CashFiles_PART1_20240901_20250131/ATM_CashFiles_15Min_XLSX_20241201_20241231.tar.gz",
+      "sha256": "a004b00e16ed1a0d2ee49e62c4d445f998c93d1a24e25bda60b6b99f70f5dfbb",
+      "stored_in_baseline": false
+    },
+    {
+      "path": "data/raw/ATM_Raw_15Min_XLSX_CashFiles_PART1_20240901_20250131/ATM_CashFiles_15Min_XLSX_20241101_20241130.tar.gz",
+      "sha256": "5156e74f1a5ab9d2c6ee7e55d74f08c6ee33b799c202184f8da093c8a0554df9",
+      "stored_in_baseline": false
+    }
+  ]
+}

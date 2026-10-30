@@ -1,0 +1,5 @@
+Slice,N_ATM_Days,Demand_Share_%,Hist_Only (A),Hist+Cal (B),Hist+Cal+Holidays (C),Full Stack (F),Exp3 Seasonal
+All Days,3080,100.0,21.75,18.74,18.56,18.5,21.09
+Regional Holiday Days,176,6.5,23.95,24.17,22.56,23.15,23.8
+Payday Days,272,9.5,21.1,19.21,19.01,18.8,20.8
+Ordinary Days,2632,83.9,21.65,18.27,18.2,18.11,20.91

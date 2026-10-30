@@ -1,0 +1,169 @@
+{
+  "assumptions": {
+    "holding_rate_annual": 0.065,
+    "cit_trip_cost": 2000.0,
+    "stockout_penalty_fixed": 10000.0,
+    "emergency_refill_premium": 3500.0,
+    "unmet_demand_penalty_rate": 0.01,
+    "target_service_level": 0.99,
+    "target_cer_buffer": 0.7,
+    "default_cassette_capacity": 6000000.0
+  },
+  "terminal_configs": {
+    "1": {
+      "capacity": 6000000.0,
+      "serviced_by": "CIT",
+      "cycle_days": 7,
+      "site_type": "RAILWAY STATION CONCOURSE",
+      "city": "MUMBAI"
+    },
+    "2": {
+      "capacity": 6000000.0,
+      "serviced_by": "CIT",
+      "cycle_days": 7,
+      "site_type": "AIRPORT TERMINAL T2",
+      "city": "MUMBAI"
+    },
+    "3": {
+      "capacity": 6000000.0,
+      "serviced_by": "CIT",
+      "cycle_days": 7,
+      "site_type": "CITY CENTRE MALL",
+      "city": "PUNE"
+    },
+    "4": {
+      "capacity": 3500000.0,
+      "serviced_by": "BRANCH",
+      "cycle_days": 3,
+      "site_type": "IT TECH PARK CAMPUS",
+      "city": "PUNE"
+    },
+    "5": {
+      "capacity": 5000000.0,
+      "serviced_by": "CIT",
+      "cycle_days": 7,
+      "site_type": "COMMERCIAL CBD / FUEL PLAZA",
+      "city": "NAGPUR"
+    },
+    "6": {
+      "capacity": 6000000.0,
+      "serviced_by": "CIT",
+      "cycle_days": 7,
+      "site_type": "TOURIST PROMENADE",
+      "city": "NAGPUR"
+    },
+    "7": {
+      "capacity": 6000000.0,
+      "serviced_by": "CIT",
+      "cycle_days": 7,
+      "site_type": "METRO STATION CONCOURSE",
+      "city": "NASHIK"
+    },
+    "8": {
+      "capacity": 3500000.0,
+      "serviced_by": "BRANCH",
+      "cycle_days": 3,
+      "site_type": "MIDC INDUSTRIAL ESTATE",
+      "city": "NASHIK"
+    }
+  },
+  "exogenous_events": [
+    {
+      "id": "EVT_01",
+      "name": "Monsoon Orange Alert",
+      "city": "MUMBAI",
+      "start_date": "2026-08-28",
+      "end_date": "2026-08-30",
+      "demand_multiplier": 0.82,
+      "notes": "Heavy localized waterlogging reduces footfall near street concourses."
+    },
+    {
+      "id": "EVT_02",
+      "name": "Corporate Salary Surge",
+      "city": "ALL",
+      "start_date": "2026-08-31",
+      "end_date": "2026-09-04",
+      "demand_multiplier": 1.28,
+      "notes": "Month-end salary dispersal spike across commercial & IT zones."
+    },
+    {
+      "id": "EVT_03",
+      "name": "Ganesh Chaturthi Festive Influx",
+      "city": "PUNE",
+      "start_date": "2026-09-04",
+      "end_date": "2026-09-07",
+      "demand_multiplier": 1.45,
+      "notes": "Festival bazaar cash withdrawals at peak demand."
+    },
+    {
+      "id": "EVT_04",
+      "name": "Mid-Month Pension Credit",
+      "city": "NAGPUR",
+      "start_date": "2026-09-10",
+      "end_date": "2026-09-12",
+      "demand_multiplier": 1.15,
+      "notes": "Senior citizen pension credits at post & bank branches."
+    }
+  ],
+  "approved_indents": {
+    "1": {
+      "approved_at": "2026-10-27 02:49:23",
+      "approved_indent": 2800000.0,
+      "notes": "Fleet Batch Authorization"
+    },
+    "2": {
+      "approved_at": "2026-10-27 02:49:23",
+      "approved_indent": 4087000.0,
+      "notes": "Fleet Batch Authorization"
+    },
+    "3": {
+      "approved_at": "2026-10-27 02:49:23",
+      "approved_indent": 3790900.0,
+      "notes": "Fleet Batch Authorization"
+    },
+    "4": {
+      "approved_at": "2026-10-27 02:49:23",
+      "approved_indent": 440747.0,
+      "notes": "Fleet Batch Authorization"
+    },
+    "5": {
+      "approved_at": "2026-10-27 02:49:23",
+      "approved_indent": 2255600.0,
+      "notes": "Fleet Batch Authorization"
+    },
+    "6": {
+      "approved_at": "2026-10-27 02:49:23",
+      "approved_indent": 4042800.0,
+      "notes": "Fleet Batch Authorization"
+    },
+    "7": {
+      "approved_at": "2026-10-27 02:49:23",
+      "approved_indent": 3182900.0,
+      "notes": "Fleet Batch Authorization"
+    },
+    "8": {
+      "approved_at": "2026-10-27 02:49:23",
+      "approved_indent": 100722.0,
+      "notes": "Fleet Batch Authorization"
+    }
+  },
+  "checker_overrides": {
+    "1": {
+      "terminal_id": "1",
+      "maker_proposed_indent": 3395200.0,
+      "checker_custom_indent": 2800000.0,
+      "delta_rupees": -595200.0,
+      "reason": "chest has limited 500 notes",
+      "actor": "Checker (AI Copilot)",
+      "timestamp": "2026-10-27 01:56:06"
+    }
+  },
+  "is_manifest_locked": true,
+  "manifest_lock_info": {
+    "manifest_id": "CIT-MANIFEST-20261027-MAH-01",
+    "locked_at": "2026-10-27 02:49:49",
+    "officer_name": "Chief Treasury Officer",
+    "total_rupees": 20700669.0,
+    "digital_signature": "SIG-AUTH-0783930538203213"
+  }
+}

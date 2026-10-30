@@ -1,0 +1,101 @@
+terminal_id,city,state,rbi_region,timezone,effective_from,effective_to,mapping_status,source
+1,MUMBAI,Maharashtra,Mumbai,Asia/Kolkata,2024-09-01,2026-12-28,curated_region_proxy,terminal_metadata.csv + CITY_GROUPS
+2,MUMBAI,Maharashtra,Mumbai,Asia/Kolkata,2024-09-01,2026-12-28,curated_region_proxy,terminal_metadata.csv + CITY_GROUPS
+3,PUNE,Maharashtra,Mumbai,Asia/Kolkata,2024-09-01,2026-12-28,curated_region_proxy,terminal_metadata.csv + CITY_GROUPS
+4,PUNE,Maharashtra,Mumbai,Asia/Kolkata,2024-09-01,2026-12-28,curated_region_proxy,terminal_metadata.csv + CITY_GROUPS
+5,NAGPUR,Maharashtra,Nagpur,Asia/Kolkata,2024-09-01,2026-12-28,curated_region_proxy,terminal_metadata.csv + CITY_GROUPS
+6,NAGPUR,Maharashtra,Nagpur,Asia/Kolkata,2024-09-01,2026-12-28,curated_region_proxy,terminal_metadata.csv + CITY_GROUPS
+7,NASHIK,Maharashtra,Mumbai,Asia/Kolkata,2024-09-01,2026-12-28,curated_region_proxy,terminal_metadata.csv + CITY_GROUPS
+8,NASHIK,Maharashtra,Mumbai,Asia/Kolkata,2024-09-01,2026-12-28,curated_region_proxy,terminal_metadata.csv + CITY_GROUPS
+9,DELHI,Delhi,New Delhi,Asia/Kolkata,2024-09-01,2026-12-28,curated_region_proxy,terminal_metadata.csv + CITY_GROUPS
+10,DELHI,Delhi,New Delhi,Asia/Kolkata,2024-09-01,2026-12-28,curated_region_proxy,terminal_metadata.csv + CITY_GROUPS
+11,GURUGRAM,Haryana,Chandigarh,Asia/Kolkata,2024-09-01,2026-12-28,curated_region_proxy,terminal_metadata.csv + CITY_GROUPS
+12,GURUGRAM,Haryana,Chandigarh,Asia/Kolkata,2024-09-01,2026-12-28,curated_region_proxy,terminal_metadata.csv + CITY_GROUPS
+13,NOIDA,Uttar Pradesh,Kanpur,Asia/Kolkata,2024-09-01,2026-12-28,curated_region_proxy,terminal_metadata.csv + CITY_GROUPS
+14,NOIDA,Uttar Pradesh,Kanpur,Asia/Kolkata,2024-09-01,2026-12-28,curated_region_proxy,terminal_metadata.csv + CITY_GROUPS
+15,LUCKNOW,Uttar Pradesh,Lucknow,Asia/Kolkata,2024-09-01,2026-12-28,curated_region_proxy,terminal_metadata.csv + CITY_GROUPS
+16,LUCKNOW,Uttar Pradesh,Lucknow,Asia/Kolkata,2024-09-01,2026-12-28,curated_region_proxy,terminal_metadata.csv + CITY_GROUPS
+17,VARANASI,Uttar Pradesh,Kanpur,Asia/Kolkata,2024-09-01,2026-12-28,curated_region_proxy,terminal_metadata.csv + CITY_GROUPS
+18,VARANASI,Uttar Pradesh,Kanpur,Asia/Kolkata,2024-09-01,2026-12-28,curated_region_proxy,terminal_metadata.csv + CITY_GROUPS
+19,JAIPUR,Rajasthan,Jaipur,Asia/Kolkata,2024-09-01,2026-12-28,curated_region_proxy,terminal_metadata.csv + CITY_GROUPS
+20,JAIPUR,Rajasthan,Jaipur,Asia/Kolkata,2024-09-01,2026-12-28,curated_region_proxy,terminal_metadata.csv + CITY_GROUPS
+21,AHMEDABAD,Gujarat,Ahmedabad,Asia/Kolkata,2024-09-01,2026-12-28,curated_region_proxy,terminal_metadata.csv + CITY_GROUPS
+22,AHMEDABAD,Gujarat,Ahmedabad,Asia/Kolkata,2024-09-01,2026-12-28,curated_region_proxy,terminal_metadata.csv + CITY_GROUPS
+23,SURAT,Gujarat,Ahmedabad,Asia/Kolkata,2024-09-01,2026-12-28,curated_region_proxy,terminal_metadata.csv + CITY_GROUPS
+24,SURAT,Gujarat,Ahmedabad,Asia/Kolkata,2024-09-01,2026-12-28,curated_region_proxy,terminal_metadata.csv + CITY_GROUPS
+25,VADODARA,Gujarat,Ahmedabad,Asia/Kolkata,2024-09-01,2026-12-28,curated_region_proxy,terminal_metadata.csv + CITY_GROUPS
+26,VADODARA,Gujarat,Ahmedabad,Asia/Kolkata,2024-09-01,2026-12-28,curated_region_proxy,terminal_metadata.csv + CITY_GROUPS
+27,BENGALURU,Karnataka,Bengaluru,Asia/Kolkata,2024-09-01,2026-12-28,curated_region_proxy,terminal_metadata.csv + CITY_GROUPS
+28,BENGALURU,Karnataka,Bengaluru,Asia/Kolkata,2024-09-01,2026-12-28,curated_region_proxy,terminal_metadata.csv + CITY_GROUPS
+29,MYSURU,Karnataka,Bengaluru,Asia/Kolkata,2024-09-01,2026-12-28,curated_region_proxy,terminal_metadata.csv + CITY_GROUPS
+30,MYSURU,Karnataka,Bengaluru,Asia/Kolkata,2024-09-01,2026-12-28,curated_region_proxy,terminal_metadata.csv + CITY_GROUPS
+31,HYDERABAD,Telangana,Hyderabad,Asia/Kolkata,2024-09-01,2026-12-28,curated_region_proxy,terminal_metadata.csv + CITY_GROUPS
+32,HYDERABAD,Telangana,Hyderabad,Asia/Kolkata,2024-09-01,2026-12-28,curated_region_proxy,terminal_metadata.csv + CITY_GROUPS
+33,WARANGAL,Telangana,Hyderabad,Asia/Kolkata,2024-09-01,2026-12-28,curated_region_proxy,terminal_metadata.csv + CITY_GROUPS
+34,WARANGAL,Telangana,Hyderabad,Asia/Kolkata,2024-09-01,2026-12-28,curated_region_proxy,terminal_metadata.csv + CITY_GROUPS
+35,CHENNAI,Tamil Nadu,Chennai,Asia/Kolkata,2024-09-01,2026-12-28,curated_region_proxy,terminal_metadata.csv + CITY_GROUPS
+36,CHENNAI,Tamil Nadu,Chennai,Asia/Kolkata,2024-09-01,2026-12-28,curated_region_proxy,terminal_metadata.csv + CITY_GROUPS
+37,COIMBATORE,Tamil Nadu,Chennai,Asia/Kolkata,2024-09-01,2026-12-28,curated_region_proxy,terminal_metadata.csv + CITY_GROUPS
+38,COIMBATORE,Tamil Nadu,Chennai,Asia/Kolkata,2024-09-01,2026-12-28,curated_region_proxy,terminal_metadata.csv + CITY_GROUPS
+39,MADURAI,Tamil Nadu,Chennai,Asia/Kolkata,2024-09-01,2026-12-28,curated_region_proxy,terminal_metadata.csv + CITY_GROUPS
+40,MADURAI,Tamil Nadu,Chennai,Asia/Kolkata,2024-09-01,2026-12-28,curated_region_proxy,terminal_metadata.csv + CITY_GROUPS
+41,KOCHI,Kerala,Kochi,Asia/Kolkata,2024-09-01,2026-12-28,curated_region_proxy,terminal_metadata.csv + CITY_GROUPS
+42,KOCHI,Kerala,Kochi,Asia/Kolkata,2024-09-01,2026-12-28,curated_region_proxy,terminal_metadata.csv + CITY_GROUPS
+43,THIRUVANANTHAPURAM,Kerala,Thiruvananthapuram,Asia/Kolkata,2024-09-01,2026-12-28,curated_region_proxy,terminal_metadata.csv + CITY_GROUPS
+44,THIRUVANANTHAPURAM,Kerala,Thiruvananthapuram,Asia/Kolkata,2024-09-01,2026-12-28,curated_region_proxy,terminal_metadata.csv + CITY_GROUPS
+45,KOZHIKODE,Kerala,Kochi,Asia/Kolkata,2024-09-01,2026-12-28,curated_region_proxy,terminal_metadata.csv + CITY_GROUPS
+46,KOZHIKODE,Kerala,Kochi,Asia/Kolkata,2024-09-01,2026-12-28,curated_region_proxy,terminal_metadata.csv + CITY_GROUPS
+47,KOLKATA,West Bengal,Kolkata,Asia/Kolkata,2024-09-01,2026-12-28,curated_region_proxy,terminal_metadata.csv + CITY_GROUPS
+48,KOLKATA,West Bengal,Kolkata,Asia/Kolkata,2024-09-01,2026-12-28,curated_region_proxy,terminal_metadata.csv + CITY_GROUPS
+49,DURGAPUR,West Bengal,Kolkata,Asia/Kolkata,2024-09-01,2026-12-28,curated_region_proxy,terminal_metadata.csv + CITY_GROUPS
+50,DURGAPUR,West Bengal,Kolkata,Asia/Kolkata,2024-09-01,2026-12-28,curated_region_proxy,terminal_metadata.csv + CITY_GROUPS
+51,BHUBANESWAR,Odisha,Bhubaneswar,Asia/Kolkata,2024-09-01,2026-12-28,curated_region_proxy,terminal_metadata.csv + CITY_GROUPS
+52,BHUBANESWAR,Odisha,Bhubaneswar,Asia/Kolkata,2024-09-01,2026-12-28,curated_region_proxy,terminal_metadata.csv + CITY_GROUPS
+53,CUTTACK,Odisha,Bhubaneswar,Asia/Kolkata,2024-09-01,2026-12-28,curated_region_proxy,terminal_metadata.csv + CITY_GROUPS
+54,CUTTACK,Odisha,Bhubaneswar,Asia/Kolkata,2024-09-01,2026-12-28,curated_region_proxy,terminal_metadata.csv + CITY_GROUPS
+55,PATNA,Bihar,Patna,Asia/Kolkata,2024-09-01,2026-12-28,curated_region_proxy,terminal_metadata.csv + CITY_GROUPS
+56,PATNA,Bihar,Patna,Asia/Kolkata,2024-09-01,2026-12-28,curated_region_proxy,terminal_metadata.csv + CITY_GROUPS
+57,RANCHI,Jharkhand,Ranchi,Asia/Kolkata,2024-09-01,2026-12-28,curated_region_proxy,terminal_metadata.csv + CITY_GROUPS
+58,RANCHI,Jharkhand,Ranchi,Asia/Kolkata,2024-09-01,2026-12-28,curated_region_proxy,terminal_metadata.csv + CITY_GROUPS
+59,JAMSHEDPUR,Jharkhand,Ranchi,Asia/Kolkata,2024-09-01,2026-12-28,curated_region_proxy,terminal_metadata.csv + CITY_GROUPS
+60,JAMSHEDPUR,Jharkhand,Ranchi,Asia/Kolkata,2024-09-01,2026-12-28,curated_region_proxy,terminal_metadata.csv + CITY_GROUPS
+61,CHANDIGARH,Chandigarh,Chandigarh,Asia/Kolkata,2024-09-01,2026-12-28,curated_region_proxy,terminal_metadata.csv + CITY_GROUPS
+62,CHANDIGARH,Chandigarh,Chandigarh,Asia/Kolkata,2024-09-01,2026-12-28,curated_region_proxy,terminal_metadata.csv + CITY_GROUPS
+63,LUDHIANA,Punjab,Chandigarh,Asia/Kolkata,2024-09-01,2026-12-28,curated_region_proxy,terminal_metadata.csv + CITY_GROUPS
+64,LUDHIANA,Punjab,Chandigarh,Asia/Kolkata,2024-09-01,2026-12-28,curated_region_proxy,terminal_metadata.csv + CITY_GROUPS
+65,AMRITSAR,Punjab,Chandigarh,Asia/Kolkata,2024-09-01,2026-12-28,curated_region_proxy,terminal_metadata.csv + CITY_GROUPS
+66,AMRITSAR,Punjab,Chandigarh,Asia/Kolkata,2024-09-01,2026-12-28,curated_region_proxy,terminal_metadata.csv + CITY_GROUPS
+67,BHOPAL,Madhya Pradesh,Bhopal,Asia/Kolkata,2024-09-01,2026-12-28,curated_region_proxy,terminal_metadata.csv + CITY_GROUPS
+68,BHOPAL,Madhya Pradesh,Bhopal,Asia/Kolkata,2024-09-01,2026-12-28,curated_region_proxy,terminal_metadata.csv + CITY_GROUPS
+69,INDORE,Madhya Pradesh,Bhopal,Asia/Kolkata,2024-09-01,2026-12-28,curated_region_proxy,terminal_metadata.csv + CITY_GROUPS
+70,INDORE,Madhya Pradesh,Bhopal,Asia/Kolkata,2024-09-01,2026-12-28,curated_region_proxy,terminal_metadata.csv + CITY_GROUPS
+71,RAIPUR,Chhattisgarh,Raipur,Asia/Kolkata,2024-09-01,2026-12-28,curated_region_proxy,terminal_metadata.csv + CITY_GROUPS
+72,RAIPUR,Chhattisgarh,Raipur,Asia/Kolkata,2024-09-01,2026-12-28,curated_region_proxy,terminal_metadata.csv + CITY_GROUPS
+73,GUWAHATI,Assam,Guwahati,Asia/Kolkata,2024-09-01,2026-12-28,curated_region_proxy,terminal_metadata.csv + CITY_GROUPS
+74,GUWAHATI,Assam,Guwahati,Asia/Kolkata,2024-09-01,2026-12-28,curated_region_proxy,terminal_metadata.csv + CITY_GROUPS
+75,SHILLONG,Meghalaya,Shillong,Asia/Kolkata,2024-09-01,2026-12-28,curated_region_proxy,terminal_metadata.csv + CITY_GROUPS
+76,SHILLONG,Meghalaya,Shillong,Asia/Kolkata,2024-09-01,2026-12-28,curated_region_proxy,terminal_metadata.csv + CITY_GROUPS
+77,AGARTALA,Tripura,Agartala,Asia/Kolkata,2024-09-01,2026-12-28,curated_region_proxy,terminal_metadata.csv + CITY_GROUPS
+78,AGARTALA,Tripura,Agartala,Asia/Kolkata,2024-09-01,2026-12-28,curated_region_proxy,terminal_metadata.csv + CITY_GROUPS
+79,DEHRADUN,Uttarakhand,Dehradun,Asia/Kolkata,2024-09-01,2026-12-28,curated_region_proxy,terminal_metadata.csv + CITY_GROUPS
+80,DEHRADUN,Uttarakhand,Dehradun,Asia/Kolkata,2024-09-01,2026-12-28,curated_region_proxy,terminal_metadata.csv + CITY_GROUPS
+81,HARIDWAR,Uttarakhand,Dehradun,Asia/Kolkata,2024-09-01,2026-12-28,curated_region_proxy,terminal_metadata.csv + CITY_GROUPS
+82,HARIDWAR,Uttarakhand,Dehradun,Asia/Kolkata,2024-09-01,2026-12-28,curated_region_proxy,terminal_metadata.csv + CITY_GROUPS
+83,PANAJI,Goa,Panaji,Asia/Kolkata,2024-09-01,2026-12-28,curated_region_proxy,terminal_metadata.csv + CITY_GROUPS
+84,PANAJI,Goa,Panaji,Asia/Kolkata,2024-09-01,2026-12-28,curated_region_proxy,terminal_metadata.csv + CITY_GROUPS
+85,VIJAYAWADA,Andhra Pradesh,Vijayawada,Asia/Kolkata,2024-09-01,2026-12-28,curated_region_proxy,terminal_metadata.csv + CITY_GROUPS
+86,VIJAYAWADA,Andhra Pradesh,Vijayawada,Asia/Kolkata,2024-09-01,2026-12-28,curated_region_proxy,terminal_metadata.csv + CITY_GROUPS
+87,VISAKHAPATNAM,Andhra Pradesh,Vijayawada,Asia/Kolkata,2024-09-01,2026-12-28,curated_region_proxy,terminal_metadata.csv + CITY_GROUPS
+88,VISAKHAPATNAM,Andhra Pradesh,Vijayawada,Asia/Kolkata,2024-09-01,2026-12-28,curated_region_proxy,terminal_metadata.csv + CITY_GROUPS
+89,TIRUPATI,Andhra Pradesh,Vijayawada,Asia/Kolkata,2024-09-01,2026-12-28,curated_region_proxy,terminal_metadata.csv + CITY_GROUPS
+90,TIRUPATI,Andhra Pradesh,Vijayawada,Asia/Kolkata,2024-09-01,2026-12-28,curated_region_proxy,terminal_metadata.csv + CITY_GROUPS
+91,SRINAGAR,Jammu and Kashmir,Srinagar,Asia/Kolkata,2024-09-01,2026-12-28,curated_region_proxy,terminal_metadata.csv + CITY_GROUPS
+92,SRINAGAR,Jammu and Kashmir,Srinagar,Asia/Kolkata,2024-09-01,2026-12-28,curated_region_proxy,terminal_metadata.csv + CITY_GROUPS
+93,JAMMU,Jammu and Kashmir,Jammu,Asia/Kolkata,2024-09-01,2026-12-28,curated_region_proxy,terminal_metadata.csv + CITY_GROUPS
+94,JAMMU,Jammu and Kashmir,Jammu,Asia/Kolkata,2024-09-01,2026-12-28,curated_region_proxy,terminal_metadata.csv + CITY_GROUPS
+95,SHIMLA,Himachal Pradesh,Shimla,Asia/Kolkata,2024-09-01,2026-12-28,curated_region_proxy,terminal_metadata.csv + CITY_GROUPS
+96,SHIMLA,Himachal Pradesh,Shimla,Asia/Kolkata,2024-09-01,2026-12-28,curated_region_proxy,terminal_metadata.csv + CITY_GROUPS
+97,JODHPUR,Rajasthan,Jaipur,Asia/Kolkata,2024-09-01,2026-12-28,curated_region_proxy,terminal_metadata.csv + CITY_GROUPS
+98,JODHPUR,Rajasthan,Jaipur,Asia/Kolkata,2024-09-01,2026-12-28,curated_region_proxy,terminal_metadata.csv + CITY_GROUPS
+99,KANPUR,Uttar Pradesh,Kanpur,Asia/Kolkata,2024-09-01,2026-12-28,curated_region_proxy,terminal_metadata.csv + CITY_GROUPS
+100,KANPUR,Uttar Pradesh,Kanpur,Asia/Kolkata,2024-09-01,2026-12-28,curated_region_proxy,terminal_metadata.csv + CITY_GROUPS

@@ -1,0 +1,45 @@
+location_label,verification_status,atm_count,city_count
+AIRPORT TERMINAL,parsed_from_location_string,5,5
+INTERCITY BUS TERMINAL,parsed_from_location_string,5,5
+METRO STATION CONCOURSE,parsed_from_location_string,4,4
+TECH PARK,parsed_from_location_string,4,4
+TOLL AREA,parsed_from_location_string,4,4
+CITY PETROL PUMP,parsed_from_location_string,3,3
+COLLEGE CAMPUS,parsed_from_location_string,3,3
+EDUCATION COMPLEX,parsed_from_location_string,3,3
+FUEL PLAZA,parsed_from_location_string,3,3
+MEDICAL COLLEGE HOSPITAL,parsed_from_location_string,3,3
+METRO ENTRY GATE,parsed_from_location_string,3,3
+METRO MALL,parsed_from_location_string,3,3
+MIDC / INDUSTRIAL AREA,parsed_from_location_string,3,3
+RAILWAY STATION CONCOURSE,parsed_from_location_string,3,3
+RAILWAY STATION ENTRY,parsed_from_location_string,3,3
+TOURIST CENTRE,parsed_from_location_string,3,3
+WHOLESALE MARKET,parsed_from_location_string,3,3
+BEACH / TOURIST ZONE,parsed_from_location_string,2,2
+BUSINESS PARK,parsed_from_location_string,2,2
+CITY BRANCH,parsed_from_location_string,2,2
+CITY CENTRE MALL,parsed_from_location_string,2,2
+CITY HOSPITAL,parsed_from_location_string,2,2
+COMMERCIAL BRANCH,parsed_from_location_string,2,2
+COMMERCIAL MARKET,parsed_from_location_string,2,2
+FACTORY CLUSTER,parsed_from_location_string,2,2
+HERITAGE AREA,parsed_from_location_string,2,2
+HIGHWAY PLAZA,parsed_from_location_string,2,2
+HOUSING SOCIETY,parsed_from_location_string,2,2
+INDUSTRIAL ESTATE,parsed_from_location_string,2,2
+MAIN BRANCH LOBBY,parsed_from_location_string,2,2
+RESIDENTIAL COMPLEX,parsed_from_location_string,2,2
+RESIDENTIAL MAIN ROAD,parsed_from_location_string,2,2
+AIRPORT ARRIVALS,parsed_from_location_string,1,1
+AIRPORT DEPARTURES,parsed_from_location_string,1,1
+CENTRAL BUS STAND,parsed_from_location_string,1,1
+CENTRAL MALL,parsed_from_location_string,1,1
+HIGHWAY FOOD COURT,parsed_from_location_string,1,1
+HIGHWAY FUEL STATION,parsed_from_location_string,1,1
+IT SEZ,parsed_from_location_string,1,1
+MAIN MARKET,parsed_from_location_string,1,1
+MARKET BRANCH,parsed_from_location_string,1,1
+MULTISPECIALITY HOSPITAL,parsed_from_location_string,1,1
+SHOPPING PLAZA,parsed_from_location_string,1,1
+UNIVERSITY CAMPUS,parsed_from_location_string,1,1

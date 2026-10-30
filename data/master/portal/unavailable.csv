@@ -1,0 +1,12 @@
+field,grain,status,portal_rule
+device_type,terminal,blank on all 100 cash-file ATMs,Do not show a dispenser or recycler type.
+capacity_amount,terminal,blank on all 100 cash-file ATMs,Do not show a rupee cassette capacity.
+verified_site_type,terminal,blank on all 100 cash-file ATMs,"Show location_label as a parsed string, not a verified site class."
+cassette_configuration,terminal,present only on legacy_demo terminals 1001-1006,Do not copy demo cassettes onto SYNATM terminals.
+local_event,city/date,"schema only, zero rows",An empty table is not a confirmed quiet day.
+uptime_pct,ATM/date,availability_daily.csv has a header and zero rows,Do not show uptime as observed.
+failed_amount,ATM/date,not in the cash-file snapshots,Cash_Out is the demand target. It is not failed-withdrawal demand.
+footfall,site/date,not collected,Airport passengers and events are not ATM footfall.
+coordinates,terminal,not on the terminal master,Weather coordinates are city centroids for four Maharashtra cities.
+bank_applicability,holiday,"RBI office matrix, known_at blank",Regional holidays are retrospective. They are not a verified bank calendar.
+salary_calendar,date,one assumed rule,"Payday is 1st, 15th, and last weekday. It is not a verified salary file."

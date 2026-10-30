@@ -1,0 +1,333 @@
+{
+  "population": "cash_files",
+  "source": "data/processed/daily_cash_out.csv",
+  "measure": "net_demand",
+  "target_semantics": "cash_out_equals_withdrawal_demand",
+  "currency": "INR",
+  "terminals": 100,
+  "calendar_days": 754,
+  "atm_days": 75400,
+  "start": "2024-09-01",
+  "end": "2026-09-24",
+  "total_inr": 48923752400,
+  "total_crore": "4892.38",
+  "mean_atm_day_inr": 648856.13,
+  "mean_atm_day_lakh": "6.49",
+  "mean_fleet_day_inr": 64885613.26,
+  "mean_fleet_day_crore": "6.49",
+  "monthly": [
+    {
+      "year_month": "2024-09",
+      "calendar_days": 30,
+      "atm_days": 3000,
+      "total_inr": 2012571500,
+      "total_crore": "201.26",
+      "mean_atm_day_inr": 670857.17,
+      "mean_atm_day_lakh": "6.71"
+    },
+    {
+      "year_month": "2024-10",
+      "calendar_days": 31,
+      "atm_days": 3100,
+      "total_inr": 2210594300,
+      "total_crore": "221.06",
+      "mean_atm_day_inr": 713094.94,
+      "mean_atm_day_lakh": "7.13"
+    },
+    {
+      "year_month": "2024-11",
+      "calendar_days": 30,
+      "atm_days": 3000,
+      "total_inr": 2017277400,
+      "total_crore": "201.73",
+      "mean_atm_day_inr": 672425.8,
+      "mean_atm_day_lakh": "6.72"
+    },
+    {
+      "year_month": "2024-12",
+      "calendar_days": 31,
+      "atm_days": 3100,
+      "total_inr": 1974085100,
+      "total_crore": "197.41",
+      "mean_atm_day_inr": 636801.65,
+      "mean_atm_day_lakh": "6.37"
+    },
+    {
+      "year_month": "2025-01",
+      "calendar_days": 31,
+      "atm_days": 3100,
+      "total_inr": 2038240600,
+      "total_crore": "203.82",
+      "mean_atm_day_inr": 657496.97,
+      "mean_atm_day_lakh": "6.57"
+    },
+    {
+      "year_month": "2025-02",
+      "calendar_days": 28,
+      "atm_days": 2800,
+      "total_inr": 1685440600,
+      "total_crore": "168.54",
+      "mean_atm_day_inr": 601943.07,
+      "mean_atm_day_lakh": "6.02"
+    },
+    {
+      "year_month": "2025-03",
+      "calendar_days": 31,
+      "atm_days": 3100,
+      "total_inr": 2024728000,
+      "total_crore": "202.47",
+      "mean_atm_day_inr": 653138.06,
+      "mean_atm_day_lakh": "6.53"
+    },
+    {
+      "year_month": "2025-04",
+      "calendar_days": 30,
+      "atm_days": 3000,
+      "total_inr": 1896305000,
+      "total_crore": "189.63",
+      "mean_atm_day_inr": 632101.67,
+      "mean_atm_day_lakh": "6.32"
+    },
+    {
+      "year_month": "2025-05",
+      "calendar_days": 31,
+      "atm_days": 3100,
+      "total_inr": 1935894800,
+      "total_crore": "193.59",
+      "mean_atm_day_inr": 624482.19,
+      "mean_atm_day_lakh": "6.24"
+    },
+    {
+      "year_month": "2025-06",
+      "calendar_days": 30,
+      "atm_days": 3000,
+      "total_inr": 1867720800,
+      "total_crore": "186.77",
+      "mean_atm_day_inr": 622573.6,
+      "mean_atm_day_lakh": "6.23"
+    },
+    {
+      "year_month": "2025-07",
+      "calendar_days": 31,
+      "atm_days": 3100,
+      "total_inr": 1961778100,
+      "total_crore": "196.18",
+      "mean_atm_day_inr": 632831.65,
+      "mean_atm_day_lakh": "6.33"
+    },
+    {
+      "year_month": "2025-08",
+      "calendar_days": 31,
+      "atm_days": 3100,
+      "total_inr": 2098399200,
+      "total_crore": "209.84",
+      "mean_atm_day_inr": 676902.97,
+      "mean_atm_day_lakh": "6.77"
+    },
+    {
+      "year_month": "2025-09",
+      "calendar_days": 30,
+      "atm_days": 3000,
+      "total_inr": 1984614700,
+      "total_crore": "198.46",
+      "mean_atm_day_inr": 661538.23,
+      "mean_atm_day_lakh": "6.62"
+    },
+    {
+      "year_month": "2025-10",
+      "calendar_days": 31,
+      "atm_days": 3100,
+      "total_inr": 2303765600,
+      "total_crore": "230.38",
+      "mean_atm_day_inr": 743150.19,
+      "mean_atm_day_lakh": "7.43"
+    },
+    {
+      "year_month": "2025-11",
+      "calendar_days": 30,
+      "atm_days": 3000,
+      "total_inr": 1866701000,
+      "total_crore": "186.67",
+      "mean_atm_day_inr": 622233.67,
+      "mean_atm_day_lakh": "6.22"
+    },
+    {
+      "year_month": "2025-12",
+      "calendar_days": 31,
+      "atm_days": 3100,
+      "total_inr": 1998752400,
+      "total_crore": "199.88",
+      "mean_atm_day_inr": 644758.84,
+      "mean_atm_day_lakh": "6.45"
+    },
+    {
+      "year_month": "2026-01",
+      "calendar_days": 31,
+      "atm_days": 3100,
+      "total_inr": 2029216500,
+      "total_crore": "202.92",
+      "mean_atm_day_inr": 654585.97,
+      "mean_atm_day_lakh": "6.55"
+    },
+    {
+      "year_month": "2026-02",
+      "calendar_days": 28,
+      "atm_days": 2800,
+      "total_inr": 1684970000,
+      "total_crore": "168.50",
+      "mean_atm_day_inr": 601775.0,
+      "mean_atm_day_lakh": "6.02"
+    },
+    {
+      "year_month": "2026-03",
+      "calendar_days": 31,
+      "atm_days": 3100,
+      "total_inr": 2032437600,
+      "total_crore": "203.24",
+      "mean_atm_day_inr": 655625.03,
+      "mean_atm_day_lakh": "6.56"
+    },
+    {
+      "year_month": "2026-04",
+      "calendar_days": 30,
+      "atm_days": 3000,
+      "total_inr": 1899821100,
+      "total_crore": "189.98",
+      "mean_atm_day_inr": 633273.7,
+      "mean_atm_day_lakh": "6.33"
+    },
+    {
+      "year_month": "2026-05",
+      "calendar_days": 31,
+      "atm_days": 3100,
+      "total_inr": 1934900000,
+      "total_crore": "193.49",
+      "mean_atm_day_inr": 624161.29,
+      "mean_atm_day_lakh": "6.24"
+    },
+    {
+      "year_month": "2026-06",
+      "calendar_days": 30,
+      "atm_days": 3000,
+      "total_inr": 1865455200,
+      "total_crore": "186.55",
+      "mean_atm_day_inr": 621818.4,
+      "mean_atm_day_lakh": "6.22"
+    },
+    {
+      "year_month": "2026-07",
+      "calendar_days": 31,
+      "atm_days": 3100,
+      "total_inr": 1963142400,
+      "total_crore": "196.31",
+      "mean_atm_day_inr": 633271.74,
+      "mean_atm_day_lakh": "6.33"
+    },
+    {
+      "year_month": "2026-08",
+      "calendar_days": 31,
+      "atm_days": 3100,
+      "total_inr": 2093444300,
+      "total_crore": "209.34",
+      "mean_atm_day_inr": 675304.61,
+      "mean_atm_day_lakh": "6.75"
+    },
+    {
+      "year_month": "2026-09",
+      "calendar_days": 24,
+      "atm_days": 2400,
+      "total_inr": 1543496200,
+      "total_crore": "154.35",
+      "mean_atm_day_inr": 643123.42,
+      "mean_atm_day_lakh": "6.43"
+    }
+  ],
+  "day_of_week": [
+    {
+      "day_of_week": 0,
+      "day_name": "Monday",
+      "atm_days": 10800,
+      "total_inr": 6981270700,
+      "total_crore": "698.13",
+      "share_of_total": 0.1427,
+      "mean_atm_day_inr": 646413.95,
+      "mean_atm_day_lakh": "6.46"
+    },
+    {
+      "day_of_week": 1,
+      "day_name": "Tuesday",
+      "atm_days": 10800,
+      "total_inr": 7058171200,
+      "total_crore": "705.82",
+      "share_of_total": 0.1443,
+      "mean_atm_day_inr": 653534.37,
+      "mean_atm_day_lakh": "6.54"
+    },
+    {
+      "day_of_week": 2,
+      "day_name": "Wednesday",
+      "atm_days": 10800,
+      "total_inr": 7002719700,
+      "total_crore": "700.27",
+      "share_of_total": 0.1431,
+      "mean_atm_day_inr": 648399.97,
+      "mean_atm_day_lakh": "6.48"
+    },
+    {
+      "day_of_week": 3,
+      "day_name": "Thursday",
+      "atm_days": 10800,
+      "total_inr": 7026719200,
+      "total_crore": "702.67",
+      "share_of_total": 0.1436,
+      "mean_atm_day_inr": 650622.15,
+      "mean_atm_day_lakh": "6.51"
+    },
+    {
+      "day_of_week": 4,
+      "day_name": "Friday",
+      "atm_days": 10700,
+      "total_inr": 6979915500,
+      "total_crore": "697.99",
+      "share_of_total": 0.1427,
+      "mean_atm_day_inr": 652328.55,
+      "mean_atm_day_lakh": "6.52"
+    },
+    {
+      "day_of_week": 5,
+      "day_name": "Saturday",
+      "atm_days": 10700,
+      "total_inr": 6908086200,
+      "total_crore": "690.81",
+      "share_of_total": 0.1412,
+      "mean_atm_day_inr": 645615.53,
+      "mean_atm_day_lakh": "6.46"
+    },
+    {
+      "day_of_week": 6,
+      "day_name": "Sunday",
+      "atm_days": 10800,
+      "total_inr": 6966869900,
+      "total_crore": "696.69",
+      "share_of_total": 0.1424,
+      "mean_atm_day_inr": 645080.55,
+      "mean_atm_day_lakh": "6.45"
+    }
+  ],
+  "payday": {
+    "rule_id": "legacy-payday-v1",
+    "rule": "1st, 15th, and last weekday; weekend month-end rolls backward; holidays are not removed",
+    "verification_status": "assumption",
+    "payday_dates": 74,
+    "atm_days": 7400,
+    "total_inr": 5390586100,
+    "total_crore": "539.06",
+    "mean_atm_day_inr": 728457.58,
+    "mean_atm_day_lakh": "7.28",
+    "other_atm_days": 68000,
+    "other_total_inr": 43533166300,
+    "other_mean_atm_day_inr": 640193.62,
+    "other_mean_atm_day_lakh": "6.40",
+    "mean_lift_vs_other": 0.1379
+  }
+}

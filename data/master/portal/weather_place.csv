@@ -1,0 +1,5 @@
+city,latitude,longitude,elevation_m,timezone,start,end,rows,provider,retrieved_for_this_run
+MUMBAI,19.086115,72.85291,6,Asia/Kolkata,2024-09-01,2026-09-24,754,Open-Meteo archive API (ERA5),2026-10-21
+NAGPUR,21.124779,79.11585,311,Asia/Kolkata,2024-09-01,2026-09-24,754,Open-Meteo archive API (ERA5),2026-10-21
+NASHIK,19.999998,73.8,584,Asia/Kolkata,2024-09-01,2026-09-24,754,Open-Meteo archive API (ERA5),2026-10-21
+PUNE,18.523726,73.86876,561,Asia/Kolkata,2024-09-01,2026-09-24,754,Open-Meteo archive API (ERA5),2026-10-21

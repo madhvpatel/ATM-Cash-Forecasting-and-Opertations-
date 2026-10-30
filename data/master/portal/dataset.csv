@@ -1,0 +1,41 @@
+dataset_id,kind,population,path,rows,grain,used_by,status
+atm_terminal,master,cash_files,data/master/portal/atm_terminal.csv,100,terminal,portal display,prepared
+city,master,cash_files,data/master/portal/city.csv,50,city,portal display,prepared
+state,master,cash_files,data/master/portal/state.csv,26,state,portal display,prepared
+rbi_region,master,cash_files,data/master/portal/rbi_region.csv,34,RBI office,portal display,prepared
+location_label,master,cash_files,data/master/portal/location_label.csv,44,parsed location label,portal display,"parsed, not verified"
+denomination,master,cash_files,data/master/portal/denomination.csv,1,demand column,portal display,rounding unit
+feature,master,cash_files,data/master/portal/feature.csv,30,feature,model registry,prepared
+population,master,all,data/master/portal/population.csv,3,population,portal display,prepared
+maharashtra_pilot_atm,master,maharashtra_pilot,data/master/portal/maharashtra_pilot_atm.csv,8,terminal,Maharashtra study,prepared
+weather_place,master,maharashtra_pilot,data/master/portal/weather_place.csv,4,city centroid,Maharashtra study,ERA5 reanalysis
+switch_field,master,mock_switch,data/master/portal/switch_field.csv,29,field,SYNATM0001 mock extract,mock
+unavailable,master,cash_files,data/master/portal/unavailable.csv,11,field,portal display,explicit gap
+terminal_metadata,master,cash_files,data/master/cash_files/terminal_metadata.csv,100,terminal,ingestion,canonical
+terminal_geography,master,cash_files,data/master/cash_files/terminal_geography.csv,100,terminal,holiday join,curated region proxy
+terminal_profile,master,cash_files,data/master/cash_files/terminal_profile.csv,100,terminal,not used as a model feature,unknowns blank
+dim_calendar,master,cash_files,data/master/cash_files/dim_calendar.csv,754,date,calendar features and payday flag,canonical
+holiday_calendar,master,cash_files,data/master/cash_files/holiday_calendar.csv,1729,date/region,regional holiday flag,retrospective
+holiday_coverage,master,cash_files,data/master/cash_files/holiday_coverage.csv,986,region/month,coverage check,canonical
+holidays,master,cash_files,data/master/cash_files/holidays.csv,6,date,legacy three-holiday rule,canonical
+paydays,master,cash_files,data/master/cash_files/paydays.csv,74,date,payday flag,assumption
+payday_rules,master,cash_files,data/master/cash_files/payday_rules.csv,1,rule,payday flag,assumption
+local_events,master,cash_files,data/master/cash_files/local_events.csv,0,event,not used,unavailable
+daily_cash_out,fact,cash_files,data/processed/daily_cash_out.csv,75400,ATM/date,demand target,synthetic
+demand_features,fact,cash_files,data/processed/demand_features.csv,74000,ATM/date,legacy training matrix,derived
+inventory_checkpoint_quality,fact,cash_files,data/processed/inventory_checkpoint_quality.csv,75400,ATM/date,snapshot quality,not downtime
+availability_daily,fact,cash_files,data/processed/availability_daily.csv,0,ATM/date,not used,unavailable
+raw_cash_archives,raw,cash_files,data/raw/ATM_Raw_15Min_XLSX_CashFiles_PART*,25,monthly archive,daily demand source,retained
+mumbai_public_snapshot,raw,mumbai_public,data/raw/mumbai_public/2026-10-21/,27,source file,not extracted in this workspace,retained
+weather_city_daily,fact,maharashtra_pilot,simulated/maharashtra/data/weather_city_daily.csv,3016,city/date,Maharashtra study,ERA5 reanalysis
+atm_daily,fact,maharashtra_pilot,simulated/maharashtra/data/atm_daily.csv,6032,ATM/date,Maharashtra study and layman experiment 4,derived
+switch_log_SYNATM0001,fact,mock_switch,simulated/maharashtra/data/switch_log_SYNATM0001.csv,238539,transaction,mock extract for one ATM,mock
+legacy_dim_calendar,master,legacy_demo,data/master/legacy_demo/dim_calendar.csv,761,legacy demo,legacy dashboard only,separate population
+legacy_dim_cassette_configuration,master,legacy_demo,data/master/legacy_demo/dim_cassette_configuration.csv,24,legacy demo,legacy dashboard only,separate population
+legacy_dim_cra,master,legacy_demo,data/master/legacy_demo/dim_cra.csv,1,legacy demo,legacy dashboard only,separate population
+legacy_dim_crm_module,master,legacy_demo,data/master/legacy_demo/dim_crm_module.csv,3,legacy demo,legacy dashboard only,separate population
+legacy_dim_location,master,legacy_demo,data/master/legacy_demo/dim_location.csv,7,legacy demo,legacy dashboard only,separate population
+legacy_dim_region,master,legacy_demo,data/master/legacy_demo/dim_region.csv,1,legacy demo,legacy dashboard only,separate population
+legacy_dim_terminal,master,legacy_demo,data/master/legacy_demo/dim_terminal.csv,6,legacy demo,legacy dashboard only,separate population
+legacy_dim_vault,master,legacy_demo,data/master/legacy_demo/dim_vault.csv,1,legacy demo,legacy dashboard only,separate population
+legacy_dim_vehicle,master,legacy_demo,data/master/legacy_demo/dim_vehicle.csv,1,legacy demo,legacy dashboard only,separate population

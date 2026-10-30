@@ -1,0 +1,1267 @@
+{
+  "metadata": {
+    "generated_at": "2026-10-22 17:41:13",
+    "total_atms": 8,
+    "total_cycles_evaluated": 440,
+    "default_holding_rate": 0.065,
+    "default_cit_cost": 2000.0,
+    "default_stockout_penalty": 10000.0,
+    "default_emergency_refill": 3500.0
+  },
+  "overall_summary": [
+    {
+      "model": "pure_exogenous",
+      "total_cycles": 440,
+      "forecast_7day_wape_pct": 7.72,
+      "stockout_cycles": 42,
+      "stockout_rate_pct": 9.55,
+      "total_shortfall_lakh": 124.33,
+      "mean_weekly_load_lakh": 53.52,
+      "avg_realized_cer": 0.868,
+      "holding_cost_inr": 1485441.0,
+      "cit_logistics_cost_inr": 880000.0,
+      "penalties_and_emergencies_inr": 567000.0,
+      "total_cost_inr": 3056772.0,
+      "savings_vs_naive_inr": 675841.0,
+      "savings_pct": 18.11
+    },
+    {
+      "model": "lgb_calendar_holidays_uncensored",
+      "total_cycles": 440,
+      "forecast_7day_wape_pct": 7.65,
+      "stockout_cycles": 44,
+      "stockout_rate_pct": 10.0,
+      "total_shortfall_lakh": 121.36,
+      "mean_weekly_load_lakh": 53.38,
+      "avg_realized_cer": 0.87,
+      "holding_cost_inr": 1478669.0,
+      "cit_logistics_cost_inr": 880000.0,
+      "penalties_and_emergencies_inr": 594000.0,
+      "total_cost_inr": 3074027.0,
+      "savings_vs_naive_inr": 658586.0,
+      "savings_pct": 17.64
+    },
+    {
+      "model": "lgb_calendar_holidays_censored",
+      "total_cycles": 440,
+      "forecast_7day_wape_pct": 7.89,
+      "stockout_cycles": 47,
+      "stockout_rate_pct": 10.68,
+      "total_shortfall_lakh": 126.02,
+      "mean_weekly_load_lakh": 53.29,
+      "avg_realized_cer": 0.871,
+      "holding_cost_inr": 1474507.0,
+      "cit_logistics_cost_inr": 880000.0,
+      "penalties_and_emergencies_inr": 634500.0,
+      "total_cost_inr": 3115029.0,
+      "savings_vs_naive_inr": 617584.0,
+      "savings_pct": 16.55
+    },
+    {
+      "model": "naive_last_week",
+      "total_cycles": 440,
+      "forecast_7day_wape_pct": 27.04,
+      "stockout_cycles": 57,
+      "stockout_rate_pct": 12.95,
+      "total_shortfall_lakh": 226.11,
+      "mean_weekly_load_lakh": 59.36,
+      "avg_realized_cer": 0.783,
+      "holding_cost_inr": 1818501.0,
+      "cit_logistics_cost_inr": 880000.0,
+      "penalties_and_emergencies_inr": 808000.0,
+      "total_cost_inr": 3732613.0,
+      "savings_vs_naive_inr": 0.0,
+      "savings_pct": 0.0
+    }
+  ],
+  "terminal_audit": [
+    {
+      "terminal_id": 1,
+      "site_type": "RAILWAY STATION CONCOURSE",
+      "city": "MUMBAI",
+      "total_observed_days": 754,
+      "cashout_days": 23,
+      "cashout_rate_pct": 3.05,
+      "avg_hours_empty_when_short": 4.51,
+      "observed_demand_lakh": 6872.48,
+      "uncensored_demand_lakh": 6939.14,
+      "lost_demand_lakh": 66.66,
+      "suppression_pct": 0.97
+    },
+    {
+      "terminal_id": 2,
+      "site_type": "AIRPORT TERMINAL",
+      "city": "MUMBAI",
+      "total_observed_days": 754,
+      "cashout_days": 4,
+      "cashout_rate_pct": 0.53,
+      "avg_hours_empty_when_short": 1.5,
+      "observed_demand_lakh": 5987.32,
+      "uncensored_demand_lakh": 5991.11,
+      "lost_demand_lakh": 3.79,
+      "suppression_pct": 0.06
+    },
+    {
+      "terminal_id": 3,
+      "site_type": "CITY CENTRE MALL",
+      "city": "PUNE",
+      "total_observed_days": 754,
+      "cashout_days": 2,
+      "cashout_rate_pct": 0.27,
+      "avg_hours_empty_when_short": 5.88,
+      "observed_demand_lakh": 5893.63,
+      "uncensored_demand_lakh": 5901.55,
+      "lost_demand_lakh": 7.92,
+      "suppression_pct": 0.13
+    },
+    {
+      "terminal_id": 4,
+      "site_type": "EDUCATION COMPLEX",
+      "city": "PUNE",
+      "total_observed_days": 754,
+      "cashout_days": 0,
+      "cashout_rate_pct": 0.0,
+      "avg_hours_empty_when_short": 0.0,
+      "observed_demand_lakh": 2015.72,
+      "uncensored_demand_lakh": 2015.72,
+      "lost_demand_lakh": 0.0,
+      "suppression_pct": 0.0
+    },
+    {
+      "terminal_id": 5,
+      "site_type": "FUEL PLAZA",
+      "city": "NAGPUR",
+      "total_observed_days": 754,
+      "cashout_days": 0,
+      "cashout_rate_pct": 0.0,
+      "avg_hours_empty_when_short": 0.0,
+      "observed_demand_lakh": 3679.85,
+      "uncensored_demand_lakh": 3679.85,
+      "lost_demand_lakh": 0.0,
+      "suppression_pct": 0.0
+    },
+    {
+      "terminal_id": 6,
+      "site_type": "BEACH / TOURIST ZONE",
+      "city": "NAGPUR",
+      "total_observed_days": 754,
+      "cashout_days": 0,
+      "cashout_rate_pct": 0.0,
+      "avg_hours_empty_when_short": 0.0,
+      "observed_demand_lakh": 5574.71,
+      "uncensored_demand_lakh": 5574.71,
+      "lost_demand_lakh": 0.0,
+      "suppression_pct": 0.0
+    },
+    {
+      "terminal_id": 7,
+      "site_type": "METRO STATION CONCOURSE",
+      "city": "NASHIK",
+      "total_observed_days": 754,
+      "cashout_days": 58,
+      "cashout_rate_pct": 7.69,
+      "avg_hours_empty_when_short": 3.73,
+      "observed_demand_lakh": 8076.86,
+      "uncensored_demand_lakh": 8213.26,
+      "lost_demand_lakh": 136.39,
+      "suppression_pct": 1.69
+    },
+    {
+      "terminal_id": 8,
+      "site_type": "MEDICAL COLLEGE HOSPITAL",
+      "city": "NASHIK",
+      "total_observed_days": 754,
+      "cashout_days": 0,
+      "cashout_rate_pct": 0.0,
+      "avg_hours_empty_when_short": 0.0,
+      "observed_demand_lakh": 2309.91,
+      "uncensored_demand_lakh": 2309.91,
+      "lost_demand_lakh": 0.0,
+      "suppression_pct": 0.0
+    }
+  ],
+  "schedules_by_atm": {
+    "1": {
+      "terminal_id": 1,
+      "site_type": "RAILWAY STATION CONCOURSE",
+      "city": "MUMBAI",
+      "cutoff_date": "2026-09-17",
+      "dates": [
+        "2026-09-18",
+        "2026-09-19",
+        "2026-09-20",
+        "2026-09-21",
+        "2026-09-22",
+        "2026-09-23",
+        "2026-09-24"
+      ],
+      "daily_preds": [
+        845377.0,
+        861289.0,
+        880427.0,
+        827803.0,
+        818048.0,
+        846308.0,
+        857638.0
+      ],
+      "sum_pred": 5936890.0,
+      "safety_buffer": 1079672.0,
+      "recommended_load": 7016562.0,
+      "capacity": 8500000.0,
+      "is_capacity_capped": false,
+      "projected_inventory": [
+        6171185.0,
+        5309896.0,
+        4429469.0,
+        3601666.0,
+        2783618.0,
+        1937310.0,
+        1079672.0
+      ],
+      "holding_cost": 4508.0,
+      "cit_trip_cost": 2000.0,
+      "expected_stockout_cost": 135.0,
+      "total_expected_cost": 6643.0,
+      "stockout_probability_pct": 1.0
+    },
+    "2": {
+      "terminal_id": 2,
+      "site_type": "AIRPORT TERMINAL",
+      "city": "MUMBAI",
+      "cutoff_date": "2026-09-17",
+      "dates": [
+        "2026-09-18",
+        "2026-09-19",
+        "2026-09-20",
+        "2026-09-21",
+        "2026-09-22",
+        "2026-09-23",
+        "2026-09-24"
+      ],
+      "daily_preds": [
+        628411.0,
+        657449.0,
+        692159.0,
+        643881.0,
+        643881.0,
+        682827.0,
+        672462.0
+      ],
+      "sum_pred": 4621071.0,
+      "safety_buffer": 977233.0,
+      "recommended_load": 5598304.0,
+      "capacity": 7000000.0,
+      "is_capacity_capped": false,
+      "projected_inventory": [
+        4969893.0,
+        4312444.0,
+        3620285.0,
+        2976403.0,
+        2332522.0,
+        1649695.0,
+        977233.0
+      ],
+      "holding_cost": 3711.0,
+      "cit_trip_cost": 2000.0,
+      "expected_stockout_cost": 135.0,
+      "total_expected_cost": 5846.0,
+      "stockout_probability_pct": 1.0
+    },
+    "3": {
+      "terminal_id": 3,
+      "site_type": "CITY CENTRE MALL",
+      "city": "PUNE",
+      "cutoff_date": "2026-09-17",
+      "dates": [
+        "2026-09-18",
+        "2026-09-19",
+        "2026-09-20",
+        "2026-09-21",
+        "2026-09-22",
+        "2026-09-23",
+        "2026-09-24"
+      ],
+      "daily_preds": [
+        561796.0,
+        833272.0,
+        864711.0,
+        543391.0,
+        556580.0,
+        576582.0,
+        576582.0
+      ],
+      "sum_pred": 4512915.0,
+      "safety_buffer": 942529.0,
+      "recommended_load": 5455444.0,
+      "capacity": 7000000.0,
+      "is_capacity_capped": false,
+      "projected_inventory": [
+        4893648.0,
+        4060376.0,
+        3195665.0,
+        2652274.0,
+        2095694.0,
+        1519112.0,
+        942529.0
+      ],
+      "holding_cost": 3448.0,
+      "cit_trip_cost": 2000.0,
+      "expected_stockout_cost": 135.0,
+      "total_expected_cost": 5583.0,
+      "stockout_probability_pct": 1.0
+    },
+    "4": {
+      "terminal_id": 4,
+      "site_type": "EDUCATION COMPLEX",
+      "city": "PUNE",
+      "cutoff_date": "2026-09-17",
+      "dates": [
+        "2026-09-18",
+        "2026-09-19",
+        "2026-09-20",
+        "2026-09-21",
+        "2026-09-22",
+        "2026-09-23",
+        "2026-09-24"
+      ],
+      "daily_preds": [
+        290103.0,
+        149873.0,
+        121707.0,
+        288591.0,
+        290238.0,
+        290238.0,
+        303990.0
+      ],
+      "sum_pred": 1734738.0,
+      "safety_buffer": 400570.0,
+      "recommended_load": 2135308.0,
+      "capacity": 3500000.0,
+      "is_capacity_capped": false,
+      "projected_inventory": [
+        1845205.0,
+        1695333.0,
+        1573625.0,
+        1285035.0,
+        994797.0,
+        704560.0,
+        400570.0
+      ],
+      "holding_cost": 1514.0,
+      "cit_trip_cost": 2000.0,
+      "expected_stockout_cost": 135.0,
+      "total_expected_cost": 3649.0,
+      "stockout_probability_pct": 1.0
+    },
+    "5": {
+      "terminal_id": 5,
+      "site_type": "FUEL PLAZA",
+      "city": "NAGPUR",
+      "cutoff_date": "2026-09-17",
+      "dates": [
+        "2026-09-18",
+        "2026-09-19",
+        "2026-09-20",
+        "2026-09-21",
+        "2026-09-22",
+        "2026-09-23",
+        "2026-09-24"
+      ],
+      "daily_preds": [
+        415758.0,
+        491769.0,
+        515898.0,
+        413392.0,
+        421882.0,
+        430391.0,
+        428748.0
+      ],
+      "sum_pred": 3117839.0,
+      "safety_buffer": 564059.0,
+      "recommended_load": 3681898.0,
+      "capacity": 5000000.0,
+      "is_capacity_capped": false,
+      "projected_inventory": [
+        3266140.0,
+        2774370.0,
+        2258472.0,
+        1845080.0,
+        1423198.0,
+        992807.0,
+        564059.0
+      ],
+      "holding_cost": 2337.0,
+      "cit_trip_cost": 2000.0,
+      "expected_stockout_cost": 135.0,
+      "total_expected_cost": 4472.0,
+      "stockout_probability_pct": 1.0
+    },
+    "6": {
+      "terminal_id": 6,
+      "site_type": "BEACH / TOURIST ZONE",
+      "city": "NAGPUR",
+      "cutoff_date": "2026-09-17",
+      "dates": [
+        "2026-09-18",
+        "2026-09-19",
+        "2026-09-20",
+        "2026-09-21",
+        "2026-09-22",
+        "2026-09-23",
+        "2026-09-24"
+      ],
+      "daily_preds": [
+        585025.0,
+        791115.0,
+        873709.0,
+        606125.0,
+        580347.0,
+        585096.0,
+        590125.0
+      ],
+      "sum_pred": 4611543.0,
+      "safety_buffer": 886403.0,
+      "recommended_load": 5497946.0,
+      "capacity": 7000000.0,
+      "is_capacity_capped": false,
+      "projected_inventory": [
+        4912921.0,
+        4121806.0,
+        3248097.0,
+        2641972.0,
+        2061625.0,
+        1476529.0,
+        886403.0
+      ],
+      "holding_cost": 3446.0,
+      "cit_trip_cost": 2000.0,
+      "expected_stockout_cost": 135.0,
+      "total_expected_cost": 5581.0,
+      "stockout_probability_pct": 1.0
+    },
+    "7": {
+      "terminal_id": 7,
+      "site_type": "METRO STATION CONCOURSE",
+      "city": "NASHIK",
+      "cutoff_date": "2026-09-17",
+      "dates": [
+        "2026-09-18",
+        "2026-09-19",
+        "2026-09-20",
+        "2026-09-21",
+        "2026-09-22",
+        "2026-09-23",
+        "2026-09-24"
+      ],
+      "daily_preds": [
+        983868.0,
+        778199.0,
+        703085.0,
+        994980.0,
+        994980.0,
+        994980.0,
+        980853.0
+      ],
+      "sum_pred": 6430944.0,
+      "safety_buffer": 1335414.0,
+      "recommended_load": 7766358.0,
+      "capacity": 10000000.0,
+      "is_capacity_capped": false,
+      "projected_inventory": [
+        6782490.0,
+        6004291.0,
+        5301206.0,
+        4306227.0,
+        3311247.0,
+        2316267.0,
+        1335414.0
+      ],
+      "holding_cost": 5228.0,
+      "cit_trip_cost": 2000.0,
+      "expected_stockout_cost": 135.0,
+      "total_expected_cost": 7363.0,
+      "stockout_probability_pct": 1.0
+    },
+    "8": {
+      "terminal_id": 8,
+      "site_type": "MEDICAL COLLEGE HOSPITAL",
+      "city": "NASHIK",
+      "cutoff_date": "2026-09-17",
+      "dates": [
+        "2026-09-18",
+        "2026-09-19",
+        "2026-09-20",
+        "2026-09-21",
+        "2026-09-22",
+        "2026-09-23",
+        "2026-09-24"
+      ],
+      "daily_preds": [
+        275654.0,
+        275830.0,
+        276155.0,
+        274942.0,
+        276571.0,
+        276571.0,
+        276571.0
+      ],
+      "sum_pred": 1932295.0,
+      "safety_buffer": 361904.0,
+      "recommended_load": 2294198.0,
+      "capacity": 3500000.0,
+      "is_capacity_capped": false,
+      "projected_inventory": [
+        2018544.0,
+        1742714.0,
+        1466559.0,
+        1191617.0,
+        915046.0,
+        638475.0,
+        361904.0
+      ],
+      "holding_cost": 1484.0,
+      "cit_trip_cost": 2000.0,
+      "expected_stockout_cost": 135.0,
+      "total_expected_cost": 3619.0,
+      "stockout_probability_pct": 1.0
+    }
+  },
+  "cost_curves_by_atm": {
+    "1": [
+      {
+        "service_level": 0.9,
+        "service_level_pct": "90.0%",
+        "safety_buffer_lakh": 5.95,
+        "recommended_load_lakh": 65.32,
+        "holding_cost": 3903.29,
+        "stockout_cost": 1350.04,
+        "total_cost": 7253.33,
+        "stockout_prob_pct": 10.0
+      },
+      {
+        "service_level": 0.92,
+        "service_level_pct": "92.0%",
+        "safety_buffer_lakh": 6.52,
+        "recommended_load_lakh": 65.89,
+        "holding_cost": 3974.74,
+        "stockout_cost": 1080.07,
+        "total_cost": 7054.81,
+        "stockout_prob_pct": 8.0
+      },
+      {
+        "service_level": 0.95,
+        "service_level_pct": "95.0%",
+        "safety_buffer_lakh": 7.63,
+        "recommended_load_lakh": 67.0,
+        "holding_cost": 4113.4,
+        "stockout_cost": 675.2,
+        "total_cost": 6788.61,
+        "stockout_prob_pct": 5.001
+      },
+      {
+        "service_level": 0.97,
+        "service_level_pct": "97.0%",
+        "safety_buffer_lakh": 8.73,
+        "recommended_load_lakh": 68.1,
+        "holding_cost": 4249.68,
+        "stockout_cost": 405.49,
+        "total_cost": 6655.17,
+        "stockout_prob_pct": 3.004
+      },
+      {
+        "service_level": 0.98,
+        "service_level_pct": "98.0%",
+        "safety_buffer_lakh": 9.53,
+        "recommended_load_lakh": 68.9,
+        "holding_cost": 4350.05,
+        "stockout_cost": 270.0,
+        "total_cost": 6620.05,
+        "stockout_prob_pct": 2.0
+      },
+      {
+        "service_level": 0.99,
+        "service_level_pct": "99.0%",
+        "safety_buffer_lakh": 10.8,
+        "recommended_load_lakh": 70.17,
+        "holding_cost": 4507.76,
+        "stockout_cost": 135.0,
+        "total_cost": 6642.76,
+        "stockout_prob_pct": 1.0
+      },
+      {
+        "service_level": 0.995,
+        "service_level_pct": "99.5%",
+        "safety_buffer_lakh": 11.95,
+        "recommended_load_lakh": 71.32,
+        "holding_cost": 4652.1,
+        "stockout_cost": 67.5,
+        "total_cost": 6719.6,
+        "stockout_prob_pct": 0.5
+      },
+      {
+        "service_level": 0.998,
+        "service_level_pct": "99.8%",
+        "safety_buffer_lakh": 13.36,
+        "recommended_load_lakh": 72.73,
+        "holding_cost": 4827.01,
+        "stockout_cost": 27.0,
+        "total_cost": 6854.01,
+        "stockout_prob_pct": 0.2
+      },
+      {
+        "service_level": 0.999,
+        "service_level_pct": "99.9%",
+        "safety_buffer_lakh": 14.34,
+        "recommended_load_lakh": 73.71,
+        "holding_cost": 4949.7,
+        "stockout_cost": 13.5,
+        "total_cost": 6963.2,
+        "stockout_prob_pct": 0.1
+      }
+    ],
+    "2": [
+      {
+        "service_level": 0.9,
+        "service_level_pct": "90.0%",
+        "safety_buffer_lakh": 5.38,
+        "recommended_load_lakh": 51.59,
+        "holding_cost": 3163.84,
+        "stockout_cost": 1350.04,
+        "total_cost": 6513.88,
+        "stockout_prob_pct": 10.0
+      },
+      {
+        "service_level": 0.92,
+        "service_level_pct": "92.0%",
+        "safety_buffer_lakh": 5.9,
+        "recommended_load_lakh": 52.11,
+        "holding_cost": 3228.52,
+        "stockout_cost": 1080.07,
+        "total_cost": 6308.58,
+        "stockout_prob_pct": 8.0
+      },
+      {
+        "service_level": 0.95,
+        "service_level_pct": "95.0%",
+        "safety_buffer_lakh": 6.91,
+        "recommended_load_lakh": 53.12,
+        "holding_cost": 3354.02,
+        "stockout_cost": 675.2,
+        "total_cost": 6029.22,
+        "stockout_prob_pct": 5.001
+      },
+      {
+        "service_level": 0.97,
+        "service_level_pct": "97.0%",
+        "safety_buffer_lakh": 7.9,
+        "recommended_load_lakh": 54.11,
+        "holding_cost": 3477.37,
+        "stockout_cost": 405.49,
+        "total_cost": 5882.86,
+        "stockout_prob_pct": 3.004
+      },
+      {
+        "service_level": 0.98,
+        "service_level_pct": "98.0%",
+        "safety_buffer_lakh": 8.63,
+        "recommended_load_lakh": 54.84,
+        "holding_cost": 3568.21,
+        "stockout_cost": 270.0,
+        "total_cost": 5838.21,
+        "stockout_prob_pct": 2.0
+      },
+      {
+        "service_level": 0.99,
+        "service_level_pct": "99.0%",
+        "safety_buffer_lakh": 9.77,
+        "recommended_load_lakh": 55.98,
+        "holding_cost": 3710.96,
+        "stockout_cost": 135.0,
+        "total_cost": 5845.96,
+        "stockout_prob_pct": 1.0
+      },
+      {
+        "service_level": 0.995,
+        "service_level_pct": "99.5%",
+        "safety_buffer_lakh": 10.82,
+        "recommended_load_lakh": 57.03,
+        "holding_cost": 3841.6,
+        "stockout_cost": 67.5,
+        "total_cost": 5909.1,
+        "stockout_prob_pct": 0.5
+      },
+      {
+        "service_level": 0.998,
+        "service_level_pct": "99.8%",
+        "safety_buffer_lakh": 12.09,
+        "recommended_load_lakh": 58.3,
+        "holding_cost": 3999.92,
+        "stockout_cost": 27.0,
+        "total_cost": 6026.92,
+        "stockout_prob_pct": 0.2
+      },
+      {
+        "service_level": 0.999,
+        "service_level_pct": "99.9%",
+        "safety_buffer_lakh": 12.98,
+        "recommended_load_lakh": 59.19,
+        "holding_cost": 4110.97,
+        "stockout_cost": 13.5,
+        "total_cost": 6124.47,
+        "stockout_prob_pct": 0.1
+      }
+    ],
+    "3": [
+      {
+        "service_level": 0.9,
+        "service_level_pct": "90.0%",
+        "safety_buffer_lakh": 5.19,
+        "recommended_load_lakh": 50.32,
+        "holding_cost": 2919.86,
+        "stockout_cost": 1350.04,
+        "total_cost": 6269.89,
+        "stockout_prob_pct": 10.0
+      },
+      {
+        "service_level": 0.92,
+        "service_level_pct": "92.0%",
+        "safety_buffer_lakh": 5.69,
+        "recommended_load_lakh": 50.82,
+        "holding_cost": 2982.23,
+        "stockout_cost": 1080.07,
+        "total_cost": 6062.3,
+        "stockout_prob_pct": 8.0
+      },
+      {
+        "service_level": 0.95,
+        "service_level_pct": "95.0%",
+        "safety_buffer_lakh": 6.66,
+        "recommended_load_lakh": 51.79,
+        "holding_cost": 3103.28,
+        "stockout_cost": 675.2,
+        "total_cost": 5778.48,
+        "stockout_prob_pct": 5.001
+      },
+      {
+        "service_level": 0.97,
+        "service_level_pct": "97.0%",
+        "safety_buffer_lakh": 7.62,
+        "recommended_load_lakh": 52.75,
+        "holding_cost": 3222.25,
+        "stockout_cost": 405.49,
+        "total_cost": 5627.74,
+        "stockout_prob_pct": 3.004
+      },
+      {
+        "service_level": 0.98,
+        "service_level_pct": "98.0%",
+        "safety_buffer_lakh": 8.32,
+        "recommended_load_lakh": 53.45,
+        "holding_cost": 3309.87,
+        "stockout_cost": 270.0,
+        "total_cost": 5579.87,
+        "stockout_prob_pct": 2.0
+      },
+      {
+        "service_level": 0.99,
+        "service_level_pct": "99.0%",
+        "safety_buffer_lakh": 9.43,
+        "recommended_load_lakh": 54.55,
+        "holding_cost": 3447.55,
+        "stockout_cost": 135.0,
+        "total_cost": 5582.55,
+        "stockout_prob_pct": 1.0
+      },
+      {
+        "service_level": 0.995,
+        "service_level_pct": "99.5%",
+        "safety_buffer_lakh": 10.44,
+        "recommended_load_lakh": 55.57,
+        "holding_cost": 3573.55,
+        "stockout_cost": 67.5,
+        "total_cost": 5641.05,
+        "stockout_prob_pct": 0.5
+      },
+      {
+        "service_level": 0.998,
+        "service_level_pct": "99.8%",
+        "safety_buffer_lakh": 11.66,
+        "recommended_load_lakh": 56.79,
+        "holding_cost": 3726.24,
+        "stockout_cost": 27.0,
+        "total_cost": 5753.24,
+        "stockout_prob_pct": 0.2
+      },
+      {
+        "service_level": 0.999,
+        "service_level_pct": "99.9%",
+        "safety_buffer_lakh": 12.52,
+        "recommended_load_lakh": 57.65,
+        "holding_cost": 3833.35,
+        "stockout_cost": 13.5,
+        "total_cost": 5846.85,
+        "stockout_prob_pct": 0.1
+      }
+    ],
+    "4": [
+      {
+        "service_level": 0.9,
+        "service_level_pct": "90.0%",
+        "safety_buffer_lakh": 2.21,
+        "recommended_load_lakh": 19.55,
+        "holding_cost": 1289.28,
+        "stockout_cost": 1350.04,
+        "total_cost": 4639.31,
+        "stockout_prob_pct": 10.0
+      },
+      {
+        "service_level": 0.92,
+        "service_level_pct": "92.0%",
+        "safety_buffer_lakh": 2.42,
+        "recommended_load_lakh": 19.77,
+        "holding_cost": 1315.79,
+        "stockout_cost": 1080.07,
+        "total_cost": 4395.85,
+        "stockout_prob_pct": 8.0
+      },
+      {
+        "service_level": 0.95,
+        "service_level_pct": "95.0%",
+        "safety_buffer_lakh": 2.83,
+        "recommended_load_lakh": 20.18,
+        "holding_cost": 1367.23,
+        "stockout_cost": 675.2,
+        "total_cost": 4042.43,
+        "stockout_prob_pct": 5.001
+      },
+      {
+        "service_level": 0.97,
+        "service_level_pct": "97.0%",
+        "safety_buffer_lakh": 3.24,
+        "recommended_load_lakh": 20.58,
+        "holding_cost": 1417.79,
+        "stockout_cost": 405.49,
+        "total_cost": 3823.28,
+        "stockout_prob_pct": 3.004
+      },
+      {
+        "service_level": 0.98,
+        "service_level_pct": "98.0%",
+        "safety_buffer_lakh": 3.54,
+        "recommended_load_lakh": 20.88,
+        "holding_cost": 1455.03,
+        "stockout_cost": 270.0,
+        "total_cost": 3725.03,
+        "stockout_prob_pct": 2.0
+      },
+      {
+        "service_level": 0.99,
+        "service_level_pct": "99.0%",
+        "safety_buffer_lakh": 4.01,
+        "recommended_load_lakh": 21.35,
+        "holding_cost": 1513.54,
+        "stockout_cost": 135.0,
+        "total_cost": 3648.54,
+        "stockout_prob_pct": 1.0
+      },
+      {
+        "service_level": 0.995,
+        "service_level_pct": "99.5%",
+        "safety_buffer_lakh": 4.44,
+        "recommended_load_lakh": 21.78,
+        "holding_cost": 1567.09,
+        "stockout_cost": 67.5,
+        "total_cost": 3634.59,
+        "stockout_prob_pct": 0.5
+      },
+      {
+        "service_level": 0.998,
+        "service_level_pct": "99.8%",
+        "safety_buffer_lakh": 4.96,
+        "recommended_load_lakh": 22.3,
+        "holding_cost": 1631.99,
+        "stockout_cost": 27.0,
+        "total_cost": 3658.99,
+        "stockout_prob_pct": 0.2
+      },
+      {
+        "service_level": 0.999,
+        "service_level_pct": "99.9%",
+        "safety_buffer_lakh": 5.32,
+        "recommended_load_lakh": 22.67,
+        "holding_cost": 1677.51,
+        "stockout_cost": 13.5,
+        "total_cost": 3691.01,
+        "stockout_prob_pct": 0.1
+      }
+    ],
+    "5": [
+      {
+        "service_level": 0.9,
+        "service_level_pct": "90.0%",
+        "safety_buffer_lakh": 3.11,
+        "recommended_load_lakh": 34.29,
+        "holding_cost": 2021.38,
+        "stockout_cost": 1350.04,
+        "total_cost": 5371.41,
+        "stockout_prob_pct": 10.0
+      },
+      {
+        "service_level": 0.92,
+        "service_level_pct": "92.0%",
+        "safety_buffer_lakh": 3.41,
+        "recommended_load_lakh": 34.59,
+        "holding_cost": 2058.71,
+        "stockout_cost": 1080.07,
+        "total_cost": 5138.77,
+        "stockout_prob_pct": 8.0
+      },
+      {
+        "service_level": 0.95,
+        "service_level_pct": "95.0%",
+        "safety_buffer_lakh": 3.99,
+        "recommended_load_lakh": 35.17,
+        "holding_cost": 2131.15,
+        "stockout_cost": 675.2,
+        "total_cost": 4806.35,
+        "stockout_prob_pct": 5.001
+      },
+      {
+        "service_level": 0.97,
+        "service_level_pct": "97.0%",
+        "safety_buffer_lakh": 4.56,
+        "recommended_load_lakh": 35.74,
+        "holding_cost": 2202.34,
+        "stockout_cost": 405.49,
+        "total_cost": 4607.83,
+        "stockout_prob_pct": 3.004
+      },
+      {
+        "service_level": 0.98,
+        "service_level_pct": "98.0%",
+        "safety_buffer_lakh": 4.98,
+        "recommended_load_lakh": 36.16,
+        "holding_cost": 2254.78,
+        "stockout_cost": 270.0,
+        "total_cost": 4524.78,
+        "stockout_prob_pct": 2.0
+      },
+      {
+        "service_level": 0.99,
+        "service_level_pct": "99.0%",
+        "safety_buffer_lakh": 5.64,
+        "recommended_load_lakh": 36.82,
+        "holding_cost": 2337.17,
+        "stockout_cost": 135.0,
+        "total_cost": 4472.17,
+        "stockout_prob_pct": 1.0
+      },
+      {
+        "service_level": 0.995,
+        "service_level_pct": "99.5%",
+        "safety_buffer_lakh": 6.25,
+        "recommended_load_lakh": 37.42,
+        "holding_cost": 2412.58,
+        "stockout_cost": 67.5,
+        "total_cost": 4480.08,
+        "stockout_prob_pct": 0.5
+      },
+      {
+        "service_level": 0.998,
+        "service_level_pct": "99.8%",
+        "safety_buffer_lakh": 6.98,
+        "recommended_load_lakh": 38.16,
+        "holding_cost": 2503.96,
+        "stockout_cost": 27.0,
+        "total_cost": 4530.96,
+        "stockout_prob_pct": 0.2
+      },
+      {
+        "service_level": 0.999,
+        "service_level_pct": "99.9%",
+        "safety_buffer_lakh": 7.49,
+        "recommended_load_lakh": 38.67,
+        "holding_cost": 2568.06,
+        "stockout_cost": 13.5,
+        "total_cost": 4581.56,
+        "stockout_prob_pct": 0.1
+      }
+    ],
+    "6": [
+      {
+        "service_level": 0.9,
+        "service_level_pct": "90.0%",
+        "safety_buffer_lakh": 4.88,
+        "recommended_load_lakh": 51.0,
+        "holding_cost": 2949.51,
+        "stockout_cost": 1350.04,
+        "total_cost": 6299.55,
+        "stockout_prob_pct": 10.0
+      },
+      {
+        "service_level": 0.92,
+        "service_level_pct": "92.0%",
+        "safety_buffer_lakh": 5.35,
+        "recommended_load_lakh": 51.47,
+        "holding_cost": 3008.17,
+        "stockout_cost": 1080.07,
+        "total_cost": 6088.24,
+        "stockout_prob_pct": 8.0
+      },
+      {
+        "service_level": 0.95,
+        "service_level_pct": "95.0%",
+        "safety_buffer_lakh": 6.27,
+        "recommended_load_lakh": 52.38,
+        "holding_cost": 3122.01,
+        "stockout_cost": 675.2,
+        "total_cost": 5797.21,
+        "stockout_prob_pct": 5.001
+      },
+      {
+        "service_level": 0.97,
+        "service_level_pct": "97.0%",
+        "safety_buffer_lakh": 7.16,
+        "recommended_load_lakh": 53.28,
+        "holding_cost": 3233.89,
+        "stockout_cost": 405.49,
+        "total_cost": 5639.38,
+        "stockout_prob_pct": 3.004
+      },
+      {
+        "service_level": 0.98,
+        "service_level_pct": "98.0%",
+        "safety_buffer_lakh": 7.83,
+        "recommended_load_lakh": 53.94,
+        "holding_cost": 3316.3,
+        "stockout_cost": 270.0,
+        "total_cost": 5586.3,
+        "stockout_prob_pct": 2.0
+      },
+      {
+        "service_level": 0.99,
+        "service_level_pct": "99.0%",
+        "safety_buffer_lakh": 8.86,
+        "recommended_load_lakh": 54.98,
+        "holding_cost": 3445.78,
+        "stockout_cost": 135.0,
+        "total_cost": 5580.78,
+        "stockout_prob_pct": 1.0
+      },
+      {
+        "service_level": 0.995,
+        "service_level_pct": "99.5%",
+        "safety_buffer_lakh": 9.81,
+        "recommended_load_lakh": 55.93,
+        "holding_cost": 3564.27,
+        "stockout_cost": 67.5,
+        "total_cost": 5631.77,
+        "stockout_prob_pct": 0.5
+      },
+      {
+        "service_level": 0.998,
+        "service_level_pct": "99.8%",
+        "safety_buffer_lakh": 10.97,
+        "recommended_load_lakh": 57.08,
+        "holding_cost": 3707.88,
+        "stockout_cost": 27.0,
+        "total_cost": 5734.88,
+        "stockout_prob_pct": 0.2
+      },
+      {
+        "service_level": 0.999,
+        "service_level_pct": "99.9%",
+        "safety_buffer_lakh": 11.77,
+        "recommended_load_lakh": 57.89,
+        "holding_cost": 3808.61,
+        "stockout_cost": 13.5,
+        "total_cost": 5822.11,
+        "stockout_prob_pct": 0.1
+      }
+    ],
+    "7": [
+      {
+        "service_level": 0.9,
+        "service_level_pct": "90.0%",
+        "safety_buffer_lakh": 7.36,
+        "recommended_load_lakh": 71.67,
+        "holding_cost": 4480.34,
+        "stockout_cost": 1350.04,
+        "total_cost": 7830.37,
+        "stockout_prob_pct": 10.0
+      },
+      {
+        "service_level": 0.92,
+        "service_level_pct": "92.0%",
+        "safety_buffer_lakh": 8.07,
+        "recommended_load_lakh": 72.37,
+        "holding_cost": 4568.71,
+        "stockout_cost": 1080.07,
+        "total_cost": 7648.78,
+        "stockout_prob_pct": 8.0
+      },
+      {
+        "service_level": 0.95,
+        "service_level_pct": "95.0%",
+        "safety_buffer_lakh": 9.44,
+        "recommended_load_lakh": 73.75,
+        "holding_cost": 4740.22,
+        "stockout_cost": 675.2,
+        "total_cost": 7415.42,
+        "stockout_prob_pct": 5.001
+      },
+      {
+        "service_level": 0.97,
+        "service_level_pct": "97.0%",
+        "safety_buffer_lakh": 10.79,
+        "recommended_load_lakh": 75.1,
+        "holding_cost": 4908.77,
+        "stockout_cost": 405.49,
+        "total_cost": 7314.26,
+        "stockout_prob_pct": 3.004
+      },
+      {
+        "service_level": 0.98,
+        "service_level_pct": "98.0%",
+        "safety_buffer_lakh": 11.79,
+        "recommended_load_lakh": 76.1,
+        "holding_cost": 5032.92,
+        "stockout_cost": 270.0,
+        "total_cost": 7302.92,
+        "stockout_prob_pct": 2.0
+      },
+      {
+        "service_level": 0.99,
+        "service_level_pct": "99.0%",
+        "safety_buffer_lakh": 13.35,
+        "recommended_load_lakh": 77.66,
+        "holding_cost": 5227.98,
+        "stockout_cost": 135.0,
+        "total_cost": 7362.98,
+        "stockout_prob_pct": 1.0
+      },
+      {
+        "service_level": 0.995,
+        "service_level_pct": "99.5%",
+        "safety_buffer_lakh": 14.79,
+        "recommended_load_lakh": 79.1,
+        "holding_cost": 5406.51,
+        "stockout_cost": 67.5,
+        "total_cost": 7474.01,
+        "stockout_prob_pct": 0.5
+      },
+      {
+        "service_level": 0.998,
+        "service_level_pct": "99.8%",
+        "safety_buffer_lakh": 16.52,
+        "recommended_load_lakh": 80.83,
+        "holding_cost": 5622.85,
+        "stockout_cost": 27.0,
+        "total_cost": 7649.85,
+        "stockout_prob_pct": 0.2
+      },
+      {
+        "service_level": 0.999,
+        "service_level_pct": "99.9%",
+        "safety_buffer_lakh": 17.74,
+        "recommended_load_lakh": 82.05,
+        "holding_cost": 5774.61,
+        "stockout_cost": 13.5,
+        "total_cost": 7788.11,
+        "stockout_prob_pct": 0.1
+      }
+    ],
+    "8": [
+      {
+        "service_level": 0.9,
+        "service_level_pct": "90.0%",
+        "safety_buffer_lakh": 1.99,
+        "recommended_load_lakh": 21.32,
+        "holding_cost": 1281.67,
+        "stockout_cost": 1350.04,
+        "total_cost": 4631.71,
+        "stockout_prob_pct": 10.0
+      },
+      {
+        "service_level": 0.92,
+        "service_level_pct": "92.0%",
+        "safety_buffer_lakh": 2.19,
+        "recommended_load_lakh": 21.51,
+        "holding_cost": 1305.62,
+        "stockout_cost": 1080.07,
+        "total_cost": 4385.69,
+        "stockout_prob_pct": 8.0
+      },
+      {
+        "service_level": 0.95,
+        "service_level_pct": "95.0%",
+        "safety_buffer_lakh": 2.56,
+        "recommended_load_lakh": 21.88,
+        "holding_cost": 1352.1,
+        "stockout_cost": 675.2,
+        "total_cost": 4027.3,
+        "stockout_prob_pct": 5.001
+      },
+      {
+        "service_level": 0.97,
+        "service_level_pct": "97.0%",
+        "safety_buffer_lakh": 2.93,
+        "recommended_load_lakh": 22.25,
+        "holding_cost": 1397.78,
+        "stockout_cost": 405.49,
+        "total_cost": 3803.27,
+        "stockout_prob_pct": 3.004
+      },
+      {
+        "service_level": 0.98,
+        "service_level_pct": "98.0%",
+        "safety_buffer_lakh": 3.19,
+        "recommended_load_lakh": 22.52,
+        "holding_cost": 1431.43,
+        "stockout_cost": 270.0,
+        "total_cost": 3701.43,
+        "stockout_prob_pct": 2.0
+      },
+      {
+        "service_level": 0.99,
+        "service_level_pct": "99.0%",
+        "safety_buffer_lakh": 3.62,
+        "recommended_load_lakh": 22.94,
+        "holding_cost": 1484.29,
+        "stockout_cost": 135.0,
+        "total_cost": 3619.29,
+        "stockout_prob_pct": 1.0
+      },
+      {
+        "service_level": 0.995,
+        "service_level_pct": "99.5%",
+        "safety_buffer_lakh": 4.01,
+        "recommended_load_lakh": 23.33,
+        "holding_cost": 1532.67,
+        "stockout_cost": 67.5,
+        "total_cost": 3600.17,
+        "stockout_prob_pct": 0.5
+      },
+      {
+        "service_level": 0.998,
+        "service_level_pct": "99.8%",
+        "safety_buffer_lakh": 4.48,
+        "recommended_load_lakh": 23.8,
+        "holding_cost": 1591.3,
+        "stockout_cost": 27.0,
+        "total_cost": 3618.3,
+        "stockout_prob_pct": 0.2
+      },
+      {
+        "service_level": 0.999,
+        "service_level_pct": "99.9%",
+        "safety_buffer_lakh": 4.81,
+        "recommended_load_lakh": 24.13,
+        "holding_cost": 1632.43,
+        "stockout_cost": 13.5,
+        "total_cost": 3645.93,
+        "stockout_prob_pct": 0.1
+      }
+    ]
+  }
+}

@@ -1,0 +1,1749 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cash Intelligence · 20 UI/UX Laws Applied Interactive Mockups</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <style>
+    @keyframes pulse-subtle {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.75; transform: scale(1.05); }
+    }
+    .pulse-danger {
+      animation: pulse-subtle 2s infinite ease-in-out;
+    }
+    .law-highlight {
+      outline: 3px solid #6366F1 !important;
+      outline-offset: 4px !important;
+      box-shadow: 0 0 20px rgba(99, 102, 241, 0.4) !important;
+      transition: all 0.3s ease;
+    }
+    /* Custom scrollbars */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #F1F5F9;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #CBD5E1;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94A3B8;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-900 font-sans antialiased min-h-screen flex flex-col selection:bg-indigo-100 selection:text-indigo-900">
+
+  <!-- ========================================================
+       TOP GLOBAL INSTITUTIONAL BAR (JAKOB'S LAW & AESTHETIC-USABILITY)
+       ======================================================== -->
+  <header class="sticky top-0 z-40 bg-white border-b border-slate-200 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        
+        <!-- Brand Identity -->
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-lg bg-slate-900 text-white font-bold font-mono flex items-center justify-center text-sm shadow-sm tracking-wider">
+            CI
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="font-bold text-slate-900 text-base tracking-tight">CASH INTELLIGENCE</span>
+              <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5 animate-pulse"></span>
+                v2.4 Live
+              </span>
+            </div>
+            <p class="text-xs text-slate-500 font-normal">Autonomous ATM Replenishment & Treasury Decision Support</p>
+          </div>
+        </div>
+
+        <!-- Primary Screen Switcher (Jakob's Law & Visual Hierarchy) -->
+        <nav class="hidden md:flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200">
+          <button onclick="switchView('network')" id="tabBtnNetwork" class="tab-btn px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all duration-200 flex items-center gap-2 bg-white text-slate-900 shadow-sm">
+            <span>🌐 Network Fleet</span>
+            <span class="px-1.5 py-0.5 rounded-full text-[11px] font-mono bg-slate-100 text-slate-700">8 ATMs</span>
+          </button>
+          <button onclick="switchView('single')" id="tabBtnSingle" class="tab-btn px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all duration-200 flex items-center gap-2 text-slate-600 hover:text-slate-900">
+            <span>🎯 ATM Deep-Dive</span>
+            <span class="px-1.5 py-0.5 rounded-full text-[11px] font-mono bg-amber-100 text-amber-800">ATM-1</span>
+          </button>
+          <button onclick="switchView('copilot')" id="tabBtnCopilot" class="tab-btn px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all duration-200 flex items-center gap-2 text-slate-600 hover:text-slate-900">
+            <span>✨ AI Copilot</span>
+            <span class="px-1.5 py-0.5 rounded-full text-[11px] font-mono bg-indigo-100 text-indigo-700 font-semibold">Agentic</span>
+          </button>
+          <button onclick="switchView('manifest')" id="tabBtnManifest" class="tab-btn px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all duration-200 flex items-center gap-2 text-slate-600 hover:text-slate-900">
+            <span>📋 CIT Seal</span>
+            <span class="px-1.5 py-0.5 rounded-full text-[11px] font-mono bg-emerald-100 text-emerald-800">Peak-End</span>
+          </button>
+        </nav>
+
+        <!-- Right Utilities: Goal-Gradient Progress + Law Inspector Toggle -->
+        <div class="flex items-center gap-3">
+          
+          <!-- Goal-Gradient Daily Cutoff Stepper (Law #15) -->
+          <div id="goalGradientPill" class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-amber-50 border border-amber-200 text-xs">
+            <div class="flex flex-col text-right">
+              <span class="font-bold text-amber-900 text-[11px]">18:00 IST Cutoff</span>
+              <span class="text-amber-700 font-mono text-[11px]" id="cutoffTimeRemaining">2h 48m left</span>
+            </div>
+            <div class="w-20 bg-amber-200 h-2 rounded-full overflow-hidden">
+              <div id="cutoffProgressBar" class="bg-amber-600 h-full rounded-full transition-all duration-500" style="width: 75%;"></div>
+            </div>
+            <span class="font-mono font-bold text-amber-800 text-xs" id="approvalRatioDisplay">6/8</span>
+          </div>
+
+          <!-- Interactive 20 Laws Inspector HUD Toggle -->
+          <button onclick="toggleLawsDrawer()" class="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold shadow-sm transition-all flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-indigo-200 animate-ping"></span>
+            <span>20 UX Laws Inspector</span>
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </header>
+
+  <!-- ========================================================
+       QUICK LAW BANNER (EDUCATIONAL ANCHOR)
+       ======================================================== -->
+  <div class="bg-gradient-to-r from-indigo-900 via-slate-900 to-indigo-950 text-white text-xs py-2 px-4 shadow-inner">
+    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2">
+      <div class="flex items-center gap-2">
+        <span class="px-2 py-0.5 rounded bg-indigo-500/30 border border-indigo-400/30 text-indigo-200 font-mono text-[11px] uppercase tracking-wider">UX Transformation Mockup</span>
+        <span class="text-slate-300">All 20 behavioral & cognitive ergonomics laws applied directly to the Cash Intelligence treasury operations portal.</span>
+      </div>
+      <div class="flex items-center gap-2 text-[11px] text-indigo-200">
+        <span>Click any law in the inspector to jump to its applied implementation ➔</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================
+       MAIN MOCKUP VIEW CONTAINER
+       ======================================================== -->
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
+
+    <!-- ========================================================
+         VIEW 1: NETWORK FLEET OPERATIONS
+         ======================================================== -->
+    <div id="viewNetwork" class="view-panel space-y-6">
+      
+      <!-- Executive Metric Strip (Serial Position Effect #16 & Visual Hierarchy #10) -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" id="sectionNetworkKpis">
+        
+        <!-- KPI 1: Primary Aggregate Cash (Primacy Effect) -->
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm relative overflow-hidden group hover:border-slate-300 transition-all">
+          <div class="flex items-center justify-between text-xs text-slate-500 mb-1">
+            <span class="font-medium">Total ATM Safe Cash</span>
+            <span class="px-2 py-0.5 rounded text-[11px] bg-slate-100 text-slate-700 font-mono">Live Telemetry</span>
+          </div>
+          <div class="text-2xl font-bold font-mono text-slate-900 tracking-tight">₹1,72,12,400</div>
+          <div class="text-xs text-slate-500 mt-1 flex items-center justify-between">
+            <span>Across 8 Connected Safes</span>
+            <span class="text-emerald-600 font-medium">● 100% Sensors Active</span>
+          </div>
+          <div class="absolute bottom-0 left-0 right-0 h-1 bg-slate-200"></div>
+        </div>
+
+        <!-- KPI 2: Actionable Indent Required Tomorrow -->
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm relative overflow-hidden group hover:border-slate-300 transition-all">
+          <div class="flex items-center justify-between text-xs text-slate-500 mb-1">
+            <span class="font-medium">Recommended Net Indent</span>
+            <span class="px-2 py-0.5 rounded text-[11px] bg-amber-50 text-amber-700 border border-amber-200 font-semibold">18:00 Cutoff</span>
+          </div>
+          <div class="text-2xl font-bold font-mono text-amber-600 tracking-tight">₹3,56,96,300</div>
+          <div class="text-xs text-slate-500 mt-1 flex items-center justify-between">
+            <span>6 Dispatches Tomorrow</span>
+            <span class="text-slate-600 font-mono text-[11px]">+₹13.2L vs Naive</span>
+          </div>
+          <div class="absolute bottom-0 left-0 right-0 h-1 bg-amber-400"></div>
+        </div>
+
+        <!-- KPI 3: SLA & Risk Overview (Von Restorff Isolation #13) -->
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm relative overflow-hidden group hover:border-slate-300 transition-all">
+          <div class="flex items-center justify-between text-xs text-slate-500 mb-1">
+            <span class="font-medium">Network SLA & Threat Floor</span>
+            <span class="px-2 py-0.5 rounded text-[11px] bg-emerald-50 text-emerald-700 font-semibold">99.85% SLA</span>
+          </div>
+          <div class="flex items-baseline gap-2">
+            <span class="text-2xl font-bold font-mono text-slate-900 tracking-tight">2 Urgent</span>
+            <span class="text-xs text-rose-600 font-semibold">(Empty &lt; 24h)</span>
+          </div>
+          <div class="text-xs text-slate-500 mt-1 flex items-center justify-between">
+            <span>0 RBI Penalty Breaches</span>
+            <span class="text-emerald-600 font-medium">99.0% Target SLA</span>
+          </div>
+          <div class="absolute bottom-0 left-0 right-0 h-1 bg-rose-500"></div>
+        </div>
+
+        <!-- KPI 4: Sign-off Stepper & Fitts's Law Rapid Action (Goal-Gradient #15 & Fitts's Law #3) -->
+        <div class="bg-indigo-50/60 p-4 rounded-xl border border-indigo-200 shadow-sm relative overflow-hidden flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between text-xs text-indigo-900 mb-1">
+              <span class="font-semibold">Maker / Checker Approvals</span>
+              <span class="px-2 py-0.5 rounded text-[11px] bg-indigo-100 text-indigo-800 font-bold" id="cardApprovalStatus">6 / 8 Approved</span>
+            </div>
+            <div class="text-2xl font-bold font-mono text-indigo-950 tracking-tight" id="cardApprovalPct">75% Complete</div>
+          </div>
+          <div class="pt-2 flex items-center gap-2">
+            <button onclick="approveAllIndentsMock()" class="flex-1 py-2 px-3 bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] text-white text-xs font-semibold rounded-lg shadow-sm transition-all flex items-center justify-center gap-1.5">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+              <span>Batch Authorize All (8)</span>
+            </button>
+          </div>
+          <div class="absolute bottom-0 left-0 right-0 h-1 bg-indigo-600"></div>
+        </div>
+
+      </div>
+
+      <!-- Network Interactive Forecast & Trajectory Chart (Law of Proximity & Common Region) -->
+      <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4" id="sectionNetworkChart">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+          <div>
+            <h2 class="text-sm font-bold text-slate-900 tracking-tight">Fleet Aggregated Cash Withdrawal Demand vs Replenishment Trajectory</h2>
+            <p class="text-xs text-slate-500">Predicted daily burn vs physical cash remaining across all 8 Maharashtra pilot terminals</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <div class="bg-slate-100 p-0.5 rounded-lg border border-slate-200 flex text-xs font-medium">
+              <button onclick="setChartRange(7, this)" class="chart-range-btn px-2.5 py-1 rounded bg-white text-slate-900 shadow-xs font-semibold">7 Days</button>
+              <button onclick="setChartRange(14, this)" class="chart-range-btn px-2.5 py-1 rounded text-slate-600 hover:text-slate-900">14 Days</button>
+              <button onclick="setChartRange(30, this)" class="chart-range-btn px-2.5 py-1 rounded text-slate-600 hover:text-slate-900">30 Days</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- SVG Micro-Chart Simulation (Doherty Threshold: Instant Render) -->
+        <div class="h-44 w-full relative flex items-end pt-4 pb-2 px-2 bg-slate-50/50 rounded-lg border border-slate-100">
+          <div class="w-full h-full flex items-end justify-between gap-3">
+            <!-- Day 1 -->
+            <div class="flex-1 flex flex-col items-center gap-1 group">
+              <span class="text-[10px] font-mono text-slate-500 opacity-0 group-hover:opacity-100 transition-opacity">₹48.2L</span>
+              <div class="w-full bg-indigo-500 rounded-t-sm transition-all hover:bg-indigo-600" style="height: 65%;"></div>
+              <span class="text-[11px] font-mono text-slate-600 font-medium">Tue 25</span>
+            </div>
+            <!-- Day 2 (Critical Peak) -->
+            <div class="flex-1 flex flex-col items-center gap-1 group">
+              <span class="text-[10px] font-mono text-rose-600 font-bold opacity-0 group-hover:opacity-100 transition-opacity">₹64.5L (Surge)</span>
+              <div class="w-full bg-rose-500 rounded-t-sm transition-all hover:bg-rose-600" style="height: 90%;"></div>
+              <span class="text-[11px] font-mono text-rose-700 font-bold">Wed 26 ⚠️</span>
+            </div>
+            <!-- Day 3 -->
+            <div class="flex-1 flex flex-col items-center gap-1 group">
+              <span class="text-[10px] font-mono text-slate-500 opacity-0 group-hover:opacity-100 transition-opacity">₹52.0L</span>
+              <div class="w-full bg-indigo-500 rounded-t-sm transition-all hover:bg-indigo-600" style="height: 72%;"></div>
+              <span class="text-[11px] font-mono text-slate-600 font-medium">Thu 27</span>
+            </div>
+            <!-- Day 4 -->
+            <div class="flex-1 flex flex-col items-center gap-1 group">
+              <span class="text-[10px] font-mono text-slate-500 opacity-0 group-hover:opacity-100 transition-opacity">₹49.8L</span>
+              <div class="w-full bg-indigo-500 rounded-t-sm transition-all hover:bg-indigo-600" style="height: 68%;"></div>
+              <span class="text-[11px] font-mono text-slate-600 font-medium">Fri 28</span>
+            </div>
+            <!-- Day 5 (Weekend Surge) -->
+            <div class="flex-1 flex flex-col items-center gap-1 group">
+              <span class="text-[10px] font-mono text-amber-600 font-bold opacity-0 group-hover:opacity-100 transition-opacity">₹59.2L</span>
+              <div class="w-full bg-amber-500 rounded-t-sm transition-all hover:bg-amber-600" style="height: 82%;"></div>
+              <span class="text-[11px] font-mono text-amber-700 font-bold">Sat 29</span>
+            </div>
+            <!-- Day 6 -->
+            <div class="flex-1 flex flex-col items-center gap-1 group">
+              <span class="text-[10px] font-mono text-slate-500 opacity-0 group-hover:opacity-100 transition-opacity">₹44.1L</span>
+              <div class="w-full bg-indigo-500 rounded-t-sm transition-all hover:bg-indigo-600" style="height: 58%;"></div>
+              <span class="text-[11px] font-mono text-slate-600 font-medium">Sun 30</span>
+            </div>
+            <!-- Day 7 -->
+            <div class="flex-1 flex flex-col items-center gap-1 group">
+              <span class="text-[10px] font-mono text-slate-500 opacity-0 group-hover:opacity-100 transition-opacity">₹50.3L</span>
+              <div class="w-full bg-indigo-500 rounded-t-sm transition-all hover:bg-indigo-600" style="height: 70%;"></div>
+              <span class="text-[11px] font-mono text-slate-600 font-medium">Mon 31</span>
+            </div>
+          </div>
+        </div>
+        <div class="flex items-center justify-between text-xs text-slate-500 pt-1">
+          <div class="flex items-center gap-4">
+            <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-xs bg-indigo-500"></span> Normal Forecast (Strategy C)</span>
+            <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-xs bg-rose-500"></span> Urgent Stockout Risk Peak</span>
+            <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-xs bg-amber-500"></span> Weekend Surge Zone</span>
+          </div>
+          <span class="text-slate-400 font-mono text-[11px]">Dynamic Uncertainty: σ = 22% Volatility</span>
+        </div>
+      </div>
+
+      <!-- Network Terminal Roster Table (Von Restorff Effect #13 & Fitts's Law #3 & Recognition over Recall #12) -->
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden" id="sectionNetworkRoster">
+        <div class="p-4 sm:px-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 bg-slate-50/50">
+          <div>
+            <div class="flex items-center gap-2">
+              <h2 class="text-sm font-bold text-slate-900 tracking-tight">ATM Replenishment Action Roster</h2>
+              <span class="px-2 py-0.5 rounded text-[11px] font-mono bg-slate-200/70 text-slate-700">Sorted by Urgency (Serial Position)</span>
+            </div>
+            <p class="text-xs text-slate-500">Click any row to open the single ATM deep-dive command center</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button onclick="filterTable('all', this)" class="table-filter-btn px-2.5 py-1 text-xs font-semibold rounded bg-white text-slate-900 border border-slate-200 shadow-xs">All (8)</button>
+            <button onclick="filterTable('urgent', this)" class="table-filter-btn px-2.5 py-1 text-xs font-semibold rounded text-rose-700 hover:bg-rose-50 border border-transparent">Urgent (2)</button>
+            <button onclick="filterTable('scheduled', this)" class="table-filter-btn px-2.5 py-1 text-xs font-semibold rounded text-amber-700 hover:bg-amber-50 border border-transparent">Scheduled (4)</button>
+            <button onclick="filterTable('healthy', this)" class="table-filter-btn px-2.5 py-1 text-xs font-semibold rounded text-emerald-700 hover:bg-emerald-50 border border-transparent">Healthy (2)</button>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-50 text-slate-600 font-semibold uppercase tracking-wider border-b border-slate-200 text-[11px]">
+              <tr>
+                <th class="py-3 px-4">ATM ID & Location</th>
+                <th class="py-3 px-4">Corridor Route</th>
+                <th class="py-3 px-4 font-mono">Current Cash</th>
+                <th class="py-3 px-4 font-mono">Runway Left</th>
+                <th class="py-3 px-4 font-mono">24h Burn</th>
+                <th class="py-3 px-4 font-mono">Recommended Indent</th>
+                <th class="py-3 px-4">Status</th>
+                <th class="py-3 px-4 text-right">Checker Action</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100 font-sans" id="rosterTableBody">
+              
+              <!-- ROW 1: CRITICAL OUTLIER (VON RESTORFF EFFECT #13) -->
+              <tr onclick="drillIntoAtm(1)" class="cursor-pointer hover:bg-rose-50/70 bg-rose-50/40 transition-colors group">
+                <td class="py-3.5 px-4">
+                  <div class="flex items-center gap-2.5">
+                    <span class="w-2.5 h-2.5 rounded-full bg-rose-500 pulse-danger"></span>
+                    <div>
+                      <span class="font-bold text-slate-900 group-hover:text-indigo-600">ATM #1 · Dadar Central Concourse</span>
+                      <div class="text-[11px] text-slate-500">High Transit Hub · Dadar Terminus</div>
+                    </div>
+                  </div>
+                </td>
+                <td class="py-3 px-4 text-slate-600">Mumbai Route 1</td>
+                <td class="py-3 px-4 font-mono font-bold text-slate-800">₹26,04,800</td>
+                <td class="py-3 px-4 font-mono">
+                  <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-rose-100 text-rose-800 border border-rose-300">
+                    22 Hours ⚠️
+                  </span>
+                </td>
+                <td class="py-3 px-4 font-mono text-slate-700">₹11,93,500</td>
+                <td class="py-3 px-4 font-mono font-bold text-indigo-700 text-sm">₹53,00,000</td>
+                <td class="py-3 px-4">
+                  <span class="inline-flex items-center gap-1 text-[11px] font-semibold text-rose-700 bg-rose-100/80 px-2 py-0.5 rounded-full">
+                    <span>🚨</span> Action Required
+                  </span>
+                </td>
+                <td class="py-3 px-4 text-right" onclick="event.stopPropagation()">
+                  <button onclick="approveSingleRow(1, this)" class="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs shadow-xs transition-all">
+                    Authorize ₹53.0L
+                  </button>
+                </td>
+              </tr>
+
+              <!-- ROW 2: CRITICAL OUTLIER 2 (VON RESTORFF EFFECT #13) -->
+              <tr onclick="drillIntoAtm(4)" class="cursor-pointer hover:bg-rose-50/70 bg-rose-50/40 transition-colors group">
+                <td class="py-3.5 px-4">
+                  <div class="flex items-center gap-2.5">
+                    <span class="w-2.5 h-2.5 rounded-full bg-rose-500 pulse-danger"></span>
+                    <div>
+                      <span class="font-bold text-slate-900 group-hover:text-indigo-600">ATM #4 · BKC Financial Plaza</span>
+                      <div class="text-[11px] text-slate-500">Corporate Banking Zone · High Salary Burn</div>
+                    </div>
+                  </div>
+                </td>
+                <td class="py-3 px-4 text-slate-600">Mumbai Route 2</td>
+                <td class="py-3 px-4 font-mono font-bold text-slate-800">₹18,12,000</td>
+                <td class="py-3 px-4 font-mono">
+                  <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-rose-100 text-rose-800 border border-rose-300">
+                    19 Hours ⚠️
+                  </span>
+                </td>
+                <td class="py-3 px-4 font-mono text-slate-700">₹14,50,000</td>
+                <td class="py-3 px-4 font-mono font-bold text-indigo-700 text-sm">₹45,00,000</td>
+                <td class="py-3 px-4">
+                  <span class="inline-flex items-center gap-1 text-[11px] font-semibold text-rose-700 bg-rose-100/80 px-2 py-0.5 rounded-full">
+                    <span>🚨</span> Action Required
+                  </span>
+                </td>
+                <td class="py-3 px-4 text-right" onclick="event.stopPropagation()">
+                  <button onclick="approveSingleRow(4, this)" class="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs shadow-xs transition-all">
+                    Authorize ₹45.0L
+                  </button>
+                </td>
+              </tr>
+
+              <!-- ROW 3: SCHEDULED ROUTINE -->
+              <tr onclick="drillIntoAtm(2)" class="cursor-pointer hover:bg-slate-50 transition-colors group">
+                <td class="py-3.5 px-4">
+                  <div class="flex items-center gap-2.5">
+                    <span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
+                    <div>
+                      <span class="font-bold text-slate-900 group-hover:text-indigo-600">ATM #2 · Thane Station West</span>
+                      <div class="text-[11px] text-slate-500">Suburban Concourse</div>
+                    </div>
+                  </div>
+                </td>
+                <td class="py-3 px-4 text-slate-600">Thane Corridor</td>
+                <td class="py-3 px-4 font-mono text-slate-800">₹32,40,000</td>
+                <td class="py-3 px-4 font-mono text-amber-700 font-semibold">41 Hours</td>
+                <td class="py-3 px-4 font-mono text-slate-700">₹9,80,000</td>
+                <td class="py-3 px-4 font-mono font-bold text-slate-900">₹35,00,000</td>
+                <td class="py-3 px-4">
+                  <span class="inline-flex items-center text-[11px] font-medium text-amber-800 bg-amber-100/70 px-2 py-0.5 rounded-full">
+                    Scheduled (Wed)
+                  </span>
+                </td>
+                <td class="py-3 px-4 text-right" onclick="event.stopPropagation()">
+                  <span class="inline-flex items-center gap-1 text-xs text-emerald-700 font-semibold">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                    Signed
+                  </span>
+                </td>
+              </tr>
+
+              <!-- ROW 4: HEALTHY (LOW ATTENTION LOAD) -->
+              <tr onclick="drillIntoAtm(3)" class="cursor-pointer hover:bg-slate-50 transition-colors group">
+                <td class="py-3.5 px-4">
+                  <div class="flex items-center gap-2.5">
+                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                    <div>
+                      <span class="font-bold text-slate-900 group-hover:text-indigo-600">ATM #3 · Pune Shivajinagar</span>
+                      <div class="text-[11px] text-slate-500">Residential Highway Node</div>
+                    </div>
+                  </div>
+                </td>
+                <td class="py-3 px-4 text-slate-600">Pune Express Route</td>
+                <td class="py-3 px-4 font-mono text-slate-800">₹44,10,000</td>
+                <td class="py-3 px-4 font-mono text-emerald-700 font-semibold">88 Hours</td>
+                <td class="py-3 px-4 font-mono text-slate-700">₹6,20,000</td>
+                <td class="py-3 px-4 font-mono text-slate-500">₹0 (No Refill)</td>
+                <td class="py-3 px-4">
+                  <span class="inline-flex items-center text-[11px] font-medium text-emerald-800 bg-emerald-100/70 px-2 py-0.5 rounded-full">
+                    Healthy (No Indent)
+                  </span>
+                </td>
+                <td class="py-3 px-4 text-right" onclick="event.stopPropagation()">
+                  <span class="text-xs text-slate-400 font-mono">Not Required</span>
+                </td>
+              </tr>
+
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ========================================================
+         VIEW 2: SINGLE ATM PALANTIR COMMAND CENTER
+         ======================================================== -->
+    <div id="viewSingle" class="view-panel space-y-6 hidden">
+      
+      <!-- Command Navigation & Context Breadcrumb (Jakob's Law #4 & Recognition over Recall #12) -->
+      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+        
+        <div class="flex items-center gap-3">
+          <button onclick="switchView('network')" class="p-2 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-600 transition-colors" title="Back to Fleet Roster">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+          </button>
+          
+          <div class="h-8 w-px bg-slate-200"></div>
+
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-slate-900 text-white uppercase tracking-wider">TERMINAL // 001</span>
+              <span class="font-bold text-slate-900 text-base">ATM #1 · Dadar Central Concourse</span>
+              <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-rose-100 text-rose-800 border border-rose-300">
+                CRITICAL THREAT
+              </span>
+            </div>
+            <div class="text-xs text-slate-500 mt-0.5 flex items-center gap-3">
+              <span>📍 Dadar Central Station · 18.9400° N, 72.8353° E</span>
+              <span>•</span>
+              <span>Corridor: Mumbai Transit Route 1</span>
+              <span>•</span>
+              <span class="text-emerald-600 font-semibold">● Sensor Online (18:30 IST)</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <!-- Quick ATM Cycler (Fitts's Law) -->
+          <div class="flex items-center border border-slate-200 rounded-lg overflow-hidden bg-slate-50">
+            <button onclick="cycleAtmMock(-1)" class="px-2.5 py-1.5 hover:bg-slate-200 text-slate-600 font-bold text-xs">‹ Prev</button>
+            <span class="px-3 py-1.5 text-xs font-mono font-bold bg-white text-slate-800 border-x border-slate-200">ATM-1 of 8</span>
+            <button onclick="cycleAtmMock(1)" class="px-2.5 py-1.5 hover:bg-slate-200 text-slate-600 font-bold text-xs">Next ›</button>
+          </div>
+          <button onclick="openCopilotForAtm(1)" class="px-3 py-1.5 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 text-xs font-semibold rounded-lg flex items-center gap-1.5">
+            <span>✨ Ask Copilot</span>
+          </button>
+        </div>
+
+      </div>
+
+      <!-- MILLER'S LAW (7±2 CHUNKS) — 4 CONCISE COGNITIVE WORKSPACES -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+        <!-- QUADRANT 1: SITUATIONAL DIRECTIVE & THREAT (Miller's Law #5 & Visual Hierarchy #10) -->
+        <div class="lg:col-span-12 bg-gradient-to-r from-rose-50 via-white to-amber-50 p-5 rounded-xl border border-rose-200 shadow-sm" id="sectionDirective">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
+            
+            <!-- Threat Statement -->
+            <div class="space-y-1 md:border-r md:border-slate-200/80 md:pr-6">
+              <div class="flex items-center gap-2">
+                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-600 text-white uppercase tracking-wider">STOCKOUT THREAT</span>
+                <span class="text-xs font-bold text-rose-700">Breaches in 22 Hours</span>
+              </div>
+              <h3 class="text-base font-bold text-slate-900">Out of Cash: Wednesday 16:30 IST</h3>
+              <p class="text-xs text-slate-600 leading-relaxed">
+                Machine currently holding <strong class="text-slate-900 font-mono">₹26,04,800</strong>. Burning at high concourse commuter velocity (<strong class="text-slate-900 font-mono">₹11,93,500 / day</strong>).
+              </p>
+            </div>
+
+            <!-- AI Recommended Prescription (Hick's Law #2: Zero Ambiguity) -->
+            <div class="space-y-1 md:border-r md:border-slate-200/80 md:pr-6">
+              <div class="flex items-center gap-2">
+                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-600 text-white uppercase tracking-wider">AI RECOMMENDATION</span>
+                <span class="text-xs font-semibold text-indigo-700">Multi-Drop Shield</span>
+              </div>
+              <div class="text-xl font-bold font-mono text-slate-900">
+                Load ₹53,00,000 <span class="text-xs text-slate-500 font-normal">(2 Drops)</span>
+              </div>
+              <p class="text-xs text-slate-600">
+                Drop 1: <strong class="text-slate-800">₹28L</strong> on Wed Aug 26 · Drop 2: <strong class="text-slate-800">₹25L</strong> on Sat Aug 29.
+              </p>
+            </div>
+
+            <!-- Operational Runway & Outcome -->
+            <div class="flex flex-col justify-between h-full">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-medium text-slate-500">Post-Refill Protected Runway</span>
+                <span class="px-2 py-0.5 rounded text-xs font-mono font-bold bg-emerald-100 text-emerald-800">108 Hours Safe</span>
+              </div>
+              <div class="text-2xl font-bold font-mono text-emerald-700 mt-1">100.0% SLA</div>
+              <div class="text-xs text-slate-500 mt-1">Zero cashout violations through next Tuesday.</div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- QUADRANT 2: REPLENISHMENT CONTROLLER & POSTEL'S LAW FORGIVING INPUTS (Law #2, #3, #17, #18) -->
+        <div class="lg:col-span-7 bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-5" id="sectionController">
+          
+          <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+            <div>
+              <h3 class="text-sm font-bold text-slate-900 tracking-tight">Replenishment Indent Controller</h3>
+              <p class="text-xs text-slate-500">Adjust cash drops or accept AI calibrated recommendation</p>
+            </div>
+            
+            <!-- Strategy Selector (Hick's Law: 2 clear presets) -->
+            <div class="bg-slate-100 p-0.5 rounded-lg border border-slate-200 flex text-xs font-medium">
+              <button onclick="toggleStrategyPreset('multi')" id="stratBtnMulti" class="px-3 py-1 rounded bg-white text-slate-900 font-semibold shadow-xs">2-Cycle Multi-Drop (Rec)</button>
+              <button onclick="toggleStrategyPreset('single')" id="stratBtnSingle" class="px-3 py-1 rounded text-slate-600 hover:text-slate-900">1-Cycle Single Drop</button>
+            </div>
+          </div>
+
+          <!-- Cycle 1 (Primary Drop) -->
+          <div class="p-4 rounded-xl border border-indigo-200 bg-indigo-50/30 space-y-3">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <span class="w-5 h-5 rounded-full bg-indigo-600 text-white font-mono font-bold text-xs flex items-center justify-center">1</span>
+                <span class="font-bold text-xs text-slate-900 uppercase tracking-wider">Cycle #1 (Immediate Dispatch)</span>
+              </div>
+              <span class="px-2 py-0.5 rounded text-[11px] font-semibold bg-indigo-100 text-indigo-800">Wed Aug 26 · 06:00 - 08:30 AM</span>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center">
+              <div class="sm:col-span-7">
+                <label class="block text-[11px] font-bold text-slate-600 mb-1">
+                  Amount Indent (Supports: "28L", "50k", or Numbers · Postel's Law #18)
+                </label>
+                <!-- Postel's Law Smart Input Field -->
+                <div class="relative">
+                  <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-mono text-sm">₹</span>
+                  <input type="text" id="inputCycle1Amount" value="28,00,000" oninput="handleSmartInput(1, this.value)" class="w-full pl-7 pr-3 py-2 bg-white border border-slate-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 rounded-lg text-sm font-mono font-bold text-slate-900 transition-all">
+                </div>
+                <div class="text-[10px] text-slate-500 mt-1 flex items-center justify-between">
+                  <span id="inputCycle1Helper">Multiples of ₹100 note pack</span>
+                  <span class="text-indigo-600 font-medium">Recommended: ₹28,00,000</span>
+                </div>
+              </div>
+
+              <!-- Fitts's Law Quick Bump Buttons -->
+              <div class="sm:col-span-5 flex items-end gap-1.5 pt-4 sm:pt-0">
+                <button onclick="bumpAmount(1, -50000)" class="flex-1 py-2 px-2 bg-white hover:bg-slate-100 active:bg-slate-200 border border-slate-300 rounded-lg text-xs font-bold text-slate-700 transition-all">-50k</button>
+                <button onclick="bumpAmount(1, 50000)" class="flex-1 py-2 px-2 bg-white hover:bg-slate-100 active:bg-slate-200 border border-slate-300 rounded-lg text-xs font-bold text-slate-700 transition-all">+50k</button>
+                <button onclick="bumpAmount(1, 200000)" class="flex-1 py-2 px-2 bg-indigo-50 hover:bg-indigo-100 active:bg-indigo-200 border border-indigo-200 rounded-lg text-xs font-bold text-indigo-700 transition-all">+2L</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Cycle 2 (Weekend Shield) -->
+          <div id="cardCycle2" class="p-4 rounded-xl border border-slate-200 bg-slate-50/50 space-y-3">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <span class="w-5 h-5 rounded-full bg-slate-700 text-white font-mono font-bold text-xs flex items-center justify-center">2</span>
+                <span class="font-bold text-xs text-slate-900 uppercase tracking-wider">Cycle #2 (Weekend Shield)</span>
+              </div>
+              <span class="px-2 py-0.5 rounded text-[11px] font-semibold bg-slate-200 text-slate-700">Sat Aug 29 · 07:00 - 09:15 AM</span>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center">
+              <div class="sm:col-span-7">
+                <label class="block text-[11px] font-bold text-slate-600 mb-1">
+                  Amount Indent
+                </label>
+                <div class="relative">
+                  <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-mono text-sm">₹</span>
+                  <input type="text" id="inputCycle2Amount" value="25,00,000" oninput="handleSmartInput(2, this.value)" class="w-full pl-7 pr-3 py-2 bg-white border border-slate-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 rounded-lg text-sm font-mono font-bold text-slate-900 transition-all">
+                </div>
+              </div>
+              <div class="sm:col-span-5 flex items-end gap-1.5 pt-4 sm:pt-0">
+                <button onclick="bumpAmount(2, -50000)" class="flex-1 py-2 px-2 bg-white hover:bg-slate-100 border border-slate-300 rounded-lg text-xs font-bold text-slate-700">-50k</button>
+                <button onclick="bumpAmount(2, 50000)" class="flex-1 py-2 px-2 bg-white hover:bg-slate-100 border border-slate-300 rounded-lg text-xs font-bold text-slate-700">+50k</button>
+                <button onclick="bumpAmount(2, 200000)" class="flex-1 py-2 px-2 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-lg text-xs font-bold text-slate-700">+2L</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Total Calculation & Fitts's Law Primary Authorization Button -->
+          <div class="pt-2 border-t border-slate-100 space-y-4">
+            
+            <div class="flex items-center justify-between text-xs">
+              <span class="text-slate-500">Combined Authorization:</span>
+              <div class="text-right">
+                <span class="text-lg font-bold font-mono text-slate-900" id="totalCombinedIndentDisplay">₹53,00,000</span>
+                <span class="text-emerald-600 font-medium ml-2 text-xs">● Matches Maker Baseline</span>
+              </div>
+            </div>
+
+            <!-- Prominent Fitts's Law Action Target -->
+            <div class="flex items-center gap-3">
+              <button onclick="authorizeCurrentAtmIndent()" id="btnAuthorizePrimary" class="flex-1 py-3 px-6 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] text-white font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                <span>Authorize & Dispatch (<span id="btnAuthAmountSpan">₹53,00,000</span>)</span>
+              </button>
+
+              <button onclick="resetIndentToBaseline()" class="py-3 px-4 rounded-xl border border-slate-200 hover:bg-slate-100 text-slate-600 font-semibold text-xs transition-all" title="Reset to AI Baseline">
+                ↺ Reset
+              </button>
+            </div>
+
+          </div>
+
+        </div>
+
+        <!-- QUADRANT 3: CASSETTE PHYSICS & TESLER'S LAW AUTOMATION (Law #7 Proximity & #17 Tesler) -->
+        <div class="lg:col-span-5 bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4" id="sectionPhysics">
+          <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+            <div>
+              <h3 class="text-sm font-bold text-slate-900 tracking-tight">Cassette Note Allocation & Safe Cap</h3>
+              <p class="text-xs text-slate-500">Tesler's Law: System auto-solves denomination note packing</p>
+            </div>
+            <span class="px-2 py-0.5 rounded text-[11px] font-mono font-bold bg-slate-100 text-slate-700">₹60.0L Cap</span>
+          </div>
+
+          <!-- Capacity Fill Bar (Common Region & Visual Hierarchy) -->
+          <div class="space-y-1.5">
+            <div class="flex items-center justify-between text-xs font-medium">
+              <span class="text-slate-600">Safe Capacity Utilization:</span>
+              <span class="font-mono font-bold text-slate-900" id="safeCapText">₹54,04,800 / ₹60,00,000 (90%)</span>
+            </div>
+            <div class="w-full h-3 bg-slate-100 rounded-full overflow-hidden flex border border-slate-200">
+              <div id="barResidualCash" class="bg-sky-500 h-full transition-all duration-300" style="width: 43%;" title="Current Residual Cash: ₹26.04L"></div>
+              <div id="barNewIndent" class="bg-indigo-600 h-full transition-all duration-300" style="width: 47%;" title="New Drop: ₹28.00L"></div>
+            </div>
+            <div class="flex items-center justify-between text-[11px] text-slate-500 pt-0.5">
+              <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-xs bg-sky-500"></span> Residual Cash (₹26.0L)</span>
+              <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-xs bg-indigo-600"></span> Drop 1 Cash (₹28.0L)</span>
+              <span class="text-emerald-600 font-semibold">₹5.95L Headroom</span>
+            </div>
+          </div>
+
+          <!-- 4 Physical Cassette Slots -->
+          <div class="grid grid-cols-2 gap-2.5 pt-2">
+            
+            <div class="p-2.5 rounded-lg border border-slate-200 bg-slate-50/50">
+              <div class="flex items-center justify-between text-[11px] font-bold text-slate-700">
+                <span>Cassette 1</span>
+                <span class="text-emerald-700 font-mono">₹500</span>
+              </div>
+              <div class="text-sm font-bold font-mono text-slate-900 mt-1" id="c1Notes">2,000 Notes</div>
+              <div class="text-[11px] font-mono text-slate-500" id="c1Amt">₹10,00,000</div>
+            </div>
+
+            <div class="p-2.5 rounded-lg border border-slate-200 bg-slate-50/50">
+              <div class="flex items-center justify-between text-[11px] font-bold text-slate-700">
+                <span>Cassette 2</span>
+                <span class="text-emerald-700 font-mono">₹500</span>
+              </div>
+              <div class="text-sm font-bold font-mono text-slate-900 mt-1" id="c2Notes">2,000 Notes</div>
+              <div class="text-[11px] font-mono text-slate-500" id="c2Amt">₹10,00,000</div>
+            </div>
+
+            <div class="p-2.5 rounded-lg border border-slate-200 bg-slate-50/50">
+              <div class="flex items-center justify-between text-[11px] font-bold text-slate-700">
+                <span>Cassette 3</span>
+                <span class="text-amber-700 font-mono">₹200</span>
+              </div>
+              <div class="text-sm font-bold font-mono text-slate-900 mt-1" id="c3Notes">1,000 Notes</div>
+              <div class="text-[11px] font-mono text-slate-500" id="c3Amt">₹2,00,000</div>
+            </div>
+
+            <div class="p-2.5 rounded-lg border border-slate-200 bg-slate-50/50">
+              <div class="flex items-center justify-between text-[11px] font-bold text-slate-700">
+                <span>Cassette 4</span>
+                <span class="text-sky-700 font-mono">₹100</span>
+              </div>
+              <div class="text-sm font-bold font-mono text-slate-900 mt-1" id="c4Notes">6,000 Notes</div>
+              <div class="text-[11px] font-mono text-slate-500" id="c4Amt">₹6,00,000</div>
+            </div>
+
+          </div>
+
+          <!-- Corridor Route Mini-Pill -->
+          <div class="p-3 rounded-lg border border-slate-200 bg-slate-50 flex items-center justify-between text-xs">
+            <div class="flex items-center gap-2">
+              <span class="text-base">🚐</span>
+              <div>
+                <span class="font-bold text-slate-800">CIT Van #MH-02-7712</span>
+                <div class="text-[11px] text-slate-500">BKC Central Vault ➔ Dadar (9.4 km)</div>
+              </div>
+            </div>
+            <span class="px-2 py-1 rounded bg-emerald-100 text-emerald-800 font-bold font-mono text-[11px]">ETA 22 min</span>
+          </div>
+
+        </div>
+
+        <!-- PROGRESSIVE DISCLOSURE TABS (LAW #11 PROGRESSIVE DISCLOSURE) -->
+        <div class="lg:col-span-12 bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden" id="sectionDisclosure">
+          <div class="border-b border-slate-200 bg-slate-50/70 px-4 flex items-center justify-between">
+            <div class="flex items-center space-x-1">
+              <button onclick="switchDisclosureTab('ledger', this)" class="disc-tab-btn py-3 px-4 text-xs font-bold text-indigo-600 border-b-2 border-indigo-600 transition-colors">
+                1. Forward 7-Day Operations Ledger
+              </button>
+              <button onclick="switchDisclosureTab('rationale', this)" class="disc-tab-btn py-3 px-4 text-xs font-semibold text-slate-600 hover:text-slate-900 border-b-2 border-transparent transition-colors">
+                2. Why This Exact Indent? (Mathematical Rationale)
+              </button>
+              <button onclick="switchDisclosureTab('audit', this)" class="disc-tab-btn py-3 px-4 text-xs font-semibold text-slate-600 hover:text-slate-900 border-b-2 border-transparent transition-colors">
+                3. Raw Telemetry & Formula Ledger
+              </button>
+            </div>
+            <span class="text-[11px] text-slate-400 font-mono hidden sm:inline">Progressive Disclosure Level 2</span>
+          </div>
+
+          <!-- TAB 1 CONTENT: FORWARD 7-DAY LEDGER -->
+          <div id="discTabLedger" class="p-4 overflow-x-auto">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200 text-[11px]">
+                <tr>
+                  <th class="py-2.5 px-3">Date & Day</th>
+                  <th class="py-2.5 px-3 font-mono">Predicted Withdrawal</th>
+                  <th class="py-2.5 px-3 font-mono">Cash Without Refill</th>
+                  <th class="py-2.5 px-3 font-mono">Cash With Refill</th>
+                  <th class="py-2.5 px-3 font-mono">Carry Cost (6.5%)</th>
+                  <th class="py-2.5 px-3">Stockout Status</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100 font-mono text-slate-700">
+                <tr class="hover:bg-slate-50">
+                  <td class="py-2 px-3 font-sans font-medium text-slate-900">2026-08-25 (Tue)</td>
+                  <td class="py-2 px-3">₹11,93,500</td>
+                  <td class="py-2 px-3 text-emerald-700">₹14,11,300</td>
+                  <td class="py-2 px-3 text-emerald-700 font-bold">₹14,11,300</td>
+                  <td class="py-2 px-3 text-amber-700">₹251</td>
+                  <td class="py-2 px-3 font-sans"><span class="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[10px] font-bold">SAFE</span></td>
+                </tr>
+                <tr class="hover:bg-slate-50 bg-indigo-50/30">
+                  <td class="py-2 px-3 font-sans font-medium text-indigo-900">2026-08-26 (Wed) ➔ DROP 1</td>
+                  <td class="py-2 px-3">₹12,40,000</td>
+                  <td class="py-2 px-3 text-rose-600 font-bold">₹1,71,300 (⚠️ FLOOR)</td>
+                  <td class="py-2 px-3 text-indigo-700 font-bold">₹29,71,300 (+₹28L)</td>
+                  <td class="py-2 px-3 text-amber-700">₹529</td>
+                  <td class="py-2 px-3 font-sans"><span class="px-2 py-0.5 rounded bg-indigo-100 text-indigo-800 text-[10px] font-bold">REPLENISHED</span></td>
+                </tr>
+                <tr class="hover:bg-slate-50">
+                  <td class="py-2 px-3 font-sans font-medium text-slate-900">2026-08-27 (Thu)</td>
+                  <td class="py-2 px-3">₹11,80,000</td>
+                  <td class="py-2 px-3 text-rose-700 font-bold">₹0 (EMPTY 🚨)</td>
+                  <td class="py-2 px-3 text-emerald-700 font-bold">₹17,91,300</td>
+                  <td class="py-2 px-3 text-amber-700">₹319</td>
+                  <td class="py-2 px-3 font-sans"><span class="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[10px] font-bold">PROTECTED</span></td>
+                </tr>
+                <tr class="hover:bg-slate-50 bg-slate-50/50">
+                  <td class="py-2 px-3 font-sans font-medium text-slate-900">2026-08-28 (Fri)</td>
+                  <td class="py-2 px-3">₹12,10,000</td>
+                  <td class="py-2 px-3 text-rose-700">₹0 (EMPTY)</td>
+                  <td class="py-2 px-3 text-emerald-700">₹5,81,300</td>
+                  <td class="py-2 px-3 text-amber-700">₹103</td>
+                  <td class="py-2 px-3 font-sans"><span class="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[10px] font-bold">SAFE</span></td>
+                </tr>
+                <tr class="hover:bg-slate-50 bg-indigo-50/30">
+                  <td class="py-2 px-3 font-sans font-medium text-indigo-900">2026-08-29 (Sat) ➔ DROP 2</td>
+                  <td class="py-2 px-3">₹13,50,000</td>
+                  <td class="py-2 px-3 text-rose-700">₹0 (EMPTY)</td>
+                  <td class="py-2 px-3 text-indigo-700 font-bold">₹17,31,300 (+₹25L)</td>
+                  <td class="py-2 px-3 text-amber-700">₹308</td>
+                  <td class="py-2 px-3 font-sans"><span class="px-2 py-0.5 rounded bg-indigo-100 text-indigo-800 text-[10px] font-bold">SHIELDED</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- TAB 2 CONTENT: WHY THIS EXACT INDENT -->
+          <div id="discTabRationale" class="p-5 hidden space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+              <div class="p-4 rounded-lg bg-rose-50 border border-rose-200 space-y-2">
+                <span class="font-bold text-rose-800 text-sm">🔻 Why NOT Less than ₹53.0L?</span>
+                <ul class="space-y-1.5 text-rose-900 list-disc list-inside">
+                  <li>Less than ₹28L on Cycle 1 causes stockout on Thursday 14:00.</li>
+                  <li>Breaches RBI mandatory cash-availability penalty floor.</li>
+                  <li>Fails 99.0% SLA confidence requirement ($z = 2.33$).</li>
+                </ul>
+              </div>
+
+              <div class="p-4 rounded-lg bg-amber-50 border border-amber-200 space-y-2">
+                <span class="font-bold text-amber-800 text-sm">🔺 Why NOT More than ₹53.0L?</span>
+                <ul class="space-y-1.5 text-amber-900 list-disc list-inside">
+                  <li>Safe capacity is physically limited to ₹60.0 Lakhs.</li>
+                  <li>Holding excess cash incurs unneeded 6.5% p.a. idle carry interest.</li>
+                  <li>Armored van corridor load limit capped at ₹4.50 Cr.</li>
+                </ul>
+              </div>
+
+              <div class="p-4 rounded-lg bg-emerald-50 border border-emerald-200 space-y-2">
+                <span class="font-bold text-emerald-800 text-sm">🎯 Why Exactly This Multi-Drop?</span>
+                <ul class="space-y-1.5 text-emerald-900 list-disc list-inside">
+                  <li>2-Cycle drop avoids overflowing the cassette capacity.</li>
+                  <li>Protects through Monday morning payroll surge.</li>
+                  <li>Minimizes total logistics + holding cost frontier.</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <!-- TAB 3 CONTENT: RAW TELEMETRY & FORMULA LEDGER -->
+          <div id="discTabAudit" class="p-5 hidden space-y-3 font-mono text-xs">
+            <div class="p-3 bg-slate-900 text-emerald-400 rounded-lg overflow-x-auto">
+              <pre>Indent = Forecast_7d (₹83,54,725) + z * σ * sqrt(H) (₹16,15,900) - Residual_Safe_Cash (₹26,04,800)
+       = ₹73,65,825 net deficit across 7 days
+Split into:
+  - Cycle 1: ₹28,00,000 (Wed Aug 26) -> Cassette Fill 90% (₹54.04L / ₹60.0L)
+  - Cycle 2: ₹25,00,000 (Sat Aug 29) -> Weekend Surge Absorber</pre>
+            </div>
+            <div class="text-slate-500 text-[11px]">
+              Engine: <span class="text-slate-700">LightGBM Strategy C (Telemetry + Day-of-Week + Exogenous Concourse Multiplier 1.30x)</span>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- ========================================================
+         VIEW 3: AI COPILOT STUDIO (RECOGNITION OVER RECALL #12 & FEEDBACK LOOPS #20)
+         ======================================================== -->
+    <div id="viewCopilot" class="view-panel space-y-6 hidden">
+      
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- Left Conversational Console -->
+        <div class="lg:col-span-8 bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col h-[580px]">
+          
+          <!-- Copilot Header -->
+          <div class="p-4 border-b border-slate-200 flex items-center justify-between bg-slate-50/70">
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center font-bold text-sm">
+                🤖
+              </div>
+              <div>
+                <div class="flex items-center gap-2">
+                  <h3 class="text-sm font-bold text-slate-900">Autonomous Treasury Copilot</h3>
+                  <span class="px-2 py-0.5 rounded text-[10px] font-mono bg-indigo-100 text-indigo-700 font-semibold">Gemini 3.5 Flash · LangGraph</span>
+                </div>
+                <p class="text-xs text-slate-500">Natural language telemetry queries, scenario simulation & batch approvals</p>
+              </div>
+            </div>
+            <button onclick="clearChatMock()" class="text-xs text-slate-500 hover:text-slate-800">Clear</button>
+          </div>
+
+          <!-- Pinned Context Strip (Recognition over Recall #12) -->
+          <div class="px-4 py-2 bg-indigo-50/60 border-b border-indigo-100 flex items-center justify-between text-xs overflow-x-auto gap-4">
+            <div class="flex items-center gap-2">
+              <span class="text-indigo-900 font-semibold">Active Focus:</span>
+              <span class="font-mono font-bold text-indigo-950 bg-white px-2 py-0.5 rounded border border-indigo-200">ATM #1 (Dadar)</span>
+            </div>
+            <div class="flex items-center gap-4 text-slate-600 font-mono text-[11px]">
+              <span>Cash: <strong class="text-slate-900">₹26.04L</strong></span>
+              <span>Runway: <strong class="text-rose-600">22 Hours</strong></span>
+              <span>Holding: <strong class="text-slate-900">6.5% p.a.</strong></span>
+              <span class="text-emerald-600 font-bold">● 6 Tools Active</span>
+            </div>
+          </div>
+
+          <!-- Chat Messages Area -->
+          <div class="flex-1 p-4 overflow-y-auto space-y-4 text-xs font-sans" id="chatMessageStage">
+            
+            <div class="flex gap-3">
+              <div class="w-7 h-7 rounded-full bg-indigo-600 text-white flex items-center justify-center shrink-0 text-xs">🤖</div>
+              <div class="bg-slate-100 rounded-2xl rounded-tl-none p-3.5 max-w-xl text-slate-800 space-y-2">
+                <p class="font-semibold text-slate-900">Hello Treasury Team. I am your Cash Intelligence Copilot.</p>
+                <p>I have live read/write access to your 8 Maharashtra ATMs, cost assumptions, and replenishment engine. Ask me anything in natural language, or tap one of the tool shortcuts below.</p>
+              </div>
+            </div>
+
+            <!-- Example Automated Query -->
+            <div class="flex gap-3 justify-end">
+              <div class="bg-indigo-600 text-white rounded-2xl rounded-tr-none p-3.5 max-w-md">
+                Why is ATM #1 recommended for ₹53.0L across 2 drops instead of 1?
+              </div>
+            </div>
+
+            <div class="flex gap-3">
+              <div class="w-7 h-7 rounded-full bg-indigo-600 text-white flex items-center justify-center shrink-0 text-xs">🤖</div>
+              <div class="bg-slate-100 rounded-2xl rounded-tl-none p-3.5 max-w-xl text-slate-800 space-y-2">
+                <p><strong>Physical Safe Cap & Commuter Surge Protection:</strong></p>
+                <ol class="list-decimal list-inside space-y-1 text-slate-700">
+                  <li><strong>Capacity Clamping:</strong> ATM #1 has ₹26.04L residual cash and a ₹60.0L safe cap. Injecting the full 7-day requirement (₹53L) in a single drop would total <strong>₹79.04L</strong>, breaching the physical cassette capacity by ₹19.04 Lakhs.</li>
+                  <li><strong>Surge Timing:</strong> Splitting into <strong>₹28L (Wed 26th)</strong> and <strong>₹25L (Sat 29th)</strong> refills the safe right before the weekend concourse surge without holding dead idle cash.</li>
+                </ol>
+                <div class="p-2.5 rounded bg-white border border-slate-200 font-mono text-[11px] text-slate-600">
+                  Result: Saves ₹1,120 in carry cost while guaranteeing 100% cash availability.
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Bottom Action Shelf (Recognition over Recall: Clickable Chips) -->
+          <div class="p-3 border-t border-slate-200 bg-slate-50/50 space-y-2">
+            <div class="flex items-center gap-1.5 overflow-x-auto text-xs pb-1">
+              <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider shrink-0">Quick Actions:</span>
+              <button onclick="sendQuickPrompt('/status')" class="px-2.5 py-1 rounded bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 font-mono text-[11px] shrink-0">/status</button>
+              <button onclick="sendQuickPrompt('/explain 1')" class="px-2.5 py-1 rounded bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 font-mono text-[11px] shrink-0">/explain 1</button>
+              <button onclick="sendQuickPrompt('/simulate 1 delay 4h')" class="px-2.5 py-1 rounded bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 font-mono text-[11px] shrink-0">🧪 /simulate delay 4h</button>
+              <button onclick="sendQuickPrompt('/approve-all')" class="px-2.5 py-1 rounded bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-700 font-semibold text-[11px] shrink-0">⚡ /approve all</button>
+            </div>
+
+            <!-- Input Box -->
+            <div class="flex items-center gap-2">
+              <input type="text" id="copilotInput" placeholder="Ask about ATM risk, simulate delays, or execute /slash commands..." class="flex-1 px-4 py-2.5 bg-white border border-slate-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 rounded-xl text-xs text-slate-900" onkeydown="if(event.key==='Enter') sendUserPrompt()">
+              <button onclick="sendUserPrompt()" class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs rounded-xl shadow-xs transition-all">Send ➔</button>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Right Side: Live Feedback Loops & Tool Execution Audit (Law #20 Feedback Loops) -->
+        <div class="lg:col-span-4 space-y-4">
+          
+          <!-- Live Tool Feed Card -->
+          <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3">
+            <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+              <div class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+                <h4 class="text-xs font-bold text-slate-900 uppercase tracking-wider">Live Agent Tool Feed</h4>
+              </div>
+              <span class="text-[10px] font-mono text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">REALTIME</span>
+            </div>
+
+            <div class="space-y-2 text-[11px] font-mono" id="toolExecutionFeed">
+              <div class="p-2 rounded bg-slate-50 border border-slate-100 flex items-start gap-2">
+                <span class="text-emerald-600 font-bold mt-0.5">✓</span>
+                <div>
+                  <div class="font-bold text-slate-800">query_fleet_telemetry()</div>
+                  <div class="text-[10px] text-slate-500">8 ATMs polled · 0 sensor anomalies</div>
+                </div>
+              </div>
+              <div class="p-2 rounded bg-slate-50 border border-slate-100 flex items-start gap-2">
+                <span class="text-emerald-600 font-bold mt-0.5">✓</span>
+                <div>
+                  <div class="font-bold text-slate-800">compute_replenishment_optimizer()</div>
+                  <div class="text-[10px] text-slate-500">Multi-drop policy sized at 99.0% SLA</div>
+                </div>
+              </div>
+              <div class="p-2 rounded bg-slate-50 border border-slate-100 flex items-start gap-2">
+                <span class="text-indigo-600 font-bold mt-0.5">⚡</span>
+                <div>
+                  <div class="font-bold text-slate-800">recalculate_holding_cost()</div>
+                  <div class="text-[10px] text-slate-500">6.5% p.a. carry cost evaluated</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Master Assumptions Quick Override -->
+          <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3">
+            <h4 class="text-xs font-bold text-slate-900 uppercase tracking-wider pb-2 border-b border-slate-100">Active Treasury Parameters</h4>
+            
+            <div class="space-y-2 text-xs">
+              <div class="flex items-center justify-between">
+                <span class="text-slate-600">Target SLA:</span>
+                <span class="font-mono font-bold text-slate-900">99.0% (z=2.33)</span>
+              </div>
+              <div class="flex items-center justify-between">
+                <span class="text-slate-600">Cost of Cash (Borrowing):</span>
+                <span class="font-mono font-bold text-slate-900">6.5% p.a.</span>
+              </div>
+              <div class="flex items-center justify-between">
+                <span class="text-slate-600">CIT Armored Trip Fee:</span>
+                <span class="font-mono font-bold text-slate-900">₹2,000 / trip</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- ========================================================
+         VIEW 4: CIT DISPATCH MANIFEST (PEAK-END RULE #14 & OCCAM'S RAZOR #19)
+         ======================================================== -->
+    <div id="viewManifest" class="view-panel space-y-6 hidden">
+      
+      <!-- Peak Experience Header -->
+      <div class="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white p-6 sm:p-8 rounded-2xl shadow-xl relative overflow-hidden">
+        <div class="relative z-10 max-w-3xl space-y-3">
+          <div class="flex items-center gap-3">
+            <span class="px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+              OFFICIAL CIT DISPATCH READY
+            </span>
+            <span class="text-xs text-slate-300 font-mono">Cutoff: 18:00 IST</span>
+          </div>
+
+          <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight">Armored CIT Manifest Authorization</h2>
+          <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
+            All indents for tomorrow's dispatch window have been calibrated, cassette-verified, and cryptographic tokens generated for armored logistics custodians.
+          </p>
+
+          <!-- Key Peak Metrics -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-4 border-t border-slate-800">
+            <div>
+              <span class="text-[11px] text-slate-400 uppercase tracking-wider block">Total Chest Pull</span>
+              <span class="text-xl font-bold font-mono text-emerald-400">₹3,56,96,300</span>
+            </div>
+            <div>
+              <span class="text-[11px] text-slate-400 uppercase tracking-wider block">Terminals Funded</span>
+              <span class="text-xl font-bold font-mono text-white">8 of 8 Safes</span>
+            </div>
+            <div>
+              <span class="text-[11px] text-slate-400 uppercase tracking-wider block">Guaranteed Uptime</span>
+              <span class="text-xl font-bold font-mono text-emerald-400">99.85%</span>
+            </div>
+            <div>
+              <span class="text-[11px] text-slate-400 uppercase tracking-wider block">Stockouts Projected</span>
+              <span class="text-xl font-bold font-mono text-white">Zero (0)</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Decorative background stamp -->
+        <div class="absolute -right-10 -bottom-10 w-64 h-64 rounded-full border-8 border-indigo-500/10 pointer-events-none flex items-center justify-center font-mono text-9xl font-black text-indigo-500/10">
+          SEAL
+        </div>
+      </div>
+
+      <!-- Official Digital Seal & Table (Aesthetic-Usability) -->
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="p-4 sm:px-6 bg-slate-50 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="font-bold text-slate-900 text-sm">MANIFEST ID: CIT-MUM-2026-08-26-A</span>
+              <span class="px-2 py-0.5 rounded text-[11px] font-mono bg-emerald-100 text-emerald-800 font-bold">Tamper-Evident SHA-256</span>
+            </div>
+            <div class="text-xs text-slate-500 mt-0.5">Authorization Token: <code class="text-slate-800 font-bold">CIT-AUTH-8821-XF9</code> · Bank Custodian Sign-off</div>
+          </div>
+
+          <button onclick="lockCITManifestMock()" id="btnLockManifest" class="py-2.5 px-5 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+            <span>Lock CIT Manifest & Transmit to Vault</span>
+          </button>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200 text-[11px]">
+              <tr>
+                <th class="py-3 px-4">Terminal & Location</th>
+                <th class="py-3 px-4">Van Corridor</th>
+                <th class="py-3 px-4 font-mono">Approved Cash Indent</th>
+                <th class="py-3 px-4">Cassette Note Pack Breakdown</th>
+                <th class="py-3 px-4">Sign-off Status</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+              <tr class="hover:bg-slate-50">
+                <td class="py-3 px-4 font-medium text-slate-900">ATM #1 · Dadar Central Concourse</td>
+                <td class="py-3 px-4 text-slate-600">Mumbai Route 1</td>
+                <td class="py-3 px-4 font-mono font-bold text-slate-900">₹28,00,000</td>
+                <td class="py-3 px-4 font-mono text-slate-600 text-[11px]">₹500: 4,000 | ₹200: 1,000 | ₹100: 6,000</td>
+                <td class="py-3 px-4"><span class="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[11px] font-bold">Signed by Chief Officer</span></td>
+              </tr>
+              <tr class="hover:bg-slate-50">
+                <td class="py-3 px-4 font-medium text-slate-900">ATM #4 · BKC Financial Plaza</td>
+                <td class="py-3 px-4 text-slate-600">Mumbai Route 2</td>
+                <td class="py-3 px-4 font-mono font-bold text-slate-900">₹45,00,000</td>
+                <td class="py-3 px-4 font-mono text-slate-600 text-[11px]">₹500: 7,000 | ₹200: 3,000 | ₹100: 4,000</td>
+                <td class="py-3 px-4"><span class="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[11px] font-bold">Signed by Chief Officer</span></td>
+              </tr>
+              <tr class="hover:bg-slate-50">
+                <td class="py-3 px-4 font-medium text-slate-900">ATM #2 · Thane Station West</td>
+                <td class="py-3 px-4 text-slate-600">Thane Route</td>
+                <td class="py-3 px-4 font-mono font-bold text-slate-900">₹35,00,000</td>
+                <td class="py-3 px-4 font-mono text-slate-600 text-[11px]">₹500: 5,000 | ₹200: 3,000 | ₹100: 4,000</td>
+                <td class="py-3 px-4"><span class="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[11px] font-bold">Signed by Chief Officer</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- ========================================================
+       SLIDE-OVER DRAWER: THE 20 UI/UX LAWS INSPECTOR HUD
+       ======================================================== -->
+  <aside id="lawsDrawer" class="fixed inset-y-0 right-0 w-full max-w-md bg-white border-l border-slate-200 shadow-2xl z-50 transform translate-x-full transition-transform duration-300 ease-in-out flex flex-col">
+    
+    <!-- Drawer Header -->
+    <div class="p-4 border-b border-slate-200 bg-slate-900 text-white flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <span class="w-6 h-6 rounded-md bg-indigo-500 text-white flex items-center justify-center font-bold text-xs">20</span>
+        <div>
+          <h3 class="text-sm font-bold">20 UI/UX Laws Inspector</h3>
+          <p class="text-[11px] text-slate-400">Click any law to see before/after & highlight implementation</p>
+        </div>
+      </div>
+      <button onclick="toggleLawsDrawer()" class="p-1 rounded-md text-slate-400 hover:text-white text-lg">✕</button>
+    </div>
+
+    <!-- 20 Laws Scrollable List -->
+    <div class="flex-1 overflow-y-auto p-4 space-y-3" id="lawsListContainer">
+      <!-- Injected by JavaScript -->
+    </div>
+
+    <div class="p-3 border-t border-slate-200 bg-slate-50 text-[11px] text-slate-500 text-center">
+      Applied to Cash Intelligence CMS2 Portal · Antigravity AI
+    </div>
+  </aside>
+
+  <!-- Overlay backdrop for drawer -->
+  <div id="drawerBackdrop" onclick="toggleLawsDrawer()" class="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-40 hidden transition-opacity duration-300"></div>
+
+  <!-- Toast Notification System (Feedback Loops #20) -->
+  <div id="toastNotification" class="fixed bottom-5 right-5 z-50 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-lg border border-slate-800 text-xs font-semibold flex items-center gap-2 transform translate-y-20 opacity-0 transition-all duration-300">
+    <span class="text-emerald-400 text-base" id="toastIcon">✓</span>
+    <span id="toastMsg">Operation successful</span>
+  </div>
+
+  <!-- ========================================================
+       APPLICATION JAVASCRIPT LOGIC
+       ======================================================== -->
+  <script>
+    // The 20 Laws Data Registry from user upload
+    const UI_UX_LAWS = [
+      {
+        id: 1,
+        name: "Aesthetic-Usability Effect",
+        alias: "Aesthetic-u/e",
+        definition: "Users perceive aesthetically pleasing design as design that’s more usable, trustworthy, and forgiving of minor hitches.",
+        currentProblem: "Current portal had high density, harsh borders, competing saturated badges, and inconsistent vertical alignments.",
+        appliedFix: "Modern fintech banking treasury design system: Slate neutral palette, high-contrast typography (Inter + JetBrains Mono), crisp 1px borders, and refined micro-shadows.",
+        highlightTargetId: "sectionNetworkKpis",
+        screen: "network"
+      },
+      {
+        id: 2,
+        name: "Hick's Law",
+        alias: "Hick's law",
+        definition: "The time it takes to make a decision increases logarithmically with the number and complexity of choices (T = b · log2(n + 1)).",
+        currentProblem: "Single ATM view forced operators to navigate 25+ simultaneous toggles, quick-bump buttons, sliders, dual-view tabs, and inputs at once.",
+        appliedFix: "Streamlined into 2 clear preset options (2-Cycle Multi-Drop vs 1-Cycle Single Drop) with one primary 'Authorize Indent' decision button.",
+        highlightTargetId: "sectionController",
+        screen: "single"
+      },
+      {
+        id: 3,
+        name: "Fitts's Law",
+        alias: "Fitt's law",
+        definition: "The time to acquire a target is a function of the distance to and size of the target (MT = a + b · log2(2D/W)).",
+        currentProblem: "Crucial approval and batch-action buttons were small (28-32px) and placed far from the data.",
+        appliedFix: "Massive primary action buttons (44px height), full-width thumb targets, and prominent 1-click batch authorization bars.",
+        highlightTargetId: "btnAuthorizePrimary",
+        screen: "single"
+      },
+      {
+        id: 4,
+        name: "Jakob's Law",
+        alias: "Jakob's law",
+        definition: "Users spend most of their time on other sites. They expect your site to work like systems they already know (Bloomberg, Stripe, AWS).",
+        currentProblem: "Non-standard idiosyncratic sub-navigation tabs, hidden inputs, and bespoke sliders.",
+        appliedFix: "Fintech treasury standard layout: Top global nav, standard table filters, breadcrumbs, standard modal behavior (Esc to dismiss), and familiar metric cards.",
+        highlightTargetId: "tabBtnNetwork",
+        screen: "network"
+      },
+      {
+        id: 5,
+        name: "Miller's Law",
+        alias: "Miller's law",
+        definition: "The average person can only keep 7 ± 2 chunks of information in working memory.",
+        currentProblem: "Single ATM view dumped 25+ unorganized metrics, confusing the operator during urgent cashout checks.",
+        appliedFix: "Chunked information into 4 distinct cognitive quadrants: 1. Threat Directive, 2. Indent Decision, 3. Cassette Hardware Physics, 4. Corridor Route Logistics.",
+        highlightTargetId: "sectionDirective",
+        screen: "single"
+      },
+      {
+        id: 6,
+        name: "Doherty Threshold",
+        alias: "Doherty Threshold",
+        definition: "Productivity soars when computer and user interact at a pace (<400ms) ensuring neither waits on the other.",
+        currentProblem: "Recalculating indent forecasts felt sluggish with layout shifts.",
+        appliedFix: "Sub-50ms optimistic client-side updates: typing an indent immediately recalculates cassette fill, cash runway, and carry costs without a full reload.",
+        highlightTargetId: "inputCycle1Amount",
+        screen: "single"
+      },
+      {
+        id: 7,
+        name: "Law of Proximity",
+        alias: "Law of proximity",
+        definition: "Elements that are close together are perceived to belong to the same group.",
+        currentProblem: "Indent input was separated from the cassette note distribution and fill meter.",
+        appliedFix: "Placed the indent controller directly alongside the cassette physical capacity fill bar and note pack breakdown.",
+        highlightTargetId: "sectionPhysics",
+        screen: "single"
+      },
+      {
+        id: 8,
+        name: "Law of Similarity",
+        alias: "Law of similarity",
+        definition: "Elements that share visual characteristics (color, shape, size) are perceived to belong together.",
+        currentProblem: "Pills and badges shared identical blue styling for telemetry, currency, route, and AI tags.",
+        appliedFix: "Strict semantic color taxonomy: Rose = Cashout danger, Amber = Scheduled cutoff, Emerald = SLA secured, Slate = Hardware metadata, Indigo = AI intelligence.",
+        highlightTargetId: "sectionNetworkRoster",
+        screen: "network"
+      },
+      {
+        id: 9,
+        name: "Common Region",
+        alias: "Common region",
+        definition: "Elements located within the same bounded region are perceived as a distinct operational unit.",
+        currentProblem: "Loose borders and floating text created visual bleed.",
+        appliedFix: "Encapsulated functional areas inside crisp, elevated surface cards with dedicated header bars and distinct background contrasts.",
+        highlightTargetId: "sectionNetworkChart",
+        screen: "network"
+      },
+      {
+        id: 10,
+        name: "Visual Hierarchy",
+        alias: "Visual hierarchy",
+        definition: "Arranging elements to show their order of importance through size, contrast, weight, and position.",
+        currentProblem: "All font sizes were between 10px and 13px, leading to a flat 'wall of text' fatigue.",
+        appliedFix: "4-tier typographic scale: Tier 1 Dominant Numbers (24-28px Bold), Tier 2 Section Titles (14-16px Semi-bold), Tier 3 Row Labels (12-13px Medium), Tier 4 Technical Metadata (11px Mono).",
+        highlightTargetId: "sectionDirective",
+        screen: "single"
+      },
+      {
+        id: 11,
+        name: "Progressive Disclosure",
+        alias: "Progressive Disc",
+        definition: "Show only essentials first; reveal advanced technical details on request.",
+        currentProblem: "Mathematical formulas, loss functions, raw JSON, and 7-day data tables were all exposed upfront.",
+        appliedFix: "Tier 1 glanceable decision card ➔ Tier 2 tabbed drawers for 7-day ledger & loss function rationale ➔ Tier 3 raw formula audit ledger.",
+        highlightTargetId: "sectionDisclosure",
+        screen: "single"
+      },
+      {
+        id: 12,
+        name: "Recognition over Recall",
+        alias: "Recognition / Reca",
+        definition: "Minimize memory load by making options, prompts, and active context visible rather than forcing memory recall.",
+        currentProblem: "Operators had to memorize slash commands in Copilot, and forgot previous baseline numbers when editing.",
+        appliedFix: "Visible comparison tags (+₹13.2L vs Baseline), persistent context bar in Copilot, and clickable quick-action chips (/status, /explain, /simulate).",
+        highlightTargetId: "viewCopilot",
+        screen: "copilot"
+      },
+      {
+        id: 13,
+        name: "Von Restorff Effect",
+        alias: "Von Restorff Effect",
+        definition: "When multiple similar objects are present, the one that differs from the rest is most likely to be noticed and remembered.",
+        currentProblem: "All 8 ATMs in the table looked nearly identical despite 2 being in critical stockout danger.",
+        appliedFix: "Isolated critical ATMs with subtle rose-tint background, pulsing crimson dot, and bold 'Action Required' callout.",
+        highlightTargetId: "sectionNetworkRoster",
+        screen: "network"
+      },
+      {
+        id: 14,
+        name: "Peak-End Rule",
+        alias: "Peak-end rule",
+        definition: "People judge an experience largely based on how they felt at its peak and at its conclusion.",
+        currentProblem: "Approving indents simply changed a tiny text line without any celebration or sense of operational milestone.",
+        appliedFix: "Turned the final step into an official, prestigious Cryptographic CIT Dispatch Manifest with digital tamper-evident seal and 100% SLA confirmation.",
+        highlightTargetId: "viewManifest",
+        screen: "manifest"
+      },
+      {
+        id: 15,
+        name: "Goal-Gradient Effect",
+        alias: "Goal-gradient",
+        definition: "The tendency to approach a goal increases with proximity to the goal.",
+        currentProblem: "Static text countdown '18:00 Cutoff: 3h 22m' provided zero visual progression toward completing the sign-off goal.",
+        appliedFix: "Interactive Daily Cutoff Sign-Off Progress Stepper showing 6/8 Approved (75%) with visual progress fill.",
+        highlightTargetId: "goalGradientPill",
+        screen: "network"
+      },
+      {
+        id: 16,
+        name: "Serial Position Effect",
+        alias: "Serial position",
+        definition: "Users best remember and attend to the first (Primacy) and last (Recency) items in a series.",
+        currentProblem: "Table rows and KPI cards were arranged haphazardly.",
+        appliedFix: "Primacy: Critical ATMs pinned to rows 1 and 2, Total Safe Cash as Card 1. Recency: Final authorization CTA and CIT Manifest Seal at the end.",
+        highlightTargetId: "sectionNetworkKpis",
+        screen: "network"
+      },
+      {
+        id: 17,
+        name: "Tesler's Law",
+        alias: "Tesler's law",
+        definition: "Every system has inherent complexity that cannot be removed; software must absorb it rather than dumping it onto the user.",
+        currentProblem: "Operators had to manually think through note denominations, cassette limits, and van weight bounds.",
+        appliedFix: "System algorithmically solves the 4-cassette note packing problem, clamping indents to physical ₹60.0L caps and checking van limits.",
+        highlightTargetId: "sectionPhysics",
+        screen: "single"
+      },
+      {
+        id: 18,
+        name: "Postel's Law",
+        alias: "Postel's law",
+        definition: "'Be liberal in what you accept, and conservative in what you send.'",
+        currentProblem: "Numeric input fields crashed or failed on shorthand ('28L', '50k') or comma-formatted currency.",
+        appliedFix: "Liberal input parser accepts '28L', '2800000', '28,00,000', auto-normalizes and rounds to nearest ₹100 note with feedback.",
+        highlightTargetId: "inputCycle1Amount",
+        screen: "single"
+      },
+      {
+        id: 19,
+        name: "Occam's Razor",
+        alias: "Occam's razor",
+        definition: "The simplest explanation or solution is usually best. Eliminate unnecessary entities without sacrificing core utility.",
+        currentProblem: "Duplicate sliders, redundant dual chart tabs, and repetitive metrics bloated the interface.",
+        appliedFix: "Pruned redundant controls; unified forecasting and depletion into a single high-signal view.",
+        highlightTargetId: "sectionNetworkChart",
+        screen: "network"
+      },
+      {
+        id: 20,
+        name: "Feedback Loops",
+        alias: "Feedback loops",
+        definition: "Systems must provide clear, immediate, multi-modal feedback for every action taken.",
+        currentProblem: "Saving changes or approving indents had subtle or absent state feedback.",
+        appliedFix: "Immediate visual toasts, live recalculating numbers, tactile button states, and live agent execution audit logs.",
+        highlightTargetId: "toolExecutionFeed",
+        screen: "copilot"
+      }
+    ];
+
+    // State
+    let currentView = 'network';
+    let cycle1Amount = 2800000;
+    let cycle2Amount = 2500000;
+    let approvedCount = 6;
+    const totalAtms = 8;
+
+    // View Switcher (Jakob's Law)
+    function switchView(viewKey) {
+      currentView = viewKey;
+      
+      // Update Tab Styles
+      ['network', 'single', 'copilot', 'manifest'].forEach(v => {
+        const btn = document.getElementById('tabBtn' + v.charAt(0).toUpperCase() + v.slice(1));
+        const panel = document.getElementById('view' + v.charAt(0).toUpperCase() + v.slice(1));
+        
+        if (v === viewKey) {
+          btn.className = "tab-btn px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all duration-200 flex items-center gap-2 bg-white text-slate-900 shadow-sm";
+          panel.classList.remove('hidden');
+        } else {
+          btn.className = "tab-btn px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all duration-200 flex items-center gap-2 text-slate-600 hover:text-slate-900";
+          panel.classList.add('hidden');
+        }
+      });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // Drill into specific ATM
+    function drillIntoAtm(atmId) {
+      switchView('single');
+      showToast(`Navigated to ATM #${atmId} Deep-Dive`);
+    }
+
+    function openCopilotForAtm(atmId) {
+      switchView('copilot');
+      showToast(`AI Copilot focused on ATM #${atmId}`);
+    }
+
+    // Postel's Law: Liberal input parsing (#18)
+    function parseLiberalCurrency(str) {
+      if (!str) return 0;
+      let clean = str.toString().trim().toUpperCase().replace(/₹/g, '').replace(/,/g, '');
+      let multiplier = 1;
+
+      if (clean.endsWith('CR') || clean.endsWith('CRORE')) {
+        multiplier = 10000000;
+        clean = clean.replace(/CR(ORE)?/, '');
+      } else if (clean.endsWith('L') || clean.endsWith('LAKH') || clean.endsWith('LAKHS')) {
+        multiplier = 100000;
+        clean = clean.replace(/L(AKH(S)?)?/, '');
+      } else if (clean.endsWith('K')) {
+        multiplier = 1000;
+        clean = clean.replace('K', '');
+      } else if (clean.endsWith('M')) {
+        multiplier = 1000000;
+        clean = clean.replace('M', '');
+      }
+
+      let num = parseFloat(clean);
+      if (isNaN(num)) return 0;
+      let total = Math.round(num * multiplier);
+      // Auto-round to multiples of 100 notes
+      return Math.round(total / 100) * 100;
+    }
+
+    function formatINR(val) {
+      return "₹" + Math.round(val).toLocaleString('en-IN');
+    }
+
+    function handleSmartInput(cycleId, rawStr) {
+      let parsed = parseLiberalCurrency(rawStr);
+      if (cycleId === 1) {
+        cycle1Amount = parsed;
+        document.getElementById('inputCycle1Helper').innerText = `Interpreted: ${formatINR(parsed)} (Auto-rounded to ₹100)`;
+      } else {
+        cycle2Amount = parsed;
+      }
+      recalculatePhysics();
+    }
+
+    function bumpAmount(cycleId, delta) {
+      if (cycleId === 1) {
+        cycle1Amount = Math.max(0, cycle1Amount + delta);
+        document.getElementById('inputCycle1Amount').value = cycle1Amount.toLocaleString('en-IN');
+        document.getElementById('inputCycle1Helper').innerText = `Interpreted: ${formatINR(cycle1Amount)}`;
+      } else {
+        cycle2Amount = Math.max(0, cycle2Amount + delta);
+        document.getElementById('inputCycle2Amount').value = cycle2Amount.toLocaleString('en-IN');
+      }
+      recalculatePhysics();
+      showToast(`Adjusted Cycle ${cycleId}: ${delta > 0 ? '+' : ''}${formatINR(delta)}`);
+    }
+
+    // Doherty Threshold & Tesler's Law (<50ms reactive recalculation)
+    function recalculatePhysics() {
+      const combined = cycle1Amount + cycle2Amount;
+      const combinedDisplay = document.getElementById('totalCombinedIndentDisplay');
+      const authSpan = document.getElementById('btnAuthAmountSpan');
+      if (combinedDisplay) combinedDisplay.innerText = formatINR(combined);
+      if (authSpan) authSpan.innerText = formatINR(combined);
+
+      // Safe capacity calculations (60L Cap, 26.04L residual)
+      const cap = 6000000;
+      const residual = 2604800;
+      const immediateLoad = cycle1Amount;
+      const totalSafeLoad = residual + immediateLoad;
+      const capPct = Math.min(100, Math.round((totalSafeLoad / cap) * 100));
+
+      const capText = document.getElementById('safeCapText');
+      if (capText) capText.innerText = `${formatINR(totalSafeLoad)} / ₹60,00,000 (${capPct}%)`;
+
+      const barIndent = document.getElementById('barNewIndent');
+      if (barIndent) {
+        const indentPct = Math.min(57, Math.round((immediateLoad / cap) * 100));
+        barIndent.style.width = indentPct + "%";
+      }
+
+      // Automated Denomination Packing (Tesler's Law)
+      let rem = immediateLoad;
+      let c1Notes = Math.min(2000, Math.floor((rem * 0.4) / 500));
+      let c2Notes = Math.min(2000, Math.floor((rem * 0.35) / 500));
+      let c3Notes = Math.min(1000, Math.floor((rem * 0.1) / 200));
+      let c4Notes = Math.floor((rem - (c1Notes * 500 + c2Notes * 500 + c3Notes * 200)) / 100);
+
+      document.getElementById('c1Notes').innerText = `${c1Notes.toLocaleString()} Notes`;
+      document.getElementById('c1Amt').innerText = formatINR(c1Notes * 500);
+      document.getElementById('c2Notes').innerText = `${c2Notes.toLocaleString()} Notes`;
+      document.getElementById('c2Amt').innerText = formatINR(c2Notes * 500);
+      document.getElementById('c3Notes').innerText = `${c3Notes.toLocaleString()} Notes`;
+      document.getElementById('c3Amt').innerText = formatINR(c3Notes * 200);
+      document.getElementById('c4Notes').innerText = `${c4Notes.toLocaleString()} Notes`;
+      document.getElementById('c4Amt').innerText = formatINR(c4Notes * 100);
+    }
+
+    function toggleStrategyPreset(mode) {
+      const btnMulti = document.getElementById('stratBtnMulti');
+      const btnSingle = document.getElementById('stratBtnSingle');
+      const cardCycle2 = document.getElementById('cardCycle2');
+
+      if (mode === 'single') {
+        btnSingle.className = "px-3 py-1 rounded bg-white text-slate-900 font-semibold shadow-xs";
+        btnMulti.className = "px-3 py-1 rounded text-slate-600 hover:text-slate-900";
+        cardCycle2.classList.add('opacity-40', 'pointer-events-none');
+        cycle2Amount = 0;
+        cycle1Amount = 4500000;
+        document.getElementById('inputCycle1Amount').value = "45,00,000";
+        showToast("Switched to 1-Cycle Single Drop Strategy");
+      } else {
+        btnMulti.className = "px-3 py-1 rounded bg-white text-slate-900 font-semibold shadow-xs";
+        btnSingle.className = "px-3 py-1 rounded text-slate-600 hover:text-slate-900";
+        cardCycle2.classList.remove('opacity-40', 'pointer-events-none');
+        cycle1Amount = 2800000;
+        cycle2Amount = 2500000;
+        document.getElementById('inputCycle1Amount').value = "28,00,000";
+        document.getElementById('inputCycle2Amount').value = "25,00,000";
+        showToast("Switched to Recommended 2-Cycle Multi-Drop");
+      }
+      recalculatePhysics();
+    }
+
+    function resetIndentToBaseline() {
+      cycle1Amount = 2800000;
+      cycle2Amount = 2500000;
+      document.getElementById('inputCycle1Amount').value = "28,00,000";
+      document.getElementById('inputCycle2Amount').value = "25,00,000";
+      recalculatePhysics();
+      showToast("Reset to AI Recommended Baseline (₹53.0L)");
+    }
+
+    // Authorize Current ATM Indent (Feedback Loops #20)
+    function authorizeCurrentAtmIndent() {
+      showToast(`✓ Indent of ${formatINR(cycle1Amount + cycle2Amount)} Authorized for ATM #1!`, "✓");
+      incrementApprovalProgress();
+    }
+
+    function approveSingleRow(id, btn) {
+      btn.innerHTML = "✓ Signed";
+      btn.className = "px-3 py-1.5 rounded-lg bg-emerald-600 text-white font-semibold text-xs shadow-xs";
+      showToast(`ATM #${id} Authorized by Chief Officer`);
+      incrementApprovalProgress();
+    }
+
+    function approveAllIndentsMock() {
+      approvedCount = 8;
+      updateApprovalDisplays();
+      showToast("All 8/8 Indents Authorized! Proceed to CIT Manifest Lock.");
+      switchView('manifest');
+    }
+
+    function incrementApprovalProgress() {
+      if (approvedCount < 8) {
+        approvedCount++;
+        updateApprovalDisplays();
+      }
+    }
+
+    function updateApprovalDisplays() {
+      const pct = Math.round((approvedCount / 8) * 100);
+      document.getElementById('approvalRatioDisplay').innerText = `${approvedCount}/8`;
+      document.getElementById('cutoffProgressBar').style.width = pct + "%";
+      const cardStatus = document.getElementById('cardApprovalStatus');
+      const cardPct = document.getElementById('cardApprovalPct');
+      if (cardStatus) cardStatus.innerText = `${approvedCount} / 8 Approved`;
+      if (cardPct) cardPct.innerText = `${pct}% Complete`;
+    }
+
+    // Progressive Disclosure Tabs
+    function switchDisclosureTab(tabKey, btn) {
+      document.querySelectorAll('.disc-tab-btn').forEach(b => {
+        b.className = "disc-tab-btn py-3 px-4 text-xs font-semibold text-slate-600 hover:text-slate-900 border-b-2 border-transparent transition-colors";
+      });
+      btn.className = "disc-tab-btn py-3 px-4 text-xs font-bold text-indigo-600 border-b-2 border-indigo-600 transition-colors";
+
+      document.getElementById('discTabLedger').classList.add('hidden');
+      document.getElementById('discTabRationale').classList.add('hidden');
+      document.getElementById('discTabAudit').classList.add('hidden');
+
+      if (tabKey === 'ledger') document.getElementById('discTabLedger').classList.remove('hidden');
+      if (tabKey === 'rationale') document.getElementById('discTabRationale').classList.remove('hidden');
+      if (tabKey === 'audit') document.getElementById('discTabAudit').classList.remove('hidden');
+    }
+
+    // Copilot quick prompt & execution
+    function sendQuickPrompt(prompt) {
+      document.getElementById('copilotInput').value = prompt;
+      sendUserPrompt();
+    }
+
+    function sendUserPrompt() {
+      const inp = document.getElementById('copilotInput');
+      const text = inp.value.trim();
+      if (!text) return;
+
+      const stage = document.getElementById('chatMessageStage');
+      
+      // User message
+      const userBubble = document.createElement('div');
+      userBubble.className = "flex gap-3 justify-end";
+      userBubble.innerHTML = `<div class="bg-indigo-600 text-white rounded-2xl rounded-tr-none p-3.5 max-w-md">${text}</div>`;
+      stage.appendChild(userBubble);
+      inp.value = "";
+
+      // Simulated sub-400ms feedback (Doherty Threshold #6)
+      setTimeout(() => {
+        const agentBubble = document.createElement('div');
+        agentBubble.className = "flex gap-3";
+        agentBubble.innerHTML = `
+          <div class="w-7 h-7 rounded-full bg-indigo-600 text-white flex items-center justify-center shrink-0 text-xs">🤖</div>
+          <div class="bg-slate-100 rounded-2xl rounded-tl-none p-3.5 max-w-xl text-slate-800 space-y-2">
+            <p class="font-bold text-slate-900">Executed command: <code class="font-mono text-indigo-700">${text}</code></p>
+            <p>Live network check confirmed: 8 ATMs evaluated. 2 critical terminals flagged for priority 06:00 AM dispatch. All cash parameters within safe tolerances.</p>
+          </div>
+        `;
+        stage.appendChild(agentBubble);
+        stage.scrollTop = stage.scrollHeight;
+
+        // Tool feed update
+        const feed = document.getElementById('toolExecutionFeed');
+        const feedItem = document.createElement('div');
+        feedItem.className = "p-2 rounded bg-indigo-50 border border-indigo-200 flex items-start gap-2 animate-fadeIn";
+        feedItem.innerHTML = `
+          <span class="text-indigo-600 font-bold mt-0.5">⚡</span>
+          <div>
+            <div class="font-bold text-indigo-900">${text.split(' ')[0]}()</div>
+            <div class="text-[10px] text-indigo-700 font-mono">Executed in 38ms · Verified</div>
+          </div>
+        `;
+        feed.prepend(feedItem);
+      }, 350);
+    }
+
+    function clearChatMock() {
+      document.getElementById('chatMessageStage').innerHTML = `
+        <div class="flex gap-3">
+          <div class="w-7 h-7 rounded-full bg-indigo-600 text-white flex items-center justify-center shrink-0 text-xs">🤖</div>
+          <div class="bg-slate-100 rounded-2xl rounded-tl-none p-3.5 max-w-xl text-slate-800 space-y-2">
+            <p class="font-semibold text-slate-900">Session cleared. Ready for new queries.</p>
+          </div>
+        </div>
+      `;
+    }
+
+    // Peak-End Manifest Lock
+    function lockCITManifestMock() {
+      const btn = document.getElementById('btnLockManifest');
+      btn.innerHTML = "✓ CIT Manifest Locked & Dispatched!";
+      btn.className = "py-2.5 px-5 bg-slate-900 text-white font-bold text-xs rounded-xl shadow-md pointer-events-none";
+      showToast("CIT Manifest Locked! Dispatched to armored fleet with zero stockout risk.", "🔒");
+    }
+
+    // Chart Range Selector
+    function setChartRange(days, btn) {
+      document.querySelectorAll('.chart-range-btn').forEach(b => {
+        b.className = "chart-range-btn px-2.5 py-1 rounded text-slate-600 hover:text-slate-900";
+      });
+      btn.className = "chart-range-btn px-2.5 py-1 rounded bg-white text-slate-900 shadow-xs font-semibold";
+      showToast(`Timeline adjusted to ${days} days forecast horizon`);
+    }
+
+    // Toast notification helper (Feedback Loops #20)
+    let toastTimeout;
+    function showToast(msg, icon = "✓") {
+      clearTimeout(toastTimeout);
+      const toast = document.getElementById('toastNotification');
+      document.getElementById('toastMsg').innerText = msg;
+      document.getElementById('toastIcon').innerText = icon;
+      toast.classList.remove('translate-y-20', 'opacity-0');
+      toastTimeout = setTimeout(() => {
+        toast.classList.add('translate-y-20', 'opacity-0');
+      }, 3000);
+    }
+
+    // Filter table
+    function filterTable(type, btn) {
+      document.querySelectorAll('.table-filter-btn').forEach(b => {
+        b.className = "table-filter-btn px-2.5 py-1 text-xs font-semibold rounded text-slate-600 hover:bg-slate-50 border border-transparent";
+      });
+      btn.className = "table-filter-btn px-2.5 py-1 text-xs font-semibold rounded bg-white text-slate-900 border border-slate-200 shadow-xs";
+      showToast(`Filtered roster table: ${type.toUpperCase()}`);
+    }
+
+    // Cycle ATM Mock
+    function cycleAtmMock(dir) {
+      showToast(`Switched ATM (${dir > 0 ? 'Next' : 'Previous'})`);
+    }
+
+    // Laws Inspector Drawer Logic
+    function toggleLawsDrawer() {
+      const drawer = document.getElementById('lawsDrawer');
+      const backdrop = document.getElementById('drawerBackdrop');
+      const isClosed = drawer.classList.contains('translate-x-full');
+      
+      if (isClosed) {
+        drawer.classList.remove('translate-x-full');
+        backdrop.classList.remove('hidden');
+      } else {
+        drawer.classList.add('translate-x-full');
+        backdrop.classList.add('hidden');
+      }
+    }
+
+    // Populate the 20 Laws Drawer
+    function renderLawsList() {
+      const container = document.getElementById('lawsListContainer');
+      container.innerHTML = UI_UX_LAWS.map(law => `
+        <div onclick="inspectLaw(${law.id})" class="p-3.5 rounded-xl border border-slate-200 hover:border-indigo-500 bg-white hover:bg-indigo-50/20 cursor-pointer transition-all space-y-2 group">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="w-6 h-6 rounded-full bg-slate-100 group-hover:bg-indigo-600 group-hover:text-white text-slate-700 font-mono font-bold text-xs flex items-center justify-center transition-colors">
+                ${law.id}
+              </span>
+              <span class="font-bold text-slate-900 text-xs">${law.name}</span>
+            </div>
+            <span class="text-[10px] font-mono text-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity">Jump to UI ➔</span>
+          </div>
+          <p class="text-[11px] text-slate-500 leading-snug">${law.definition}</p>
+          <div class="text-[10px] space-y-1 pt-1 border-t border-slate-100">
+            <div><strong class="text-rose-700">Problem:</strong> <span class="text-slate-600">${law.currentProblem}</span></div>
+            <div><strong class="text-emerald-700">Applied Redesign:</strong> <span class="text-slate-600">${law.appliedFix}</span></div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function inspectLaw(lawId) {
+      const law = UI_UX_LAWS.find(l => l.id === lawId);
+      if (!law) return;
+
+      // Switch to the view where this law is showcased
+      switchView(law.screen);
+
+      // Close drawer
+      toggleLawsDrawer();
+
+      // Highlight target element
+      setTimeout(() => {
+        const target = document.getElementById(law.highlightTargetId);
+        if (target) {
+          target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          target.classList.add('law-highlight');
+          setTimeout(() => {
+            target.classList.remove('law-highlight');
+          }, 3500);
+        }
+        showToast(`Inspecting Law #${law.id}: ${law.name}`, "🔍");
+      }, 300);
+    }
+
+    // Init
+    document.addEventListener('DOMContentLoaded', () => {
+      renderLawsList();
+      recalculatePhysics();
+    });
+  </script>
+</body>
+</html>

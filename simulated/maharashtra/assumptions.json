@@ -1,0 +1,24 @@
+{
+  "region": "Maharashtra",
+  "why_this_region": "Named pilot on the engagement slide. Only state whose cities all received a public weather pull, and whose ATMs already map to RBI offices.",
+  "atms": 8,
+  "days": 754,
+  "demand_source": "data/processed/daily_cash_out.csv, the daily sum of 15-minute Cash_Out. The series are synthetic.",
+  "exogenous_included": [
+    "Day of month, month, Sunday, 2nd and 4th Saturday, from the date.",
+    "Payday flag from the existing 1st / 15th / last-weekday rule.",
+    "RBI regional bank holidays for the Mumbai and Nagpur offices. known_at is blank, so this join is retrospective.",
+    "City-centroid daily rain and temperature from the Open-Meteo archive (ERA5).",
+    "Location type parsed from the location string. One ATM per type, so it is the site level, not a shared factor."
+  ],
+  "exogenous_not_invented": [
+    "Footfall, demographics, UPI, competing ATMs, card mix, festival intensity scores, cassette capacity, failed withdrawals, CIT routes."
+  ],
+  "policy_assumptions_for_the_indent_sketch": {
+    "cycle_days": 7,
+    "cer_target": 0.7,
+    "load_rule": "predicted cycle demand / 0.70",
+    "capacity_constraint": "none applied"
+  },
+  "holdout": "Last 90 days, factors fit only on earlier days. The previous 90 days are the stability check."
+}

@@ -1,0 +1,33 @@
+feature,definition,grain,status,source,availability,missing_behavior,schema_version
+day_of_week,Monday=0 through Sunday=6,ATM/date,available,versioned calendar reference,bundle cutoff/coverage rules,reject missing coverage,legacy-v1 (is_holiday changes in regional-v2)
+month,calendar month 1..12,ATM/date,available,versioned calendar reference,bundle cutoff/coverage rules,reject missing coverage,legacy-v1 (is_holiday changes in regional-v2)
+quarter,calendar quarter 1..4,ATM/date,available,versioned calendar reference,bundle cutoff/coverage rules,reject missing coverage,legacy-v1 (is_holiday changes in regional-v2)
+is_weekend,Saturday or Sunday,ATM/date,available,versioned calendar reference,bundle cutoff/coverage rules,reject missing coverage,legacy-v1 (is_holiday changes in regional-v2)
+is_payday,"assumed 1st, 15th, last weekday; no holiday adjustment",ATM/date,available,versioned calendar reference,bundle cutoff/coverage rules,reject missing coverage,legacy-v1 (is_holiday changes in regional-v2)
+is_holiday,v1: three fixed holidays; regional-v2: RBI listed NI holiday for assigned office,ATM/date,available,versioned calendar reference,bundle cutoff/coverage rules,reject missing coverage,legacy-v1 (is_holiday changes in regional-v2)
+days_to_month_end,days_in_month minus day,ATM/date,available,versioned calendar reference,bundle cutoff/coverage rules,reject missing coverage,legacy-v1 (is_holiday changes in regional-v2)
+is_month_start,first three days,ATM/date,available,versioned calendar reference,bundle cutoff/coverage rules,reject missing coverage,legacy-v1 (is_holiday changes in regional-v2)
+is_month_end,last three days,ATM/date,available,versioned calendar reference,bundle cutoff/coverage rules,reject missing coverage,legacy-v1 (is_holiday changes in regional-v2)
+lag_1,prior-day demand,ATM/date,derived,prior daily demand,strictly before forecast date,reject insufficient history,legacy-v1 (is_holiday changes in regional-v2)
+lag_7,demand seven days earlier,ATM/date,derived,prior daily demand,strictly before forecast date,reject insufficient history,legacy-v1 (is_holiday changes in regional-v2)
+lag_14,demand fourteen days earlier,ATM/date,derived,prior daily demand,strictly before forecast date,reject insufficient history,legacy-v1 (is_holiday changes in regional-v2)
+rolling_mean_7,mean of prior seven days,ATM/date,derived,prior daily demand,strictly before forecast date,reject insufficient history,legacy-v1 (is_holiday changes in regional-v2)
+rolling_mean_14,mean of prior fourteen days,ATM/date,derived,prior daily demand,strictly before forecast date,reject insufficient history,legacy-v1 (is_holiday changes in regional-v2)
+rolling_std_7,population standard deviation of prior seven days,ATM/date,derived,prior daily demand,strictly before forecast date,reject insufficient history,legacy-v1 (is_holiday changes in regional-v2)
+is_bank_closed_day,RBI listed holiday/account closing or Sunday or second/fourth Saturday; regional proxy,ATM/date,available,versioned calendar reference,bundle cutoff/coverage rules,reject missing coverage,regional-v2
+is_pre_holiday_3d,RBI NI holiday in next 1..3 days; excludes scheduled weekends alone,ATM/date,available,versioned calendar reference,bundle cutoff/coverage rules,reject missing coverage,regional-v2
+is_post_holiday_3d,RBI NI holiday in preceding 1..3 days; excludes scheduled weekends alone,ATM/date,available,versioned calendar reference,bundle cutoff/coverage rules,reject missing coverage,regional-v2
+local_event,requires verified external observations,ATM/date,unavailable,not collected,unknown,exclude from model; keep unknown,not_enabled
+verified_site_type,"Location typology (concourse, airport terminal, mall, hospital, education campus, fuel plaza)",ATM/profile,available,terminal_profile.csv,master profile lookup,reject missing coverage,operational-v2
+device_type,"Hardware model and dispenser specs (NCR SelfServ 84, Diebold Nixdorf CS 7700, Hitachi Recycler)",ATM/profile,available,terminal_profile.csv,master profile lookup,fallback to standard NCR,operational-v2
+capacity_amount,"Physical vault rupee capacity limit (₹35L to ₹100L) bounding maximum cash loading",ATM/profile,available,terminal_profile.csv,master profile lookup,default 6000000.0,operational-v2
+serviced_by,"Operational channel: CIT armored van carrier vs. attached Branch cashiers",ATM/profile,available,terminal_profile.csv,master profile lookup,default CIT,operational-v2
+replenishment_cycle_days,"Standard replenishment review cycle: 7 days for scheduled CIT routes vs. 3 days for agile Branch runs",ATM/profile,available,terminal_profile.csv,master profile lookup,default 7,operational-v2
+uptime_pct,requires verified external observations,ATM/date,unavailable,not collected,unknown,exclude from model; keep unknown,not_enabled
+failed_amount,requires verified external observations,ATM/date,unavailable,not collected,unknown,exclude from model; keep unknown,not_enabled
+weather,ERA5 surface reanalysis (daily rain_mm and min/mean/max temperature across 4 Maharashtra cities),ATM/date,available,Open-Meteo ERA5 Archive,daily weather sync,impute median,exogenous-v2
+footfall,requires verified external observations,ATM/date,unavailable,not collected,unknown,exclude from model; keep unknown,not_enabled
+terminal_id,synthetic ATM identifier; separate namespace from legacy demo,ATM/profile,observed_identifier,daily demand / terminal metadata,static compatibility context,do not infer verified device characteristics,global-model-context-v1
+denomination,"primary data: constant 100 INR rounding unit, not observed banknote demand",ATM/profile,rounding_unit,daily demand / terminal metadata,static compatibility context,do not infer verified device characteristics,global-model-context-v1
+site_type,Normalized operational site category used in Strategy B cold-start profiler,ATM/profile,derived,terminal_profile.csv,master lookup,fallback to COMMERCIAL_HUB,operational-v2
+is_recycler,legacy demo setting; primary daily export false is an unverified compatibility placeholder,ATM/profile,not_verified_for_primary,daily demand / terminal metadata,static compatibility context,do not infer verified device characteristics,global-model-context-v1

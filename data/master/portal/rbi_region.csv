@@ -1,0 +1,35 @@
+rbi_region,atm_count,states,cities,holiday_rows,coverage_rows,coverage_complete_rows,in_terminal_geography
+Agartala,2,Tripura,AGARTALA,56,29,29,yes
+Ahmedabad,6,Gujarat,AHMEDABAD | SURAT | VADODARA,47,29,29,yes
+Aizawl,0,,,59,29,29,no
+Belapur,0,,,51,29,29,no
+Bengaluru,4,Karnataka,BENGALURU | MYSURU,57,29,29,yes
+Bhopal,4,Madhya Pradesh,BHOPAL | INDORE,48,29,29,yes
+Bhubaneswar,4,Odisha,BHUBANESWAR | CUTTACK,52,29,29,yes
+Chandigarh,8,Chandigarh | Haryana | Punjab,AMRITSAR | CHANDIGARH | GURUGRAM | LUDHIANA,38,29,29,yes
+Chennai,6,Tamil Nadu,CHENNAI | COIMBATORE | MADURAI,52,29,29,yes
+Dehradun,4,Uttarakhand,DEHRADUN | HARIDWAR,56,29,29,yes
+Gangtok,0,,,68,29,29,no
+Guwahati,2,Assam,GUWAHATI,48,29,29,yes
+Hyderabad,4,Telangana,HYDERABAD | WARANGAL,47,29,29,yes
+Imphal,0,,,46,29,29,no
+Itanagar,0,,,43,29,29,no
+Jaipur,4,Rajasthan,JAIPUR | JODHPUR,44,29,29,yes
+Jammu,2,Jammu and Kashmir,JAMMU,53,29,29,yes
+Kanpur,6,Uttar Pradesh,KANPUR | NOIDA | VARANASI,62,29,29,yes
+Kochi,4,Kerala,KOCHI | KOZHIKODE,49,29,29,yes
+Kohima,0,,,42,29,29,no
+Kolkata,4,West Bengal,DURGAPUR | KOLKATA,64,29,29,yes
+Lucknow,2,Uttar Pradesh,LUCKNOW,61,29,29,yes
+Mumbai,6,Maharashtra,MUMBAI | NASHIK | PUNE,51,29,29,yes
+Nagpur,2,Maharashtra,NAGPUR,51,29,29,yes
+New Delhi,2,Delhi,DELHI,38,29,29,yes
+Panaji,2,Goa,PANAJI,40,29,29,yes
+Patna,2,Bihar,PATNA,47,29,29,yes
+Raipur,2,Chhattisgarh,RAIPUR,43,29,29,yes
+Ranchi,4,Jharkhand,JAMSHEDPUR | RANCHI,59,29,29,yes
+Shillong,2,Meghalaya,SHILLONG,63,29,29,yes
+Shimla,2,Himachal Pradesh,SHIMLA,46,29,29,yes
+Srinagar,2,Jammu and Kashmir,SRINAGAR,52,29,29,yes
+Thiruvananthapuram,2,Kerala,THIRUVANANTHAPURAM,52,29,29,yes
+Vijayawada,6,Andhra Pradesh,TIRUPATI | VIJAYAWADA | VISAKHAPATNAM,44,29,29,yes

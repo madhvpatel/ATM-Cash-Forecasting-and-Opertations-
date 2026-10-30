@@ -1,0 +1,9 @@
+Comparison,Daily_WAPE_Change_pp,7Day_WAPE_Change_pp,Bias_Change_pp,95%_CI_Daily_pp,95%_CI_7Day_pp
+Calendar vs History Only,+3.01 pp (+13.8%),+2.77 pp (+22.8%),+0.46 pp,"[+2.31, +3.60]","[+1.58, +3.96]"
+Events/Holidays vs History+Calendar,+0.18 pp (+1.0%),+0.19 pp (+2.0%),+0.15 pp,"[+0.01, +0.36]","[+0.04, +0.35]"
+Weather vs History+Calendar,+0.03 pp (+0.2%),+0.08 pp (+0.9%),+0.05 pp,"[-0.13, +0.23]","[-0.18, +0.35]"
+All External (Full Stack) vs History+Calendar,+0.24 pp (+1.3%),+0.29 pp (+3.1%),+0.18 pp,"[+0.02, +0.47]","[-0.05, +0.63]"
+Value of Weather in Full Stack (F vs F-minus-Weather),+0.06 pp (+0.3%),+0.10 pp (+1.0%),+0.03 pp,"[-0.12, +0.25]","[-0.21, +0.45]"
+Value of Holidays in Full Stack (F vs F-minus-Holidays),+0.20 pp (+1.1%),+0.20 pp (+2.2%),+0.13 pp,"[+0.04, +0.36]","[-0.01, +0.45]"
+Value of Calendar in Full Stack (F vs F-minus-Calendar),+3.05 pp (+14.1%),+2.63 pp (+22.5%),+0.73 pp,"[+2.42, +3.60]","[+1.58, +3.60]"
+Value of History in Full Stack (F vs Pure Exogenous),-0.53 pp (-2.9%),-0.31 pp (-3.6%),-0.45 pp,"[-0.80, -0.24]","[-0.80, +0.10]"

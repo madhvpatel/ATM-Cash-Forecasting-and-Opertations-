@@ -1,0 +1,177 @@
+{
+  "assumptions": {
+    "holding_rate_annual": 0.065,
+    "cit_trip_cost": 2000.0,
+    "stockout_penalty_fixed": 10000.0,
+    "emergency_refill_premium": 3500.0,
+    "unmet_demand_penalty_rate": 0.01,
+    "target_service_level": 0.99,
+    "target_cer_buffer": 0.7,
+    "default_cassette_capacity": 6000000.0
+  },
+  "terminal_configs": {
+    "1": {
+      "capacity": 6000000.0,
+      "serviced_by": "CIT",
+      "cycle_days": 7,
+      "site_type": "RAILWAY STATION CONCOURSE",
+      "city": "MUMBAI"
+    },
+    "2": {
+      "capacity": 6000000.0,
+      "serviced_by": "CIT",
+      "cycle_days": 7,
+      "site_type": "AIRPORT TERMINAL T2",
+      "city": "MUMBAI"
+    },
+    "3": {
+      "capacity": 6000000.0,
+      "serviced_by": "CIT",
+      "cycle_days": 7,
+      "site_type": "CITY CENTRE MALL",
+      "city": "PUNE"
+    },
+    "4": {
+      "capacity": 3500000.0,
+      "serviced_by": "BRANCH",
+      "cycle_days": 3,
+      "site_type": "IT TECH PARK CAMPUS",
+      "city": "PUNE"
+    },
+    "5": {
+      "capacity": 5000000.0,
+      "serviced_by": "CIT",
+      "cycle_days": 7,
+      "site_type": "COMMERCIAL CBD / FUEL PLAZA",
+      "city": "NAGPUR"
+    },
+    "6": {
+      "capacity": 6000000.0,
+      "serviced_by": "CIT",
+      "cycle_days": 7,
+      "site_type": "TOURIST PROMENADE",
+      "city": "NAGPUR"
+    },
+    "7": {
+      "capacity": 6000000.0,
+      "serviced_by": "CIT",
+      "cycle_days": 7,
+      "site_type": "METRO STATION CONCOURSE",
+      "city": "NASHIK"
+    },
+    "8": {
+      "capacity": 3500000.0,
+      "serviced_by": "BRANCH",
+      "cycle_days": 3,
+      "site_type": "MIDC INDUSTRIAL ESTATE",
+      "city": "NASHIK"
+    }
+  },
+  "exogenous_events": [
+    {
+      "id": "EVT_01",
+      "name": "Monsoon Orange Alert",
+      "city": "MUMBAI",
+      "start_date": "2026-08-28",
+      "end_date": "2026-08-30",
+      "demand_multiplier": 0.82,
+      "notes": "Heavy localized waterlogging reduces footfall near street concourses."
+    },
+    {
+      "id": "EVT_02",
+      "name": "Corporate Salary Surge",
+      "city": "ALL",
+      "start_date": "2026-08-31",
+      "end_date": "2026-09-04",
+      "demand_multiplier": 1.28,
+      "notes": "Month-end salary dispersal spike across commercial & IT zones."
+    },
+    {
+      "id": "EVT_03",
+      "name": "Ganesh Chaturthi Festive Influx",
+      "city": "PUNE",
+      "start_date": "2026-09-04",
+      "end_date": "2026-09-07",
+      "demand_multiplier": 1.45,
+      "notes": "Festival bazaar cash withdrawals at peak demand."
+    },
+    {
+      "id": "EVT_04",
+      "name": "Mid-Month Pension Credit",
+      "city": "NAGPUR",
+      "start_date": "2026-09-10",
+      "end_date": "2026-09-12",
+      "demand_multiplier": 1.15,
+      "notes": "Senior citizen pension credits at post & bank branches."
+    }
+  ],
+  "approved_indents": {},
+  "checker_overrides": {
+    "8": {
+      "terminal_id": "8",
+      "maker_proposed_indent": 100700.0,
+      "checker_custom_indent": 1500000.0,
+      "delta_rupees": 1399300.0,
+      "reason": "Amended: Configured 2-CYCLE multi-drop strategy (\u20b915,00,000)",
+      "actor": "Treasury Operations Planner",
+      "timestamp": "2026-10-29 01:37:07"
+    }
+  },
+  "amended_replenishments": {
+    "8": {
+      "terminal_id": "8",
+      "strategy": "2-CYCLE",
+      "refill_cycles": [
+        {
+          "cycle_id": 1,
+          "name": "Refill Cycle #1 (Mid-Week Primary)",
+          "date": "2026-08-26",
+          "window": "08:00 AM",
+          "amount": 600000.0,
+          "is_enabled": true,
+          "servicing": "BRANCH",
+          "status": "Amended",
+          "reason": "Primary operational replenishment"
+        },
+        {
+          "cycle_id": 2,
+          "name": "Refill Cycle #2 (Weekend Surge Shield)",
+          "date": "2026-08-28",
+          "window": "07:00 AM \u2013 09:15 AM",
+          "amount": 900000.0,
+          "is_enabled": true,
+          "servicing": "BRANCH",
+          "status": "Amended",
+          "reason": "Auto-suggested to eliminate 2026-08-29 stockout"
+        }
+      ],
+      "amended_date": "2026-08-26",
+      "amended_window": "08:00 AM",
+      "amended_indent": 1500000.0,
+      "original_indent": 100700.0,
+      "notes": "Configured 2-CYCLE multi-drop strategy (\u20b915,00,000)",
+      "actor": "Treasury Operations Planner",
+      "timestamp": "2026-10-29 01:37:07"
+    }
+  },
+  "feedback_logs": [
+    {
+      "terminal_id": "1",
+      "feedback": "thumbs_down",
+      "reason": "INDENT_TOO_HIGH",
+      "comment": "",
+      "actor": "CMS Ops Operator",
+      "timestamp": "2026-10-28 23:39:17"
+    },
+    {
+      "terminal_id": "1",
+      "feedback": "thumbs_down",
+      "reason": "INDENT_TOO_HIGH",
+      "comment": "",
+      "actor": "CMS Ops Operator",
+      "timestamp": "2026-10-28 23:40:20"
+    }
+  ],
+  "is_manifest_locked": false,
+  "manifest_lock_info": null
+}

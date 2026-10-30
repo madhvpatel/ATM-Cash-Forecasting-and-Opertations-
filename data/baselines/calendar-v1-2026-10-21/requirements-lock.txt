@@ -1,0 +1,12 @@
+# Development lock captured from the local CPython 3.10/macOS environment on
+# 2026-09-22. This is a reproducibility aid for that environment, not a
+# cross-platform deployment lock or complete transitive lock. Build tools were
+# unavailable locally and are deliberately not given unverified pins here.
+# Use pyproject.toml constraints for CI.
+joblib==1.5.3
+lightgbm==4.7.0
+matplotlib==3.10.9
+numpy==2.2.6
+pandas==2.3.3
+pytest==8.4.2
+scikit-learn==1.7.2

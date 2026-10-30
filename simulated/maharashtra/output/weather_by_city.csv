@@ -1,0 +1,5 @@
+city,rows,pearson_rain_vs_residual,pearson_tmax_vs_residual,rain_ge_10_median_ratio
+MUMBAI,1328,0.103,-0.053,1.059
+NAGPUR,1328,-0.045,-0.03,0.94
+NASHIK,1328,-0.048,-0.047,0.911
+PUNE,1328,-0.057,-0.003,0.985

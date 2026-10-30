@@ -1,0 +1,117 @@
+{
+  "prepared_on": "2026-10-22",
+  "entry_point": "data/master/portal/index.json",
+  "readme": "data/master/portal/README.md",
+  "dataset_catalog": "data/master/portal/dataset.csv",
+  "populations_do_not_join": [
+    "cash_files",
+    "legacy_demo"
+  ],
+  "cash_summary": "data/master/portal/cash_summary.json",
+  "cash_total_inr": 48923752400,
+  "cash_total_crore": "4892.38",
+  "legacy_fixed_holidays": [
+    "2024-10-02",
+    "2025-01-26",
+    "2025-08-15",
+    "2025-10-02",
+    "2026-01-26",
+    "2026-08-15"
+  ],
+  "legacy_demo_cassette": {
+    "path": "data/master/legacy_demo/dim_cassette_configuration.csv",
+    "rows": 24,
+    "terminals": [
+      1001,
+      1002,
+      1003,
+      1004,
+      1005,
+      1006
+    ],
+    "denominations_inr": [
+      100,
+      200,
+      500,
+      2000
+    ],
+    "applies_to": "legacy_demo only"
+  },
+  "files": [
+    {
+      "path": "data/master/portal/README.md",
+      "bytes": 1471,
+      "sha256": "597df0c32cc4508c3dca8ed4d55afe357d04304303f41570a616267b88a781ce"
+    },
+    {
+      "path": "data/master/portal/atm_terminal.csv",
+      "bytes": 22133,
+      "sha256": "be6378f90361ff476b06b7cadbd2ee87e7c6388908dba5e07781b61d1544ab43"
+    },
+    {
+      "path": "data/master/portal/cash_summary.json",
+      "bytes": 8571,
+      "sha256": "a90d600c07bbc2c5bf57fb31453f3aa12ffe6f4521df88ce69bbf44e846bcc7c"
+    },
+    {
+      "path": "data/master/portal/city.csv",
+      "bytes": 3210,
+      "sha256": "de008a71e4b88d1e27ba8f527b3c670b2eb793362d2286076b591e4fa70a3d17"
+    },
+    {
+      "path": "data/master/portal/dataset.csv",
+      "bytes": 4856,
+      "sha256": "352f22bab7718e81cdff1b34d4708512a309ebc1cd4ab03566f16d301dcdc8bb"
+    },
+    {
+      "path": "data/master/portal/denomination.csv",
+      "bytes": 262,
+      "sha256": "e78cf187310af32d15418bfaebdde9acc34760b66c1a663ac6353bad6b21cde5"
+    },
+    {
+      "path": "data/master/portal/feature.csv",
+      "bytes": 5997,
+      "sha256": "fd012ba279df900dd7044e90591c614d2f5773bf5fcc0d756343439f9b5a7144"
+    },
+    {
+      "path": "data/master/portal/location_label.csv",
+      "bytes": 2215,
+      "sha256": "87e2e49c7c64b43c8b1cbdf4751bdd4c2ce93ce9d08d36b70bb60fd848807b4b"
+    },
+    {
+      "path": "data/master/portal/maharashtra_pilot_atm.csv",
+      "bytes": 1064,
+      "sha256": "8d446ccbe1593f1011e6b4b0fd50aa10b7d516ee433a1845c084199e712f2f8c"
+    },
+    {
+      "path": "data/master/portal/population.csv",
+      "bytes": 368,
+      "sha256": "a106abd4a552e3b7cabd2763e2a7a6ae8df2d064acb987a2148d56aa7a3af96b"
+    },
+    {
+      "path": "data/master/portal/rbi_region.csv",
+      "bytes": 1706,
+      "sha256": "b1f8864768a25b311bb7e9a08997a327dc40e766a106144d406d076fb4d86aa1"
+    },
+    {
+      "path": "data/master/portal/state.csv",
+      "bytes": 683,
+      "sha256": "b135cd35518bae0a3a7f35679b580a26f3b97cd9840a2b0fe31e7619fa2904cd"
+    },
+    {
+      "path": "data/master/portal/switch_field.csv",
+      "bytes": 2411,
+      "sha256": "a65c1d41e44594582d2becd6433b2c2f7e4cae3836afc1f50442ad9274768df3"
+    },
+    {
+      "path": "data/master/portal/unavailable.csv",
+      "bytes": 1249,
+      "sha256": "effeb81af85d698bb243f227884da5d7370e00c4c68947004b01bef81db94cd3"
+    },
+    {
+      "path": "data/master/portal/weather_place.csv",
+      "bytes": 524,
+      "sha256": "4d391e19b017f94df26b2bfa78050fbf8e186a6de51622148712e8aeda456583"
+    }
+  ]
+}
