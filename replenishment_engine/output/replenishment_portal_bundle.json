@@ -1,6 +1,6 @@
 {
   "metadata": {
-    "generated_at": "2026-11-03 19:53:57",
+    "generated_at": "2026-11-04 03:27:33",
     "total_atms": 8,
     "total_cycles_evaluated": 440,
     "default_holding_rate": 0.065,
@@ -13,17 +13,17 @@
       "model": "lgb_holiday",
       "total_cycles": 440,
       "forecast_7day_wape_pct": 8.43,
-      "stockout_cycles": 124,
-      "stockout_rate_pct": 28.18,
-      "total_shortfall_lakh": 855.22,
-      "mean_weekly_load_lakh": 49.54,
-      "avg_realized_cer": 0.913,
-      "holding_cost_inr": 1333068.0,
+      "stockout_cycles": 123,
+      "stockout_rate_pct": 27.95,
+      "total_shortfall_lakh": 854.36,
+      "mean_weekly_load_lakh": 49.37,
+      "avg_realized_cer": 0.917,
+      "holding_cost_inr": 1323451.0,
       "cit_logistics_cost_inr": 880000.0,
-      "penalties_and_emergencies_inr": 1859500.0,
-      "total_cost_inr": 4927787.0,
-      "savings_vs_naive_inr": 96955.0,
-      "savings_pct": 1.93
+      "penalties_and_emergencies_inr": 1846000.0,
+      "total_cost_inr": 4903812.0,
+      "savings_vs_naive_inr": 120930.0,
+      "savings_pct": 2.41
     },
     {
       "model": "pure_exogenous",

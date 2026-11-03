@@ -1,5 +1,5 @@
 model,total_cycles,forecast_7day_wape_pct,stockout_cycles,stockout_rate_pct,total_shortfall_lakh,mean_weekly_load_lakh,avg_realized_cer,holding_cost_inr,cit_logistics_cost_inr,penalties_and_emergencies_inr,total_cost_inr,savings_vs_naive_inr,savings_pct
-lgb_holiday,440,8.43,124,28.18,855.22,49.54,0.913,1333068.0,880000.0,1859500.0,4927787.0,96955.0,1.93
+lgb_holiday,440,8.43,123,27.95,854.36,49.37,0.917,1323451.0,880000.0,1846000.0,4903812.0,120930.0,2.41
 pure_exogenous,440,9.02,137,31.14,878.18,47.41,0.96,1220456.0,880000.0,2035000.0,5013636.0,11106.0,0.22
 naive_last_week,440,18.92,129,29.32,863.8,49.89,0.907,1353940.0,880000.0,1927000.0,5024742.0,0.0,0.0
 lgb_calendar_holidays_censored,440,9.24,143,32.5,887.35,47.43,0.96,1222861.0,880000.0,2116000.0,5106211.0,-81469.0,-1.62

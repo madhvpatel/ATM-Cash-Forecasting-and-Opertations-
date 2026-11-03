@@ -215,11 +215,13 @@ class ReplenishmentForecaster:
             if terminal_id is None or pd.isna(terminal_id):
                 raise ValueError("lgb_holiday needs a terminal_id column in the panel")
             week = demand_model.forecast_week(cutoff_date)
-            week = week[week["terminal_id"] == int(terminal_id)].set_index("target_date")["pred"]
-            preds = week.reindex(pd.to_datetime(test["target_date"])).to_numpy(dtype=float)
+            week = week[week["terminal_id"] == int(terminal_id)].set_index("target_date")
+            preds = week["pred"].reindex(pd.to_datetime(test["target_date"])).to_numpy(dtype=float)
             if np.isnan(preds).any():
                 raise ValueError(f"lgb_holiday has no forecast for ATM {terminal_id} at {cutoff_date}")
-            multiplier, _ = demand_model.buffer_multiplier(cutoff_date, self.config.target_service_level)
+            multiplier, _ = demand_model.buffer_multiplier(
+                cutoff_date, bool(week["holiday_week"].iloc[0]), self.config.target_service_level
+            )
             sigma_7 = demand_model.equivalent_sigma(float(preds.sum()), multiplier, self.config.target_service_level)
 
         elif model_type == "lgb_calendar_holidays":

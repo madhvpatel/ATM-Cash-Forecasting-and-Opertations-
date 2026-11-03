@@ -34,6 +34,9 @@ NUM_LEAVES = 63
 MIN_CHILD_SAMPLES = 50
 CONFORMAL_WINDOW_WEEKS = 26
 MIN_PAST_WEEKS = 8
+# A forecast week "touches a holiday" if any day is a holiday or within this many days before one.
+# Those weeks need a wider buffer (P99 ratio ~1.36 vs ~1.24), see docs/SCORECARD_100_ATMS.md.
+HOLIDAY_WEEK_LEAD_DAYS = 3
 # ponytail: used only before 8 backtest weeks exist; roughly the naive forecast's P99 (+57-69%).
 UNCALIBRATED_MULTIPLIER = 1.6
 
@@ -306,11 +309,21 @@ def _forecast_week(cutoff: pd.Timestamp) -> pd.DataFrame:
     if train["target_idx"].max() > cutoff_idx or test["target_idx"].min() <= cutoff_idx:
         raise AssertionError("train and test dates overlap")
     pred = fit_predict(lightgbm, train, test, holiday_model_features(ro), train["demand"])
-    return test[["terminal_id", "target_date", "horizon"]].assign(pred=pred).reset_index(drop=True)
+    out = test[["terminal_id", "target_date", "horizon"]].assign(pred=pred)
+    out["holiday_week"] = is_holiday_day(test["days_to_holiday"]).groupby(test["terminal_id"]).transform("any")
+    return out.reset_index(drop=True)
+
+
+def is_holiday_day(days_to_holiday: pd.Series) -> pd.Series:
+    """Holiday, or within HOLIDAY_WEEK_LEAD_DAYS before one. Known from the RBI calendar in advance."""
+    return days_to_holiday <= HOLIDAY_WEEK_LEAD_DAYS
 
 
 def forecast_week(cutoff) -> pd.DataFrame:
-    """Forecast for every ATM, horizons 1-7 after the cutoff: terminal_id, target_date, horizon, pred."""
+    """Forecast for every ATM, horizons 1-7 after the cutoff.
+
+    Columns: terminal_id, target_date, horizon, pred, holiday_week (same for all 7 rows of an ATM).
+    """
     return _forecast_week(pd.Timestamp(cutoff)).copy()
 
 
@@ -319,24 +332,39 @@ def _scorecard_weekly() -> pd.DataFrame:
     if not SCORECARD_WEEKLY.exists():
         raise FileNotFoundError(f"{SCORECARD_WEEKLY} is missing; run python3 scripts/run_scorecard_100.py first")
     weekly = pd.read_csv(SCORECARD_WEEKLY, parse_dates=["origin_date"])
-    if MODEL_NAME not in weekly.columns:
-        raise ValueError(f"{SCORECARD_WEEKLY} has no {MODEL_NAME} column; re-run the scorecard")
+    missing = {MODEL_NAME, "holiday_week"} - set(weekly.columns)
+    if missing:
+        raise ValueError(f"{SCORECARD_WEEKLY} has no {sorted(missing)} column; re-run the scorecard")
     return weekly
 
 
-def buffer_multiplier(cutoff, service_level: float = 0.99) -> tuple[float, bool]:
+def conformal_multiplier(ratio: pd.Series, past: pd.Series, origin: pd.Series, same_type: pd.Series, q: float):
+    """P-q of past actual/forecast ratios among weeks of the same type; pooled if that type is too rare.
+
+    Returns None when even the pooled window has fewer than MIN_PAST_WEEKS origins.
+    """
+    for rows in (past & same_type, past):
+        if origin[rows].nunique() >= MIN_PAST_WEEKS:
+            return max(1.0, float(np.nanquantile(ratio[rows], q)))
+    return None
+
+
+def buffer_multiplier(cutoff, holiday_week: bool, service_level: float = 0.99) -> tuple[float, bool]:
     """Load multiplier on the 7-day forecast that met the service level in past backtest weeks.
 
-    Uses only weeks whose last day is on or before the cutoff. Returns (multiplier, calibrated).
+    Calibrated separately for weeks that touch a holiday and weeks that don't. Uses only weeks whose
+    last day is on or before the cutoff. Returns (multiplier, calibrated).
     """
     cutoff = pd.Timestamp(cutoff)
     weekly = _scorecard_weekly()
     week_end = weekly["origin_date"] + pd.Timedelta(days=7)
     past = (week_end <= cutoff) & (weekly["origin_date"] > cutoff - pd.Timedelta(weeks=CONFORMAL_WINDOW_WEEKS))
-    if weekly.loc[past, "origin_date"].nunique() < MIN_PAST_WEEKS:
+    ratio = weekly["demand"] / weekly[MODEL_NAME].replace(0, np.nan)
+    same_type = weekly["holiday_week"] == bool(holiday_week)
+    multiplier = conformal_multiplier(ratio, past, weekly["origin_date"], same_type, service_level)
+    if multiplier is None:
         return UNCALIBRATED_MULTIPLIER, False
-    ratio = weekly.loc[past, "demand"] / weekly.loc[past, MODEL_NAME].replace(0, np.nan)
-    return max(1.0, float(np.nanquantile(ratio, service_level))), True
+    return multiplier, True
 
 
 def equivalent_sigma(pred_sum: float, multiplier: float, service_level: float = 0.99) -> float:

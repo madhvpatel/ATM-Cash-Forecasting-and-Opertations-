@@ -28,8 +28,9 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from replenishment_engine.demand_model import (  # noqa: E402
-    CALENDAR, CONFORMAL_WINDOW_WEEKS, MAJOR_FESTIVALS, MIN_PAST_WEEKS,
-    add_features, fit_predict, holiday_model_features, level_features, load_panel, load_rolling_origin,
+    CALENDAR, CONFORMAL_WINDOW_WEEKS, HOLIDAY_WEEK_LEAD_DAYS, MAJOR_FESTIVALS, MIN_PAST_WEEKS,
+    add_features, conformal_multiplier, fit_predict, holiday_model_features, is_holiday_day, level_features,
+    load_panel, load_rolling_origin, SEED,
 )
 
 PILOT_PANEL = ROOT / "simulated" / "maharashtra" / "data" / "atm_daily.csv"
@@ -82,14 +83,17 @@ def forecast_origin(ro, lightgbm, frame, cutoff_idx, n_atm) -> pd.DataFrame:
 
 
 def weekly_totals(pred: pd.DataFrame) -> pd.DataFrame:
-    return (
-        pred.groupby(["terminal_id", "origin_idx", "origin_date", "volume_tier", "loc_type"], as_index=False)
-        [["demand", *MODELS]].sum()
-    )
+    keys = ["terminal_id", "origin_idx", "origin_date", "volume_tier", "loc_type"]
+    totals = pred.groupby(keys, as_index=False)[["demand", *MODELS]].sum()
+    holiday = pred.assign(holiday_week=is_holiday_day(pred["days_to_holiday"])).groupby(keys, as_index=False)["holiday_week"].any()
+    return totals.merge(holiday, on=keys, validate="one_to_one")
 
 
 def add_conformal_bounds(weekly: pd.DataFrame, horizon: int) -> pd.DataFrame:
-    """Per model, P95/P99 multipliers from past weeks only (rolling 26-week window)."""
+    """Per model, P95/P99 multipliers from past weeks only (rolling 26-week window).
+
+    Calibrated separately for holiday-touched and quiet weeks (pooled if a type has too few past weeks).
+    """
     weekly = weekly.copy()
     origins = np.sort(weekly["origin_idx"].unique())
     for model in MODELS:
@@ -98,11 +102,13 @@ def add_conformal_bounds(weekly: pd.DataFrame, horizon: int) -> pd.DataFrame:
             weekly[f"{model}_q{q}"] = np.nan
         for origin in origins:
             past = (weekly["origin_idx"] + horizon <= origin) & (weekly["origin_idx"] > origin - CONFORMAL_WINDOW_WEEKS * 7)
-            if weekly.loc[past, "origin_idx"].nunique() < MIN_PAST_WEEKS:
-                continue
-            now = weekly["origin_idx"] == origin
-            for q in (95, 99):
-                weekly.loc[now, f"{model}_q{q}"] = float(np.nanquantile(ratio[past], q / 100))
+            for week_type in (False, True):
+                same_type = weekly["holiday_week"] == week_type
+                now = (weekly["origin_idx"] == origin) & same_type
+                for q in (95, 99):
+                    mult = conformal_multiplier(ratio, past, weekly["origin_idx"], same_type, q / 100)
+                    if mult is not None:
+                        weekly.loc[now, f"{model}_q{q}"] = mult
     return weekly
 
 
@@ -129,6 +135,7 @@ def metric_rows(daily: pd.DataFrame, weekly: pd.DataFrame) -> pd.DataFrame:
         ("long_closure", daily[(daily["is_bank_closed"] == 1) & (daily["closure_run"] >= 3)]),
     ]
     weekly_slices = [("all", weekly)] + [(f"tier:{t}", weekly[weekly["volume_tier"] == t]) for t in ["low", "mid", "high"]]
+    weekly_slices += [("quiet_week", weekly[~weekly["holiday_week"]]), ("holiday_week", weekly[weekly["holiday_week"]])]
     for model in MODELS:
         for name, part in daily_slices:
             if part.empty:
@@ -231,7 +238,10 @@ def main() -> None:
         "last_cutoff": str(pd.Timestamp(dates[cutoffs[-1]]).date()),
         "target": "observed net_demand (Cash_Out), not uncensored",
         "pilot_flag_agreement": agreement,
-        "conformal": f"P95/P99 of actual/forecast 7-day ratios, past {CONFORMAL_WINDOW_WEEKS} weeks, >= {MIN_PAST_WEEKS} weeks required",
+        "conformal": (
+            f"P95/P99 of actual/forecast 7-day ratios, past {CONFORMAL_WINDOW_WEEKS} weeks, >= {MIN_PAST_WEEKS} weeks required; "
+            f"separate for weeks touching a holiday (any day within {HOLIDAY_WEEK_LEAD_DAYS} days before one) and quiet weeks"
+        ),
         "recency_half_life_days": RECENCY_HALF_LIFE_DAYS,
         "models": {
             "seasonal_naive": "same weekday last week",

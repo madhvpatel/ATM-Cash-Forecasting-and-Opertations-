@@ -29,6 +29,12 @@ from replenishment_engine import demand_model
 
 OPERATIONAL_MODEL = demand_model.MODEL_NAME
 
+
+def cycle_multiplier(buffers: dict, tid) -> float:
+    """P99 multiplier for this ATM in this cycle: holiday-week or quiet-week calibration."""
+    holiday = int(tid) in buffers["holiday_week_atms"]
+    return buffers["p99_multiplier_holiday_week" if holiday else "p99_multiplier_quiet_week"]
+
 ATM_GEO_METADATA = {
     1: {
         "terminal_code": "SYNATM0001",
@@ -644,11 +650,14 @@ def build_portal_data():
         cycle_cutoff = pd.Timestamp(c["start"]) - pd.Timedelta(days=1)
         week = demand_model.forecast_week(cycle_cutoff)
         holiday_weeks.append(week[week["target_date"] <= pd.Timestamp(c["end"])])
-        multiplier, calibrated = demand_model.buffer_multiplier(cycle_cutoff, config.target_service_level)
+        quiet_mult, quiet_cal = demand_model.buffer_multiplier(cycle_cutoff, False, config.target_service_level)
+        holiday_mult, holiday_cal = demand_model.buffer_multiplier(cycle_cutoff, True, config.target_service_level)
         cycle_buffers[c["cycle_id"]] = {
             "forecast_cutoff": str(cycle_cutoff.date()),
-            "p99_multiplier": round(multiplier, 4),
-            "calibrated": calibrated,
+            "p99_multiplier_quiet_week": round(quiet_mult, 4),
+            "p99_multiplier_holiday_week": round(holiday_mult, 4),
+            "calibrated": quiet_cal and holiday_cal,
+            "holiday_week_atms": sorted(int(t) for t in week.loc[week["holiday_week"], "terminal_id"].unique()),
         }
     holiday_preds = pd.concat(holiday_weeks)
     holiday_pred_map = {
@@ -912,7 +921,7 @@ def build_portal_data():
             c_actual_sum = sum(c_actuals)
             c_days = len(c_sub)
             sigma_c = sigma_daily * math.sqrt(c_days)
-            c_multiplier = cycle_buffers[c["cycle_id"]]["p99_multiplier"]
+            c_multiplier = cycle_multiplier(cycle_buffers[c["cycle_id"]], tid)
 
             c_model_perf = {}
             for m in models:
@@ -975,7 +984,8 @@ def build_portal_data():
             op = c_model_perf[OPERATIONAL_MODEL]
             buffer_note = (
                 f"Load = forecast × {c_multiplier:.3f}: the 99th percentile of actual/forecast over the past "
-                f"{demand_model.CONFORMAL_WINDOW_WEEKS} backtest weeks (100 ATMs)"
+                f"{demand_model.CONFORMAL_WINDOW_WEEKS} backtest weeks (100 ATMs), "
+                f"{'holiday' if int(tid) in cycle_buffers[c['cycle_id']]['holiday_week_atms'] else 'quiet'} weeks only"
                 if cycle_buffers[c["cycle_id"]]["calibrated"]
                 else f"Uncalibrated default ×{c_multiplier:.2f} (fewer than {demand_model.MIN_PAST_WEEKS} backtest weeks)"
             )
@@ -1018,7 +1028,7 @@ def build_portal_data():
         ref_daily_preds = t_sub.loc[0:6, f"pred_{OPERATIONAL_MODEL}"].tolist()
         # Sigma that reproduces the calibrated P99 load; other frontier levels assume a normal shape.
         op_sigma_7 = demand_model.equivalent_sigma(
-            ref_pred_sum, cycle_buffers[1]["p99_multiplier"], config.target_service_level
+            ref_pred_sum, cycle_multiplier(cycle_buffers[1], tid), config.target_service_level
         )
         frontier = optimizer.compute_cost_frontier(
             predicted_7day_sum=ref_pred_sum,
@@ -1204,7 +1214,10 @@ def build_portal_data():
                 "drives": "all indents, cycle cash chain, explainability and cost frontier",
                 "forecast": "re-forecast at each cycle's own cutoff (the day before the cycle starts); other models use the single 2026-08-24 cutoff",
                 "target": "observed Cash_Out across all 100 cash-file ATMs; scored here against uncensored_demand",
-                "buffer": "P99 of actual/forecast 7-day totals over the past 26 backtest weeks (outputs/scorecard_100)",
+                "buffer": (
+                    "P99 of actual/forecast 7-day totals over the past 26 backtest weeks (outputs/scorecard_100), "
+                    "calibrated separately for weeks touching a holiday and quiet weeks"
+                ),
                 "cycle_buffers": cycle_buffers,
             },
             "default_holding_rate": config.holding_rate_annual,

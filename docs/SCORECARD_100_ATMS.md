@@ -80,27 +80,53 @@
 
 **Buffer:**
 - The load is the forecast × the P99 of actual/forecast 7-day totals over the past 26 backtest weeks, read from `outputs/scorecard_100/predictions_weekly.csv`.
+- Since 4 Nov, that P99 is calibrated separately for weeks that touch a holiday and for quiet weeks (see "Buffer by week type" below).
 - With fewer than 8 past weeks it falls back to ×1.6 and marks the buffer uncalibrated.
 - The optimizer and cost frontier still take a σ. `equivalent_sigma` converts the multiplier, so the 99% load matches exactly. Other frontier levels still assume a normal shape.
 
 **Portal (`live_portal/generate_portal_data.py`):**
 - `lgb_holiday` drives every indent, the cycle cash chain, the explainability text and the cost frontier (previously `pure_exogenous` did).
 - Each weekly cycle is re-forecast at its own cutoff, the day before the cycle starts. The other models in the comparison table still use the single 24 Aug cutoff, so the comparison favours `lgb_holiday` slightly: it has fresher data.
-- Cycle buffer multipliers: ×1.24–1.29, all calibrated.
+- Cycle buffer multipliers: quiet weeks ×1.23–1.24, holiday weeks ×1.27–1.32, all calibrated. They were ×1.24–1.29 for every week before the week-type split.
 - Portal holdout, per ATM-day: 17.6% WAPE (vs 18.5% pure exogenous), 7-day 16.4%, bias −2.4%.
 
 **Engine (`python3 -m replenishment_engine.run_simulation`, 440 weekly cycles, 8 pilot ATMs):**
 
 | Model | 7-day WAPE | Stockout cycles | Total cost | vs naive |
 | --- | --- | --- | --- | --- |
-| **`lgb_holiday`** | **8.4%** | **28.2%** | **₹49.3L** | **−1.9%** |
+| **`lgb_holiday`** | **8.4%** | **28.0%** | **₹49.0L** | **−2.4%** |
 | Pure exogenous | 9.0% | 31.1% | ₹50.1L | −0.2% |
 | Same weekday last week | 18.9% | 29.3% | ₹50.2L | — |
 | LightGBM calendar (old default) | 9.2% | 32.5% | ₹51.1L | +1.6% |
 
-**Why stockouts stay near 28%:** in 123 of 448 ATM-weeks (27%), actual demand exceeds the cassette capacity in `config.py`. That happens at ATM 7 in 89% of weeks and at ATM 1 in 57%. No forecast can prevent those stockouts with one visit a week, so `lgb_holiday` is at that floor. The next saving comes from a second weekly visit (or a larger cassette) at ATMs 1, 2 and 7, not from the model.
+**Why stockouts stay near 28%:** in 123 of 448 ATM-weeks (27%), actual demand exceeds the cassette capacity in `config.py`. With the week-type buffer, `lgb_holiday` has exactly 123 stockout cycles. That happens at ATM 7 in 89% of weeks and at ATM 1 in 57%. No forecast can prevent those stockouts with one visit a week, so `lgb_holiday` is at that floor. The next saving comes from a second weekly visit (or a larger cassette) at ATMs 1, 2 and 7, not from the model.
 
 **Not synced:** `live_portal_v2/` and `UI_2/` still hold the old bundle copies.
+
+## Buffer by week type (4 Nov 2026)
+
+**What was wrong:** one P99 multiplier was shared by every week. Holiday weeks are harder to forecast, so they set it. Quiet weeks then carried cash they didn't need. Holiday weeks still fell *below* the 99% target, because they were averaged with easy weeks.
+
+**What changed:**
+- A week is a *holiday week* for an ATM if any of its 7 days is a holiday or within 3 days before one, using the ATM's RBI region (`demand_model.is_holiday_day`). That is known from the calendar before the forecast.
+- `buffer_multiplier(cutoff, holiday_week)` and the scorecard's conformal bounds take the P99 over past weeks of the same type only. If a type has fewer than 8 past weeks, they fall back to the pooled P99.
+- The engine (`forecaster.py`) and the portal (`cycle_buffers`) pick the multiplier from each ATM's week type.
+
+**Result** (rolling backtest, 55 origins, past weeks only):
+
+| `lgb_holiday` P99 buffer | Quiet weeks: coverage / extra cash | Holiday weeks: coverage / extra cash | All weeks |
+| --- | --- | --- | --- |
+| Pooled (before) | 99.8% / +30.8% | **98.8%** / +30.1% | 99.4% / +30.5% |
+| **By week type** | 99.1% / **+24.1%** | **99.5%** / +34.9% | 99.3% / **+28.8%** |
+
+- Quiet weeks are now within 4 points of the floor (+19.8%).
+- Engine: stockout cycles 124 → 123 (the capacity floor). Cost ₹49.3L → ₹49.0L.
+- Portal: stockout cycles 12 → 11 of 40.
+- The baselines lose coverage with the split (naive: 97.5% on quiet weeks). Each type has fewer past weeks to estimate from, which hurts noisy models more. `lgb_holiday` stays above 99% on both types.
+
+**Check:** `python3 tests/test_buffer_week_type.py`
+
+**Also fixed:** `scripts/run_scorecard_100.py` crashed at the cold-start step (`SEED` not imported) ever since the shared-module refactor. The 3 Nov outputs were produced before it.
 
 ## New ATMs (cold start)
 
@@ -171,7 +197,7 @@ The pooled multiplier is set by holiday weeks and then applied to quiet weeks to
 Re-ordered after the noise-floor result above.
 
 1. **Damp the prior-year holiday lift towards the family-wide lift.** Holiday weeks are where the remaining forecast error is.
-2. **Calibrate the buffer by week type.** In `buffer_multiplier`, compute the rolling P99 separately for weeks that touch a holiday and weeks that don't, and use the multiplier for this week's type. Expected: holiday-free weeks go from +31% towards +24% extra cash. The floor is +20%.
+2. ~~Calibrate the buffer by week type~~ (done, see below).
 3. **Add a drift alarm** that switches an ATM to the ratio model when its 14-day bias exceeds ±10%. This is protection for real data, not an accuracy gain here.
 4. Done:
    - ~~Holiday features~~

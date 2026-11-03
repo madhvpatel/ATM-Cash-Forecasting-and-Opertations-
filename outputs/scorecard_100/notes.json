@@ -12,7 +12,7 @@
     "is_regional_holiday": 1.0,
     "pre_holiday": 1.0
   },
-  "conformal": "P95/P99 of actual/forecast 7-day ratios, past 26 weeks, >= 8 weeks required",
+  "conformal": "P95/P99 of actual/forecast 7-day ratios, past 26 weeks, >= 8 weeks required; separate for weeks touching a holiday (any day within 3 days before one) and quiet weeks",
   "recency_half_life_days": 90,
   "models": {
     "seasonal_naive": "same weekday last week",
