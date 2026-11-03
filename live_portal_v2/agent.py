@@ -169,7 +169,7 @@ def explain_atm(terminal_id: str) -> str:
 
 
 @tool
-def simulate_scenario(terminal_id: str, custom_indent: float = 0.0, delay_hours: int = 0) -> str:
+def simulate_scenario(terminal_id: str, custom_indent: Optional[float] = None, delay_hours: int = 0) -> str:
     """Simulate what-if replenishment with a custom cash indent amount or CIT dispatch delay hours."""
     tid = str(terminal_id).replace("ATM-", "").replace("ATM", "").strip()
     res = masters_mgr.compute_fleet_replenishment()
@@ -177,34 +177,37 @@ def simulate_scenario(terminal_id: str, custom_indent: float = 0.0, delay_hours:
     if not t:
         return f"Error: Terminal ID '{terminal_id}' not found."
 
-    indent = float(custom_indent) if custom_indent > 0 else float(t["c1_net_indent"])
+    indent = float(custom_indent) if custom_indent is not None else float(t["c1_net_indent"])
     delay = int(delay_hours)
 
-    pred_demand = (
+    cycle_days = int(t.get("cycle_days", 7))
+    pred_demand = float(
         t.get("c1_pred_demand")
         or t.get("observations", {}).get("pred_demand_7d")
         or t.get("formula_ledger", {}).get("expected_demand")
         or 4000000.0
     )
-    daily_burn = pred_demand / max(1, t.get("cycle_days", 7))
-    starting_cash = t["existing_cash"]
+    daily_burn = pred_demand / max(1, cycle_days)
+    starting_cash = float(t["existing_cash"])
     
     # Delay burn effect
     delay_burn = daily_burn * (delay / 24.0)
     cash_at_arrival = max(0.0, starting_cash - delay_burn)
     is_stockout_before_arrival = (starting_cash - delay_burn) <= 0.0
 
-    post_refill_cash = min(t["capacity"], cash_at_arrival + indent)
-    end_of_cycle_cash = max(0.0, post_refill_cash - (daily_burn * t["cycle_days"]))
+    phys_cap = masters_mgr.get_physical_cassette_capacity(tid)
+    post_refill_cash = min(phys_cap, cash_at_arrival + indent)
+    end_of_cycle_cash = max(0.0, post_refill_cash - (daily_burn * cycle_days))
     dcr_post_refill = round(post_refill_cash / daily_burn, 2) if daily_burn > 0 else 99.0
 
-    holding_cost_cycle = round(post_refill_cash * (masters_mgr.assumptions["holding_rate_annual"] / 365.0) * t["cycle_days"], 0)
+    holding_rate = float(masters_mgr.assumptions.get("holding_rate_annual", 0.075))
+    holding_cost_cycle = round(post_refill_cash * (holding_rate / 365.0) * cycle_days, 0)
 
     return (
         f"**Simulation Results for ATM {tid}** ({t['site_name']}):\n"
         f"- Test Parameters: Indent = ₹{indent:,.0f} | CIT Delay = {delay} hours\n"
-        f"- Cash at Delivery Arrival: ₹{cash_at_arrival:,.0f} {'⚠️ STOCKOUT OCCURRED' if is_stockout_before_arrival else '✅ Preserved runway'}\n"
-        f"- Post-Refill Starting Balance: ₹{post_refill_cash:,.0f}\n"
+        f"- Cash at Delivery Arrival: ₹{cash_at_arrival:,.0f} {'⚠️ STOCKOUT OCCURRED BEFORE REFILL' if is_stockout_before_arrival else '✅ Preserved runway'}\n"
+        f"- Post-Refill Starting Balance: ₹{post_refill_cash:,.0f} (Cassette Cap: ₹{phys_cap:,.0f})\n"
         f"- Post-Refill Cash Runway: {int(round(dcr_post_refill * 24))} Hours\n"
         f"- Projected End-of-Cycle Cash: ₹{end_of_cycle_cash:,.0f}\n"
         f"- Estimated Holding Cost: ₹{holding_cost_cycle:,.0f}"
@@ -284,8 +287,12 @@ def update_master_parameter(category: str, key: str, value: str, sub_id: Optiona
 
 
 @tool
-def approve_indents(terminal_ids: str = "all", approver_notes: str = "Approved via AI Agent") -> str:
-    """Approve replenishment net indents for one or all ATMs."""
+def approve_indents(terminal_ids: str, actor: str, approver_notes: str = "Approved by Treasury Checker via AI Copilot") -> str:
+    """Formally approve net cash replenishment indents for specified ATMs or all pending terminals (Checker Action)."""
+    # Check if locked
+    if masters_mgr.locked_manifest_snapshot is not None:
+        return "❌ Error: Dispatch manifest is digitally locked. Approvals cannot be modified."
+
     res = masters_mgr.compute_fleet_replenishment()
     t_dict = res["terminals"]
     
@@ -304,49 +311,58 @@ def approve_indents(terminal_ids: str = "all", approver_notes: str = "Approved v
     now_ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     for tid in target_ids:
-        t = t_dict[tid]
-        masters_mgr.approved_indents[tid] = {
-            "approved_at": now_ts,
-            "approved_indent": t["c1_net_indent"],
-            "notes": approver_notes
-        }
-        approved_names.append(f"ATM {tid} (₹{t['c1_net_indent']:,.0f})")
-        total_approved_cash += t["c1_net_indent"]
+        try:
+            r = masters_mgr.approve_terminal_indent(terminal_id=tid, officer_name=actor, notes=approver_notes)
+            approved_names.append(f"ATM {tid} (₹{r['approved_indent']:,.0f})")
+            total_approved_cash += r["approved_indent"]
+        except Exception as e:
+            return f"❌ Approval failed for ATM {tid}: {e}"
+
+    masters_mgr.save_overrides()
 
     return (
-        f"✅ **Replenishment Indents Approved** ({len(target_ids)} ATMs):\n"
+        f"✅ **Replenishment Indents Approved by Checker** ({len(target_ids)} ATMs):\n"
         f"- Total Approved Net Indent: **₹{total_approved_cash:,.0f}**\n"
         f"- Approved Terminals: {', '.join(approved_names)}\n"
         f"- Timestamp: {now_ts}\n"
-        f"- Status: Queued for Armored CIT Route Dispatch."
+        f"- Status: Recorded & Persisted. CIT Dispatch Manifest updated."
     )
 
 
 @tool
-def adjust_indent(terminal_id: str, new_indent: float, reason: str = "Checker Natural Language Adjustment") -> str:
-    """Adjust an ATM replenishment indent with an explicit Checker natural language audit reason."""
+def adjust_indent(terminal_id: str, new_indent: Any, actor: str, reason: str = "Checker Natural Language Adjustment") -> str:
+    """Adjust an ATM replenishment indent with an explicit Checker natural language audit reason. Amounts must include explicit units (e.g. '28L', '28 Lakhs') or be >= 10,000 rupees."""
     tid = str(terminal_id).replace("ATM-", "").replace("ATM", "").strip()
     try:
         val_str = str(new_indent).replace("₹", "").replace(",", "").strip()
-        # Handle Lakhs e.g. 28L or 28 lakhs
-        if "l" in val_str.lower():
-            clean_num = float(re.findall(r"[\d\.]+", val_str)[0])
+        lower_str = val_str.lower()
+        if "cr" in lower_str:
+            clean_num = float(re.findall(r"[\d\.]+", lower_str)[0])
+            val = clean_num * 10000000.0
+        elif "l" in lower_str:
+            clean_num = float(re.findall(r"[\d\.]+", lower_str)[0])
             val = clean_num * 100000.0
-        elif float(val_str) < 1000.0:  # e.g. entered 28 or 35 meaning Lakhs
-            val = float(val_str) * 100000.0
         else:
             val = float(val_str)
+            if 0.0 < val < 10000.0:
+                return (
+                    f"⚠️ **Ambiguous Amount Unit**: '{new_indent}'.\n"
+                    f"To prevent catastrophic treasury errors, amounts under ₹10,000 without explicit unit suffixes (like 'L', 'Lakhs', 'Cr') are rejected.\n"
+                    f"Please re-enter with explicit units, e.g. `28 Lakhs`, `28L`, or exact rupees `2800000`."
+                )
 
-        res = masters_mgr.apply_checker_override(terminal_id=tid, new_indent=val, reason=reason, actor="Checker (AI Copilot)")
+        res = masters_mgr.apply_checker_override(terminal_id=tid, new_indent=val, reason=reason, actor=actor)
         delta = res["new_indent"] - res["maker_proposed_indent"]
         sign = "+" if delta >= 0 else ""
+        phys_cap = masters_mgr.get_physical_cassette_capacity(tid)
         return (
             f"✅ **Checker Override Applied for ATM {tid}**:\n"
             f"- Maker Recommended Indent: **₹{res['maker_proposed_indent']:,.0f}**\n"
             f"- Checker Adjusted Indent: **₹{res['new_indent']:,.0f}** ({sign}₹{delta:,.0f})\n"
+            f"- Physical Cassette Capacity: **₹{phys_cap:,.0f}**\n"
             f"- Logged Audit Reason: *\"{reason}\"*\n"
             f"- Updated Fleet Net Indent: **₹{res['fleet_summary']['total_net_indent']:,.0f}**\n"
-            f"- Status: **Approved & Recorded in Digital Manifest**."
+            f"- Status: **Indent Updated (Pending Checker Re-Approval & Manifest Lock)**."
         )
     except Exception as e:
         return f"Error applying Checker override: {e}"
@@ -539,10 +555,10 @@ def explain_mathematical_derivation(terminal_id: str = "1") -> str:
 
 
 @tool
-def execute_inter_atm_sweep_tool(donor_terminal_id: str = "4", recipient_terminal_id: str = "3", amount_rupees: float = 700000.0) -> str:
+def execute_inter_atm_sweep_tool(donor_terminal_id: str, recipient_terminal_id: str, amount_rupees: float, actor: str) -> str:
     """Execute an Inter-ATM corridor cash sweep transferring surplus cash from donor to starving ATM, avoiding emergency CIT run."""
     try:
-        res = masters_mgr.execute_inter_atm_sweep(donor_id=donor_terminal_id, recipient_id=recipient_terminal_id, amount=amount_rupees, actor="Chief Treasury Officer (Copilot)")
+        res = masters_mgr.execute_inter_atm_sweep(donor_id=donor_terminal_id, recipient_id=recipient_terminal_id, amount=amount_rupees, actor=actor)
         rec = res["sweep_record"]
         sav = rec.get("estimated_savings", {})
         return (
@@ -559,10 +575,10 @@ def execute_inter_atm_sweep_tool(donor_terminal_id: str = "4", recipient_termina
 
 
 @tool
-def clear_reject_bin_tool(terminal_id: str = "5") -> str:
+def clear_reject_bin_tool(terminal_id: str, actor: str) -> str:
     """Clear/empty the purge reject bin counter to 0 notes, unblocking dispenser hardware after mispicks/rejects."""
     try:
-        res = masters_mgr.execute_clear_reject_bin(terminal_id=terminal_id, actor="Field Custodian Technician (Copilot)")
+        res = masters_mgr.execute_clear_reject_bin(terminal_id=terminal_id, actor=actor)
         return (
             f"🧹 **Purge Reject Bin Emptied & Reset**:\n"
             f"- Terminal: **ATM {res['terminal_id']}**\n"
@@ -691,7 +707,11 @@ ALL_TOOLS = [
     explain_downtime_and_anomalies,
     explain_atm_performance_and_cycles
 ]
-TOOL_MAP = {t.name: t for t in ALL_TOOLS}
+# Tools that move cash or freeze approvals. The LLM never gets these: they run only from
+# slash commands that carry an explicit trailing `confirm` and the signed-in user's identity.
+ACTION_TOOLS = [approve_indents, adjust_indent, lock_dispatch_manifest, execute_inter_atm_sweep_tool, clear_reject_bin_tool]
+LLM_TOOLS = [t for t in ALL_TOOLS if t.name not in {a.name for a in ACTION_TOOLS}]
+TOOL_MAP = {t.name: t for t in LLM_TOOLS}
 
 
 # ==========================================
@@ -726,7 +746,7 @@ def create_agent_graph():
                 if "thinking_budget" in cfg:
                     kwargs["thinking_budget"] = cfg["thinking_budget"]
                 llm = ChatGoogleGenerativeAI(**kwargs)
-                llm_with_tools = llm.bind_tools(ALL_TOOLS)
+                llm_with_tools = llm.bind_tools(LLM_TOOLS)
                 resp = llm_with_tools.invoke(state["messages"])
                 return {"messages": [resp]}
             except Exception as e:
@@ -835,12 +855,44 @@ def extract_message_text(content: Union[str, list, Any]) -> str:
 # 3. SLASH COMMANDS & DETERMINISTIC FALLBACK
 # ==========================================
 
+ACTION_COMMANDS = {"/override", "/adjust", "/lock", "/signoff", "/approve", "/approve-indents", "/sweep", "/rebalance", "/clear-bin", "/empty-bin", "/reset"}
+CHECKER_COMMANDS = {"/lock", "/signoff", "/approve", "/approve-indents", "/reset"}
+
+
+def _gate_action(cmd: str, cmd_text: str, confirmed: bool, context: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    """Returns a refusal/preview reply unless the action is confirmed by a signed-in user with the right role."""
+    actor = str(context.get("actor") or "").strip()
+    if not actor:
+        return {"reply": "❌ Sign-in required: actions can only be run by an authenticated portal user.", "action_payload": {}}
+    if cmd in CHECKER_COMMANDS and str(context.get("role", "")).upper() != "CHECKER":
+        return {"reply": f"❌ `{cmd}` requires the CHECKER role. You are signed in as {context.get('role') or 'unknown'}.", "action_payload": {}}
+    if not confirmed:
+        return {
+            "reply": f"⚠️ **Confirmation required.** Nothing was changed. To run it, send exactly:\n`{cmd_text} confirm`",
+            "action_payload": {}
+        }
+    return None
+
+
 def handle_slash_command(cmd_text: str, context: Dict[str, Any]) -> Dict[str, Any]:
-    """Instant execution for slash commands (/status, /explain, /simulate, /set, /approve, /override, /manifest, /lock, /masters, /save, /reset, /help)."""
+    """Instant execution for slash commands (/status, /explain, /simulate, /set, /approve, /override, /manifest, /lock, /masters, /save, /reset, /help).
+    State-changing commands need a trailing `confirm` and a signed-in actor in context (set by the server, never the client)."""
+    words = cmd_text.split()
+    confirmed = len(words) > 1 and words[-1].lower() == "confirm"
+    if confirmed:
+        cmd_text = " ".join(words[:-1])
     parts = cmd_text.split(maxsplit=2)
     cmd = parts[0].lower()
     arg1 = parts[1] if len(parts) > 1 else ""
     arg2 = parts[2] if len(parts) > 2 else ""
+    actor = str(context.get("actor") or "").strip()
+
+    if cmd in ("/approve", "/approve-indents") and not arg1:
+        return {"reply": "Usage: `/approve [atm_id|all] confirm` — name the ATMs explicitly.", "action_payload": {}}
+    if cmd in ACTION_COMMANDS:
+        refusal = _gate_action(cmd, cmd_text, confirmed, context)
+        if refusal:
+            return refusal
 
     if cmd in ["/status", "/summary"]:
         res = query_network_status.invoke({})
@@ -858,7 +910,7 @@ def handle_slash_command(cmd_text: str, context: Dict[str, Any]) -> Dict[str, An
             tid = tokens[0]
             amt = tokens[1]
             reason = tokens[2] if len(tokens) > 2 else "Checker manual adjustment"
-            res = adjust_indent.invoke({"terminal_id": tid, "new_indent": amt, "reason": reason})
+            res = adjust_indent.invoke({"terminal_id": tid, "new_indent": amt, "reason": reason, "actor": actor})
             return {"reply": res, "action_payload": {"type": "master_updated", "terminal_id": tid}}
         else:
             return {"reply": "Usage: `/override [atm_id] [amount] [reason]` (e.g., `/override 1 2800000 Chest capacity limit`)", "action_payload": {}}
@@ -868,9 +920,11 @@ def handle_slash_command(cmd_text: str, context: Dict[str, Any]) -> Dict[str, An
         return {"reply": res, "action_payload": {"type": "show_manifest"}}
 
     elif cmd in ["/lock", "/signoff"]:
-        officer = arg1 or "Chief Treasury Officer"
-        notes = arg2 or "Authorized for CIT Dispatch"
-        res = lock_dispatch_manifest.invoke({"checker_name": officer, "notes": notes})
+        notes = " ".join(p for p in (arg1, arg2) if p) or "Authorized for CIT Dispatch"
+        try:
+            res = lock_dispatch_manifest.invoke({"checker_name": actor, "notes": notes})
+        except Exception as e:
+            return {"reply": f"❌ Manifest not locked: {e}", "action_payload": {}}
         return {"reply": res, "action_payload": {"type": "indents_approved", "manifest_locked": True}}
 
     elif cmd in ["/simulate", "/whatif"]:
@@ -903,8 +957,7 @@ def handle_slash_command(cmd_text: str, context: Dict[str, Any]) -> Dict[str, An
             return {"reply": "Usage: `/set [parameter] [value]` (e.g. `/set holding_rate_annual 7.0%` or `/set cit_trip_cost 2500`)", "action_payload": {}}
 
     elif cmd in ["/approve", "/approve-indents"]:
-        target = arg1 if arg1 else "all"
-        res = approve_indents.invoke({"terminal_ids": target})
+        res = approve_indents.invoke({"terminal_ids": arg1, "actor": actor})
         return {"reply": res, "action_payload": {"type": "indents_approved"}}
 
     elif cmd in ["/masters", "/config"]:
@@ -928,15 +981,18 @@ def handle_slash_command(cmd_text: str, context: Dict[str, Any]) -> Dict[str, An
         return {"reply": res, "action_payload": {"type": "highlight_terminal", "terminal_id": tid, "visual_aid": {"type": "math_derivation", "terminal_id": tid}}}
 
     elif cmd in ["/sweep", "/rebalance"]:
-        donor = arg1 or "4"
-        recipient = arg2 or "3"
-        amt = 700000.0
-        res = execute_inter_atm_sweep_tool.invoke({"donor_terminal_id": donor, "recipient_terminal_id": recipient, "amount_rupees": amt})
+        tokens = (arg1 + " " + arg2).split()
+        if len(tokens) != 3 or not tokens[2].isdigit() or int(tokens[2]) < 10000:
+            return {"reply": "Usage: `/sweep [donor_atm] [recipient_atm] [amount in rupees] confirm` (e.g. `/sweep 4 3 700000 confirm`).", "action_payload": {}}
+        donor, recipient, amt = tokens[0], tokens[1], float(tokens[2])
+        res = execute_inter_atm_sweep_tool.invoke({"donor_terminal_id": donor, "recipient_terminal_id": recipient, "amount_rupees": amt, "actor": actor})
         return {"reply": res, "action_payload": {"type": "sweep_executed"}}
 
     elif cmd in ["/clear-bin", "/empty-bin"]:
-        tid = arg1 or str(context.get("active_terminal", "5"))
-        res = clear_reject_bin_tool.invoke({"terminal_id": tid})
+        if not arg1:
+            return {"reply": "Usage: `/clear-bin [atm_id] confirm`.", "action_payload": {}}
+        tid = arg1
+        res = clear_reject_bin_tool.invoke({"terminal_id": tid, "actor": actor})
         return {"reply": res, "action_payload": {"type": "reject_bin_cleared", "terminal_id": tid}}
 
     elif cmd in ["/downtime", "/anomaly", "/threat"]:
@@ -954,7 +1010,10 @@ def handle_slash_command(cmd_text: str, context: Dict[str, Any]) -> Dict[str, An
         return {"reply": "💾 **Changes Committed to Production Disk** (`config_overrides.json`). All batch scripts and live APIs now reflect these parameters.", "action_payload": {"type": "saved"}}
 
     elif cmd in ["/reset"]:
-        res = masters_mgr.reset_to_defaults()
+        try:
+            res = masters_mgr.reset_to_defaults()
+        except PermissionError as e:
+            return {"reply": f"❌ {e}", "action_payload": {}}
         return {"reply": "🔄 **Masters & Assumptions Reset to System Defaults**.", "action_payload": {"type": "reset"}}
 
     elif cmd in ["/help"]:
@@ -965,20 +1024,20 @@ def handle_slash_command(cmd_text: str, context: Dict[str, Any]) -> Dict[str, An
                 "- `/explain [atm_id]` — Facts, observations & demand drivers for an ATM\n"
                 "- `/downtime [atm_id]` — Inspect downtime triggers, CRA breach, threat & anomaly metrics\n"
                 "- `/cycles [atm_id]` — Inspect past 3-cycle forecasting efficacy, ticket sizes & P50/P80/P95 quantiles\n"
-                "- `/sweep [donor] [recipient]` — Execute corridor inter-ATM cash surplus rebalancing\n"
-                "- `/clear-bin [atm_id]` — Clear purge reject bin and reset sensor lockout\n"
+                "- `/sweep [donor] [recipient] [rupees] confirm` — Execute same-city inter-ATM cash rebalancing\n"
+                "- `/clear-bin [atm_id] confirm` — Clear purge reject bin and reset sensor lockout\n"
                 "- `/variables [atm_id]` — 30 ML model features, relative importance weights & lags\n"
                 "- `/holidays [atm_id]` — Verified RBI bank holidays & payday calendar for cycle\n"
                 "- `/formula [atm_id]` — Exact 6-step mathematical derivation of indent\n"
-                "- `/override [atm_id] [amount] [reason]` — Checker override with natural language audit note\n"
+                "- `/override [atm_id] [amount] [reason] confirm` — Override an indent (needs a different checker to approve)\n"
                 "- `/manifest` — Inspect Digital CIT Dispatch Manifest & Chest Pull Slip\n"
-                "- `/lock [officer_name]` — Digitally sign & lock the fleet dispatch manifest\n"
+                "- `/lock [notes] confirm` — Digitally sign & lock the fleet dispatch manifest (Checker)\n"
                 "- `/simulate [atm_id] delay [hours]` — Run what-if scenario on delivery delay\n"
                 "- `/set [param] [value]` — Update cost assumption or terminal capacity\n"
-                "- `/approve-indents [all|atm_id]` — Approve replenishment orders for dispatch\n"
+                "- `/approve [all|atm_id] confirm` — Approve replenishment orders for dispatch (Checker)\n"
                 "- `/masters [cost|terminal|holiday|weather]` — Inspect master data records\n"
                 "- `/save` — Commit active overrides to permanent disk\n"
-                "- `/reset` — Reset all parameters to baseline defaults"
+                "- `/reset confirm` — Reset all parameters to baseline defaults (Checker)"
             ),
             "action_payload": {}
         }
@@ -1008,6 +1067,16 @@ def deterministic_nlp_dispatch(query: str, context: Dict[str, Any], quota_exceed
     if quota_exceeded:
         banner = "\n\n> 💡 *Note: Google AI Studio Free Tier daily quota limit (20 req/day) was reached on this API key. Copilot dynamically resolved your operational request using the real-time simulation engine.*"
 
+    # Free text never executes a control action; it only proposes the exact slash command to run.
+    def propose(cmd_text: str, what: str, payload: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        return {
+            "reply": (
+                f"⚠️ **{what} — not executed.** Free-text requests never move cash or change approvals.\n"
+                f"Review the figures, then send exactly:\n`{cmd_text} confirm`"
+            ) + banner,
+            "action_payload": payload or {}
+        }
+
     # 0. Checker Override with Natural Language Reason
     # e.g. "change atm 1 indent to 28 lakhs because chest has limited 500 notes"
     m_override = re.search(r"(?:change|override|adjust|set)\s*(?:atm[- ]?(\d+))?.*?(?:indent|load|amount)?.*?(?:to|=)\s*₹?\s*(\d+(?:\.\d+)?)\s*(lakhs?|l|cr)?(?:\s*(?:because|due to|reason:?)\s*(.*))?", q)
@@ -1017,15 +1086,18 @@ def deterministic_nlp_dispatch(query: str, context: Dict[str, Any], quota_exceed
         unit = (m_override.group(3) or "").lower()
         if "cr" in unit:
             amt = raw_amt * 10000000.0
-        elif "l" in unit or raw_amt < 1000.0:
+        elif "l" in unit:
             amt = raw_amt * 100000.0
-        else:
+        elif raw_amt >= 10000.0:
             amt = raw_amt
-        reason_txt = m_override.group(4) or "Checker manual override via Copilot"
-        return {
-            "reply": adjust_indent.invoke({"terminal_id": target_tid, "new_indent": amt, "reason": reason_txt}) + banner,
-            "action_payload": {"type": "master_updated", "terminal_id": target_tid}
-        }
+        else:
+            return {
+                "reply": f"⚠️ Ambiguous amount '{raw_amt}'. To prevent unintended multi-crore indents, please specify explicit units like '{int(raw_amt)} Lakhs', '{int(raw_amt)}L', or exact rupees." + banner,
+                "action_payload": {}
+            }
+        reason_txt = (m_override.group(4) or "Checker manual override via Copilot").strip()
+        return propose(f"/override {target_tid} {int(amt)} {reason_txt}", f"Override ATM {target_tid} to ₹{amt:,.0f}",
+                       {"type": "highlight_terminal", "terminal_id": target_tid})
 
     # 0b. Inter-ATM Sweep / Corridor Rebalancing
     if any(k in q for k in ["sweep", "rebalance", "surplus cash", "transfer cash", "corridor rebalance", "move cash"]):
@@ -1038,20 +1110,21 @@ def deterministic_nlp_dispatch(query: str, context: Dict[str, Any], quota_exceed
             val_num = float(m_amt.group(1))
             u = (m_amt.group(2) or "").lower()
             if "cr" in u: amt = val_num * 10000000.0
-            elif "l" in u or val_num < 100.0: amt = val_num * 100000.0
+            elif "l" in u: amt = val_num * 100000.0
             elif val_num >= 10000.0: amt = val_num
-        return {
-            "reply": execute_inter_atm_sweep_tool.invoke({"donor_terminal_id": donor, "recipient_terminal_id": recipient, "amount_rupees": amt}) + banner,
-            "action_payload": {"type": "sweep_executed"}
-        }
+            else:
+                return {
+                    "reply": f"⚠️ Ambiguous sweep amount '{m_amt.group(0)}'. Please specify explicit units (e.g. '7 Lakhs' or '700000')." + banner,
+                    "action_payload": {}
+                }
+        return propose(f"/sweep {donor} {recipient} {int(amt)}", f"Sweep ₹{amt:,.0f} from ATM {donor} to ATM {recipient}",
+                       {"type": "highlight_terminal", "terminal_id": donor})
 
     # 0c. Clear / Empty Reject Bin
     if any(k in q for k in ["clear reject", "empty reject", "reset reject", "purge reject", "reject bin"]):
         target = active_tid if active_tid != "1" else "5"
-        return {
-            "reply": clear_reject_bin_tool.invoke({"terminal_id": target}) + banner,
-            "action_payload": {"type": "reject_bin_cleared", "terminal_id": target}
-        }
+        return propose(f"/clear-bin {target}", f"Clear reject bin on ATM {target}",
+                       {"type": "highlight_terminal", "terminal_id": target})
 
     # 0d. Downtime Risk Factors, CRA SLA Breach & Anomaly Telemetry
     if any(k in q for k in ["downtime", "anomaly", "anomalies", "risk score", "cra miss", "missed visit", "sla breach", "threat", "curfew", "mispick"]):
@@ -1070,10 +1143,7 @@ def deterministic_nlp_dispatch(query: str, context: Dict[str, Any], quota_exceed
     # Digital Manifest / Chest Pull Slip
     if any(k in q for k in ["manifest", "pull slip", "vault slip", "chest slip"]):
         if any(k in q for k in ["lock", "sign", "authorize"]):
-            return {
-                "reply": lock_dispatch_manifest.invoke({"checker_name": "Chief Treasury Officer", "notes": "Authorized via Copilot"}) + banner,
-                "action_payload": {"type": "indents_approved", "manifest_locked": True}
-            }
+            return propose("/lock", "Lock the dispatch manifest (permanent for this cycle)", {"type": "show_manifest"})
         return {
             "reply": get_dispatch_manifest.invoke({}) + banner,
             "action_payload": {"type": "show_manifest"}
@@ -1129,16 +1199,25 @@ def deterministic_nlp_dispatch(query: str, context: Dict[str, Any], quota_exceed
 
     # 7. Approval
     if any(k in q for k in ["approve", "dispatch all", "sign off", "accept indent"]):
-        target = "all" if ("all" in q or "every" in q) else active_tid
-        return {"reply": approve_indents.invoke({"terminal_ids": target}) + banner, "action_payload": {"type": "indents_approved"}}
+        target = "all" if ("all" in q or "every" in q or "fleet" in q) else active_tid
+        return propose(f"/approve {target}", f"Approve indents for {'all terminals' if target == 'all' else f'ATM {target}'}",
+                       {"type": "refresh"})
 
     # 8. Simulation / What-If
     if any(k in q for k in ["what if", "simulate", "delay", "scenario", "test"]):
         m_delay = re.search(r"(\d+)\s*(?:hour|hr|h)", q)
         delay = int(m_delay.group(1)) if m_delay else (4 if "delay" in q else 0)
-        m_indent = re.search(r"₹?\s*(\d+(?:,\d+)*(?:\.\d+)?)\s*(?:lakh|cr)?", q)
-        indent = 0.0
-        return {"reply": simulate_scenario.invoke({"terminal_id": active_tid, "delay_hours": delay, "custom_indent": indent}) + banner, "action_payload": {"type": "highlight_terminal", "terminal_id": active_tid}}
+        m_indent = re.search(r"(?:indent|amount|cash|load|refill)?\s*(?:of|=|to)?\s*₹?\s*(\d+(?:\.\d+)?)\s*(lakhs?|l|cr)?", q)
+        custom_indent = None
+        if m_indent and any(w in q for w in ["indent", "load", "refill", "amount", "zero", "0"]):
+            val_str = m_indent.group(1)
+            if val_str:
+                val_num = float(val_str)
+                u = (m_indent.group(2) or "").lower()
+                if "cr" in u: custom_indent = val_num * 10000000.0
+                elif "l" in u: custom_indent = val_num * 100000.0
+                elif val_num >= 10000.0 or val_num == 0.0: custom_indent = val_num
+        return {"reply": simulate_scenario.invoke({"terminal_id": active_tid, "delay_hours": delay, "custom_indent": custom_indent}) + banner, "action_payload": {"type": "highlight_terminal", "terminal_id": active_tid}}
 
     # 9. Parameter Updates
     if any(k in q for k in ["set ", "update ", "change "]) and any(p in q for p in ["holding", "rate", "cost", "sla", "trip", "penalty", "capacity"]):
@@ -1190,12 +1269,10 @@ Specialized Domain Tools:
 2. `query_holiday_calendar(terminal_id, cycle_window)`: Queries exact RBI bank holidays, Sundays, gazetted holidays, and salary payday dates for the active replenishment cycle (Cycle 1: Aug 25 - Aug 31, 2026) and surrounding dates. ALWAYS call this tool whenever the Checker asks about holidays, calendar, festivals, bank closures, or "around that time".
 3. `explain_mathematical_derivation(terminal_id)`: Explains the exact 6-step mathematical formula steps (expected demand, horizon volatility sigma, z-score safety buffer, gross target, and net top-up indent). ALWAYS call this tool whenever the Checker asks for math, derivation, formula, equations, calculations, or ledger steps.
 4. `explain_atm(terminal_id)`: Provides high-level operational facts, runway, and primary demand drivers.
-5. `adjust_indent(terminal_id, new_indent, reason)`: When the Checker asks to change or override an indent with a reason (e.g. "Change ATM 1 indent to 28L because chest has limited 500 notes"), immediately call this tool with terminal_id, new_indent, and reason.
+5. Overrides, approvals, manifest lock, sweeps and reject-bin clearing are NOT available to you as tools. When the Checker asks for one, explain the impact and give the exact slash command to run, ending in `confirm` (e.g. `/override 1 2800000 chest short of 500s confirm`, `/approve 3 confirm`, `/lock confirm`, `/sweep 4 3 700000 confirm`, `/clear-bin 5 confirm`). Never say an action was done.
 6. `simulate_scenario(terminal_id, custom_indent, delay_hours)`: Runs What-If simulation with custom indents or delay hours.
-7. `get_dispatch_manifest()` and `lock_dispatch_manifest(checker_name, notes)`: For digital manifest inspection and cryptographic signoff.
+7. `get_dispatch_manifest()`: For digital manifest inspection.
 8. `update_master_parameter(category, key, value)`: Updates economic parameters live.
-9. `execute_inter_atm_sweep_tool(donor_terminal_id, recipient_terminal_id, amount_rupees)`: Executes an inter-ATM cash surplus sweep between nearby ATMs along a corridor to alleviate an imminent cashout without incurring emergency CIT fees.
-10. `clear_reject_bin_tool(terminal_id)`: Clears the purge reject bin counter to 0 notes and unblocks hardware sensor lockout after note jams or reject threshold saturation.
 11. `explain_downtime_and_anomalies(terminal_id)`: Explains composite downtime risk %, reject bin status, CRA SLA missed visit breaches, curfews/threat levels, and mechanical mispick rates.
 12. `explain_atm_performance_and_cycles(terminal_id)`: Explains past 3-cycle forecasting efficacy (accuracy %, residual ending cash, stockouts), average ticket sizes (daily/weekly/monthly), and multi-quantile demand projections (P50, P80, P95).
 

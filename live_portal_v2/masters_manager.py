@@ -12,12 +12,17 @@ from __future__ import annotations
 
 import io
 import csv
+import copy
 import hashlib
+import hmac
 import json
 import math
+import os
+import threading
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from statistics import NormalDist
+from typing import Any, Dict, List, Optional, Set
 import numpy as np
 
 try:
@@ -30,7 +35,8 @@ except ImportError:
 
 HERE = Path(__file__).resolve().parent
 DATA_MASTERS_DIR = HERE / "data_masters"
-OVERRIDES_FILE = HERE / "config_overrides.json"
+# Tests point this at a temp file so they never touch the operator's live state.
+OVERRIDES_FILE = Path(os.environ.get("CMS_OVERRIDES_FILE") or HERE / "config_overrides.json")
 PORTAL_DATA_FILE = HERE / "portal_data.json"
 
 # Baseline Assumptions (Indian Banking Industry Standards)
@@ -40,9 +46,9 @@ DEFAULT_ASSUMPTIONS = {
     "stockout_penalty_fixed": 10000.0,     # ₹10,000 RBI downtime/regulatory penalty
     "emergency_refill_premium": 3500.0,    # ₹3,500 emergency unscheduled replenishment trip
     "unmet_demand_penalty_rate": 0.01,     # 1% per-day interest/reputational penalty
-    "target_service_level": 0.99,          # 99.0% availability SLA (z ≈ 2.326)
+    "target_service_level": 0.99,          # 99.0% availability SLA (z ≈ 2.326 via NormalDist)
     "target_cer_buffer": 0.70,             # Cash Exhaustion Rate baseline target
-    "default_cassette_capacity": 6000000.0,# ₹60 Lakhs standard limit
+    "default_cassette_capacity": 2860000.0,# ₹28.6 Lakhs physical cassette capacity (4 cassettes x 2,200 notes: 2x500, 200, 100)
     "min_sweep_threshold": 200000.0,       # ₹2,00,000 minimum viable Inter-ATM cash transfer
     "inter_atm_transfer_fee": 1500.0,      # ₹1,500 corridor transit/custodian handling fee
     "hood_threat_idle_cap": 2000000.0,     # ₹20 Lakhs surplus cap in high-threat locations
@@ -51,14 +57,14 @@ DEFAULT_ASSUMPTIONS = {
 }
 
 DEFAULT_TERMINAL_CONFIGS = {
-    "1": {"capacity": 6000000.0, "serviced_by": "CIT", "cycle_days": 7, "site_type": "RAILWAY STATION CONCOURSE", "city": "MUMBAI"},
-    "2": {"capacity": 6000000.0, "serviced_by": "CIT", "cycle_days": 7, "site_type": "AIRPORT TERMINAL T2", "city": "MUMBAI"},
-    "3": {"capacity": 6000000.0, "serviced_by": "CIT", "cycle_days": 7, "site_type": "CITY CENTRE MALL", "city": "PUNE"},
-    "4": {"capacity": 3500000.0, "serviced_by": "BRANCH", "cycle_days": 3, "site_type": "IT TECH PARK CAMPUS", "city": "PUNE"},
-    "5": {"capacity": 5000000.0, "serviced_by": "CIT", "cycle_days": 7, "site_type": "COMMERCIAL CBD / FUEL PLAZA", "city": "NAGPUR"},
-    "6": {"capacity": 6000000.0, "serviced_by": "CIT", "cycle_days": 7, "site_type": "TOURIST PROMENADE", "city": "NAGPUR"},
-    "7": {"capacity": 6000000.0, "serviced_by": "CIT", "cycle_days": 7, "site_type": "METRO STATION CONCOURSE", "city": "NASHIK"},
-    "8": {"capacity": 3500000.0, "serviced_by": "BRANCH", "cycle_days": 3, "site_type": "MIDC INDUSTRIAL ESTATE", "city": "NASHIK"},
+    "1": {"capacity": 2860000.0, "serviced_by": "CIT", "cycle_days": 7, "site_type": "RAILWAY STATION CONCOURSE", "city": "MUMBAI"},
+    "2": {"capacity": 2860000.0, "serviced_by": "CIT", "cycle_days": 7, "site_type": "AIRPORT TERMINAL T2", "city": "MUMBAI"},
+    "3": {"capacity": 2860000.0, "serviced_by": "CIT", "cycle_days": 7, "site_type": "CITY CENTRE MALL", "city": "PUNE"},
+    "4": {"capacity": 2860000.0, "serviced_by": "BRANCH", "cycle_days": 3, "site_type": "IT TECH PARK CAMPUS", "city": "PUNE"},
+    "5": {"capacity": 2860000.0, "serviced_by": "CIT", "cycle_days": 7, "site_type": "COMMERCIAL CBD / FUEL PLAZA", "city": "NAGPUR"},
+    "6": {"capacity": 2860000.0, "serviced_by": "CIT", "cycle_days": 7, "site_type": "TOURIST PROMENADE", "city": "NAGPUR"},
+    "7": {"capacity": 2860000.0, "serviced_by": "CIT", "cycle_days": 7, "site_type": "METRO STATION CONCOURSE", "city": "NASHIK"},
+    "8": {"capacity": 2860000.0, "serviced_by": "BRANCH", "cycle_days": 3, "site_type": "MIDC INDUSTRIAL ESTATE", "city": "NASHIK"},
 }
 
 TERMINAL_OPERATIONAL_METADATA = {
@@ -99,7 +105,7 @@ TERMINAL_OPERATIONAL_METADATA = {
             {"slot": 4, "denomination": 100, "max_notes": 2200, "current_notes": 2000, "amount": 200000.0}
         ],
         "reject_bin": {"max_notes": 300, "current_notes": 48, "status": "NORMAL"},
-        "crm_collection_bin": {"max_notes": 2000, "current_notes": 412, "amount": 286000.0, "status": "NORMAL"},
+        "crm_collection_bin": {"max_notes": 2000, "current_notes": 412, "amount": 164800.0, "status": "NORMAL"},
         "cra_tracking": {
             "scheduled_date": "2026-08-26",
             "window": "06:30 AM – 08:30 AM",
@@ -393,7 +399,7 @@ TERMINAL_OPERATIONAL_METADATA = {
             {"slot": 4, "denomination": 100, "max_notes": 2200, "current_notes": 1200, "amount": 120000.0}
         ],
         "reject_bin": {"max_notes": 300, "current_notes": 40, "status": "NORMAL"},
-        "crm_collection_bin": {"max_notes": 2000, "current_notes": 520, "amount": 310000.0, "status": "NORMAL"},
+        "crm_collection_bin": {"max_notes": 2000, "current_notes": 520, "amount": 208000.0, "status": "NORMAL"},
         "cra_tracking": {
             "scheduled_date": "2026-08-26",
             "window": "06:00 AM – 07:30 AM",
@@ -500,8 +506,117 @@ DEFAULT_EXOGENOUS_EVENTS = [
 ]
 
 
+def get_physical_cassette_capacity(tid: str) -> float:
+    """Calculates physical capacity as sum over cassettes of max_notes * denomination."""
+    meta = TERMINAL_OPERATIONAL_METADATA.get(str(tid), {})
+    cassettes = meta.get("cassettes", [])
+    if cassettes:
+        return float(sum(c.get("max_notes", 2200) * c.get("denomination", 500) for c in cassettes))
+    return 2860000.0
+
+
+def get_free_cassette_space(tid: str) -> Dict[str, Any]:
+    """Inspects physical dispenser slots and computes free notes and free cash capacity."""
+    meta = TERMINAL_OPERATIONAL_METADATA.get(str(tid), {})
+    cassettes = meta.get("cassettes", [])
+    free_by_denom = {500: 0, 200: 0, 100: 0}
+    free_by_slot = []
+    total_free_cash = 0.0
+    for c in cassettes:
+        fn = max(0, c.get("max_notes", 2200) - c.get("current_notes", 0))
+        denom = c.get("denomination", 500)
+        slot_free_cash = fn * denom
+        free_by_denom[denom] = free_by_denom.get(denom, 0) + fn
+        free_by_slot.append({
+            "slot": c.get("slot"),
+            "denomination": denom,
+            "max_notes": c.get("max_notes", 2200),
+            "current_notes": c.get("current_notes", 0),
+            "free_notes": fn,
+            "free_cash": slot_free_cash
+        })
+        total_free_cash += slot_free_cash
+    return {
+        "free_by_denom": free_by_denom,
+        "free_by_slot": free_by_slot,
+        "total_free_cash": total_free_cash
+    }
+
+
+def allocate_denomination_mix(net_indent: float, tid: str, denom_weights: Optional[Dict[str, float]] = None) -> Dict[str, Any]:
+    """Allocates notes across physical cassette slots respecting available free space.
+    Guarantees sum of notes * denomination matches net_indent (or warns and caps if overflowing free capacity).
+    """
+    free_info = get_free_cassette_space(tid)
+    total_free_cash = free_info["total_free_cash"]
+    free_500_notes = free_info["free_by_denom"].get(500, 0)
+    free_200_notes = free_info["free_by_denom"].get(200, 0)
+    free_100_notes = free_info["free_by_denom"].get(100, 0)
+
+    overflow_warning = None
+    target_indent = max(0.0, round(float(net_indent) / 100.0) * 100.0)
+
+    if target_indent > total_free_cash:
+        overflow_warning = f"Requested indent ₹{target_indent:,.0f} exceeds free physical cassette space ₹{total_free_cash:,.0f} by ₹{target_indent - total_free_cash:,.0f}."
+        alloc_target = total_free_cash
+    else:
+        alloc_target = target_indent
+
+    if denom_weights is None:
+        denom_weights = {"500": 0.70, "200": 0.20, "100": 0.10}
+
+    w500 = float(denom_weights.get("500", 0.70))
+    w200 = float(denom_weights.get("200", 0.20))
+    w100 = float(denom_weights.get("100", 0.10))
+    total_w = w500 + w200 + w100
+    if total_w <= 0:
+        w500, w200, w100 = 0.70, 0.20, 0.10
+        total_w = 1.0
+    w500 /= total_w
+    w200 /= total_w
+    w100 /= total_w
+
+    target_500_cash = alloc_target * w500
+    n500 = min(free_500_notes, int(target_500_cash // 500))
+    rem_cash = alloc_target - (n500 * 500)
+
+    target_200_cash = rem_cash * (w200 / (w200 + w100) if (w200 + w100) > 0 else 0.5)
+    n200 = min(free_200_notes, int(target_200_cash // 200))
+    rem_cash -= (n200 * 200)
+
+    n100 = min(free_100_notes, int(rem_cash // 100))
+    rem_cash -= (n100 * 100)
+
+    while rem_cash >= 500 and n500 < free_500_notes:
+        n500 += 1
+        rem_cash -= 500
+    while rem_cash >= 200 and n200 < free_200_notes:
+        n200 += 1
+        rem_cash -= 200
+    while rem_cash >= 100 and n100 < free_100_notes:
+        n100 += 1
+        rem_cash -= 100
+
+    actual_allocated = (n500 * 500) + (n200 * 200) + (n100 * 100)
+    mix_str = f"₹500: {n500:,} notes (₹{n500*500:,.0f}) | ₹200: {n200:,} notes (₹{n200*200:,.0f}) | ₹100: {n100:,} notes (₹{n100*100:,.0f})"
+
+    return {
+        "500_notes": n500,
+        "200_notes": n200,
+        "100_notes": n100,
+        "500_amount": n500 * 500,
+        "200_amount": n200 * 200,
+        "100_amount": n100 * 100,
+        "total_allocated": actual_allocated,
+        "denomination_mix": mix_str,
+        "free_capacity": total_free_cash,
+        "overflow_warning": overflow_warning
+    }
+
+
 class MastersManager:
     def __init__(self):
+        self._lock = threading.RLock()
         self.assumptions: Dict[str, Any] = dict(DEFAULT_ASSUMPTIONS)
         self.terminal_configs: Dict[str, Any] = {k: dict(v) for k, v in DEFAULT_TERMINAL_CONFIGS.items()}
         self.exogenous_events: List[Dict[str, Any]] = [dict(e) for e in DEFAULT_EXOGENOUS_EVENTS]
@@ -514,6 +629,8 @@ class MastersManager:
         self.executed_sweeps: List[Dict[str, Any]] = []
         self.is_manifest_locked: bool = False
         self.manifest_lock_info: Optional[Dict[str, Any]] = None
+        self.locked_manifest_snapshot: Optional[Dict[str, Any]] = None
+        self.cleared_reject_bins: Set[str] = set()
         
         self._load_base_bundle()
         self._load_holidays()
@@ -542,6 +659,12 @@ class MastersManager:
                 {"date": "2026-09-26", "name": "4th Saturday Bank Holiday", "type": "Banking Calendar", "bank_closed": True},
             ]
 
+    def get_physical_cassette_capacity(self, tid: str) -> float:
+        return get_physical_cassette_capacity(tid)
+
+    def get_free_cassette_space(self, tid: str) -> Dict[str, Any]:
+        return get_free_cassette_space(tid)
+
     def _load_overrides(self):
         if OVERRIDES_FILE.exists():
             try:
@@ -567,43 +690,64 @@ class MastersManager:
                         self.feedback_logs = data["feedback_logs"]
                     if "executed_sweeps" in data:
                         self.executed_sweeps = data["executed_sweeps"]
+                    if "cleared_reject_bins" in data:
+                        self.cleared_reject_bins = set(data["cleared_reject_bins"])
+                        for c_tid in self.cleared_reject_bins:
+                            meta = TERMINAL_OPERATIONAL_METADATA.get(c_tid)
+                            if meta and "reject_bin" in meta:
+                                meta["reject_bin"]["current_notes"] = 0
+                                meta["reject_bin"]["status"] = "NORMAL"
                     if "is_manifest_locked" in data:
                         self.is_manifest_locked = bool(data["is_manifest_locked"])
                         self.manifest_lock_info = data.get("manifest_lock_info")
+                        self.locked_manifest_snapshot = data.get("locked_manifest_snapshot")
             except Exception as e:
                 print(f"Warning: could not load config_overrides.json: {e}")
 
     def save_overrides(self) -> Dict[str, Any]:
-        data = {
-            "assumptions": self.assumptions,
-            "terminal_configs": self.terminal_configs,
-            "exogenous_events": self.exogenous_events,
-            "approved_indents": self.approved_indents,
-            "checker_overrides": self.checker_overrides,
-            "amended_replenishments": self.amended_replenishments,
-            "feedback_logs": self.feedback_logs,
-            "executed_sweeps": self.executed_sweeps,
-            "is_manifest_locked": self.is_manifest_locked,
-            "manifest_lock_info": self.manifest_lock_info,
-        }
-        with open(OVERRIDES_FILE, "w") as f:
-            json.dump(data, f, indent=2)
-        return {"status": "saved", "file": str(OVERRIDES_FILE)}
+        with self._lock:
+            data = {
+                "assumptions": self.assumptions,
+                "terminal_configs": self.terminal_configs,
+                "exogenous_events": self.exogenous_events,
+                "approved_indents": self.approved_indents,
+                "checker_overrides": self.checker_overrides,
+                "amended_replenishments": self.amended_replenishments,
+                "feedback_logs": self.feedback_logs,
+                "executed_sweeps": self.executed_sweeps,
+                "cleared_reject_bins": list(self.cleared_reject_bins),
+                "is_manifest_locked": self.is_manifest_locked,
+                "manifest_lock_info": self.manifest_lock_info,
+                "locked_manifest_snapshot": self.locked_manifest_snapshot,
+            }
+            with open(OVERRIDES_FILE, "w") as f:
+                json.dump(data, f, indent=2)
+            return {"status": "saved", "file": str(OVERRIDES_FILE)}
 
     def reset_to_defaults(self) -> Dict[str, Any]:
-        self.assumptions = dict(DEFAULT_ASSUMPTIONS)
-        self.terminal_configs = {k: dict(v) for k, v in DEFAULT_TERMINAL_CONFIGS.items()}
-        self.exogenous_events = [dict(e) for e in DEFAULT_EXOGENOUS_EVENTS]
-        self.approved_indents = {}
-        self.checker_overrides = {}
-        self.amended_replenishments = {}
-        self.feedback_logs = []
-        self.executed_sweeps = []
-        self.is_manifest_locked = False
-        self.manifest_lock_info = None
-        if OVERRIDES_FILE.exists():
-            OVERRIDES_FILE.unlink()
-        return {"status": "reset_to_defaults"}
+        with self._lock:
+            if self.is_manifest_locked:
+                raise PermissionError("Manifest is digitally locked. Reset is not permitted while locked.")
+            self.assumptions = dict(DEFAULT_ASSUMPTIONS)
+            self.terminal_configs = {k: dict(v) for k, v in DEFAULT_TERMINAL_CONFIGS.items()}
+            self.exogenous_events = [dict(e) for e in DEFAULT_EXOGENOUS_EVENTS]
+            self.approved_indents = {}
+            self.checker_overrides = {}
+            self.amended_replenishments = {}
+            self.feedback_logs = []
+            self.executed_sweeps = []
+            self.cleared_reject_bins = set()
+            self.is_manifest_locked = False
+            self.manifest_lock_info = None
+            self.locked_manifest_snapshot = None
+            # Reset metadata counters
+            for tid, meta in TERMINAL_OPERATIONAL_METADATA.items():
+                if "reject_bin" in meta:
+                    meta["reject_bin"]["current_notes"] = 48 if tid == "1" else (62 if tid == "2" else (40 if tid in ["4", "7"] else (275 if tid == "5" else 45)))
+                    meta["reject_bin"]["status"] = "SATURATED" if tid == "5" else "NORMAL"
+            if OVERRIDES_FILE.exists():
+                OVERRIDES_FILE.unlink()
+            return {"status": "reset_to_defaults"}
 
     def get_all_masters(self) -> Dict[str, Any]:
         return {
@@ -621,1120 +765,1321 @@ class MastersManager:
         }
 
     def amend_replenishment(self, terminal_id: str, new_date: Optional[str] = None, new_window: Optional[str] = None, new_indent: Optional[float] = None, notes: str = "", actor: str = "Field Ops Planner", refill_cycles: Optional[List[Dict[str, Any]]] = None, strategy: Optional[str] = None) -> Dict[str, Any]:
-        tid = str(terminal_id).replace("ATM-", "").replace("ATM", "").strip()
-        now_ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        with self._lock:
+            if self.is_manifest_locked:
+                raise PermissionError("Manifest is digitally locked. No modifications permitted while locked.")
 
-        current_data = self.compute_fleet_replenishment()
-        t = current_data["terminals"].get(tid)
-        if not t:
-            raise ValueError(f"Terminal '{terminal_id}' not found")
+            tid = str(terminal_id).replace("ATM-", "").replace("ATM", "").strip()
+            now_ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-        if refill_cycles and isinstance(refill_cycles, list):
-            clean_cycles = []
-            total_cycle_indent = 0.0
-            for i, c in enumerate(refill_cycles):
-                amt = round(float(c.get("amount", 0.0)) / 100.0) * 100.0
-                dt = str(c.get("date", "2026-08-26")).strip()
-                win = str(c.get("window", "06:00 AM – 08:30 AM")).strip()
-                is_en = bool(c.get("is_enabled", True))
-                serv = str(c.get("servicing", t.get("serviced_by", "CIT"))).strip()
-                c_id = int(c.get("cycle_id", i + 1))
-                c_name = str(c.get("name", f"Refill Cycle #{c_id}"))
-                clean_cycles.append({
-                    "cycle_id": c_id,
-                    "name": c_name,
-                    "date": dt,
-                    "window": win,
-                    "amount": amt,
-                    "is_enabled": is_en,
-                    "servicing": serv,
-                    "status": "Amended" if is_en else "Disabled",
-                    "reason": str(c.get("reason", "Custom schedule"))
-                })
-                if is_en:
-                    total_cycle_indent += amt
+            current_data = self.compute_fleet_replenishment()
+            t = current_data["terminals"].get(tid)
+            if not t:
+                raise ValueError(f"Terminal '{terminal_id}' not found")
 
-            strat = strategy or ("2-CYCLE" if len(clean_cycles) > 1 else "1-CYCLE")
-            indent_val = total_cycle_indent
-            date_val = clean_cycles[0]["date"] if clean_cycles else str(new_date or "2026-08-26")
-            window_val = clean_cycles[0]["window"] if clean_cycles else str(new_window or "07:00 AM")
-        else:
-            clean_cycles = None
-            strat = strategy or "1-CYCLE"
-            indent_val = float(new_indent) if new_indent is not None else float(t.get("c1_net_indent", t.get("maker_proposed_indent", 0.0)))
-            indent_val = round(indent_val / 100.0) * 100.0
-            date_val = str(new_date or "2026-08-26").strip()
-            window_val = str(new_window or "07:00 AM").strip()
+            phys_cap = get_physical_cassette_capacity(tid)
+            valid_dates = t.get("dates", []) or ['2026-08-25', '2026-08-26', '2026-08-27', '2026-08-28', '2026-08-29', '2026-08-30', '2026-08-31']
 
-        self.amended_replenishments[tid] = {
-            "terminal_id": tid,
-            "strategy": strat,
-            "refill_cycles": clean_cycles,
-            "amended_date": date_val,
-            "amended_window": window_val,
-            "amended_indent": round(indent_val, 0),
-            "original_indent": round(float(t.get("maker_proposed_indent", 0.0)) / 100.0) * 100.0,
-            "notes": str(notes).strip() or "Refill cycles amended via Portal Operations",
-            "actor": actor,
-            "timestamp": now_ts
-        }
+            if refill_cycles and isinstance(refill_cycles, list):
+                clean_cycles = []
+                total_cycle_indent = 0.0
+                prev_date = ""
+                for i, c in enumerate(refill_cycles):
+                    amt = float(c.get("amount", 0.0))
+                    if amt < 0:
+                        raise ValueError(f"Cycle amount cannot be negative: ₹{amt}")
+                    if amt > phys_cap:
+                        raise ValueError(f"Cycle amount ₹{amt:,.0f} exceeds physical cassette capacity ₹{phys_cap:,.0f}")
 
-        if tid in self.approved_indents:
-            del self.approved_indents[tid]
+                    dt = str(c.get("date", valid_dates[0])).strip()
+                    if dt not in valid_dates and (dt < valid_dates[0] or dt > valid_dates[-1]):
+                        raise ValueError(f"Cycle date '{dt}' outside forecast window [{valid_dates[0]}, {valid_dates[-1]}]")
 
-        maker_indent = round(float(t.get("maker_proposed_indent", 0.0)) / 100.0) * 100.0
-        if abs(indent_val - maker_indent) > 500:
-            self.checker_overrides[tid] = {
+                    if prev_date and dt < prev_date:
+                        raise ValueError(f"Cycle dates must be sequential: cycle #{i+1} ({dt}) cannot precede cycle #{i} ({prev_date})")
+                    prev_date = dt
+
+                    win = str(c.get("window", "06:00 AM – 08:30 AM")).strip()
+                    is_en = bool(c.get("is_enabled", True))
+                    serv = str(c.get("servicing", t.get("serviced_by", "CIT"))).strip()
+                    c_id = int(c.get("cycle_id", i + 1))
+                    c_name = str(c.get("name", f"Refill Cycle #{c_id}"))
+                    clean_cycles.append({
+                        "cycle_id": c_id,
+                        "name": c_name,
+                        "date": dt,
+                        "window": win,
+                        "amount": round(amt / 100.0) * 100.0,
+                        "is_enabled": is_en,
+                        "servicing": serv,
+                        "status": "Amended" if is_en else "Disabled",
+                        "reason": str(c.get("reason", "Custom schedule"))
+                    })
+                    if is_en:
+                        total_cycle_indent += round(amt / 100.0) * 100.0
+
+                strat = strategy or ("2-CYCLE" if len(clean_cycles) > 1 else "1-CYCLE")
+                indent_val = total_cycle_indent
+                date_val = clean_cycles[0]["date"] if clean_cycles else str(new_date or valid_dates[0])
+                window_val = clean_cycles[0]["window"] if clean_cycles else str(new_window or "07:00 AM")
+            else:
+                clean_cycles = None
+                strat = strategy or "1-CYCLE"
+                raw_amt = float(new_indent) if new_indent is not None else float(t.get("c1_net_indent", t.get("maker_proposed_indent", 0.0)))
+                if raw_amt < 0:
+                    raise ValueError(f"Indent amount cannot be negative: ₹{raw_amt}")
+                if raw_amt > phys_cap:
+                    raise ValueError(f"Indent amount ₹{raw_amt:,.0f} exceeds physical cassette capacity ₹{phys_cap:,.0f}")
+                indent_val = round(raw_amt / 100.0) * 100.0
+                date_val = str(new_date or valid_dates[0]).strip()
+                if date_val not in valid_dates and (date_val < valid_dates[0] or date_val > valid_dates[-1]):
+                    raise ValueError(f"Replenishment date '{date_val}' outside forecast window [{valid_dates[0]}, {valid_dates[-1]}]")
+                window_val = str(new_window or "07:00 AM").strip()
+
+            self.amended_replenishments[tid] = {
                 "terminal_id": tid,
-                "maker_proposed_indent": maker_indent,
-                "checker_custom_indent": round(indent_val, 0),
-                "delta_rupees": round(indent_val - maker_indent, 0),
-                "reason": f"Amended: {notes or 'Schedule/Amount change'}",
+                "strategy": strat,
+                "refill_cycles": clean_cycles,
+                "amended_date": date_val,
+                "amended_window": window_val,
+                "amended_indent": round(indent_val, 0),
+                "original_indent": round(float(t.get("maker_proposed_indent", 0.0)) / 100.0) * 100.0,
+                "notes": str(notes).strip() or "Refill cycles amended via Portal Operations",
                 "actor": actor,
                 "timestamp": now_ts
             }
 
-        self.save_overrides()
-        recomputed = self.compute_fleet_replenishment()
-        return {
-            "status": "amended_pending_approval",
-            "terminal_id": tid,
-            "amendment": self.amended_replenishments[tid],
-            "is_approved": False,
-            "schedule_status": "AMENDED",
-            "recomputed_summary": recomputed["summary"]
-        }
+            # Clear stale overrides so amendments strictly win
+            if tid in self.checker_overrides:
+                del self.checker_overrides[tid]
 
-    def approve_terminal_indent(self, terminal_id: str, officer_name: str = "Treasury Checker Officer", notes: str = "Authorized for CIT Dispatch") -> Dict[str, Any]:
-        tid = str(terminal_id).replace("ATM-", "").replace("ATM", "").strip()
-        now_ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            # Invalidate any previous approval
+            if tid in self.approved_indents:
+                del self.approved_indents[tid]
 
-        current_data = self.compute_fleet_replenishment()
-        t = current_data["terminals"].get(tid)
-        if not t:
-            raise ValueError(f"Terminal '{terminal_id}' not found")
+            self.save_overrides()
+            recomputed = self.compute_fleet_replenishment()
+            return {
+                "status": "amended_pending_approval",
+                "terminal_id": tid,
+                "amendment": self.amended_replenishments[tid],
+                "is_approved": False,
+                "schedule_status": "AMENDED",
+                "recomputed_summary": recomputed["summary"]
+            }
 
-        indent_val = float(t.get("c1_net_indent", 0.0))
-        self.approved_indents[tid] = {
-            "approved_at": now_ts,
-            "approved_indent": round(indent_val, 0),
-            "notes": notes,
-            "actor": officer_name
-        }
+    def approve_terminal_indent(self, terminal_id: str, officer_name: str = "Treasury Checker Officer", notes: str = "Authorized for CIT Dispatch", actor: Optional[str] = None) -> Dict[str, Any]:
+        with self._lock:
+            if self.is_manifest_locked:
+                raise PermissionError("Manifest is digitally locked. No approvals permitted while locked.")
 
-        self.save_overrides()
-        recomputed = self.compute_fleet_replenishment()
-        return {
-            "status": "approved_and_scheduled",
-            "terminal_id": tid,
-            "approved_indent": round(indent_val, 0),
-            "schedule_status": "SCHEDULED",
-            "recomputed_summary": recomputed["summary"]
-        }
+            if actor:
+                officer_name = actor
+
+            tid = str(terminal_id).replace("ATM-", "").replace("ATM", "").strip()
+            now_ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+            current_data = self.compute_fleet_replenishment()
+            t = current_data["terminals"].get(tid)
+            if not t:
+                raise ValueError(f"Terminal '{terminal_id}' not found")
+
+            # Separation of duties: whoever overrode or amended this indent cannot approve it
+            approver = str(officer_name).strip().lower()
+            authors = {
+                str(src[tid].get("actor", "")).strip().lower()
+                for src in (self.checker_overrides, self.amended_replenishments) if tid in src
+            }
+            if approver in authors:
+                raise PermissionError(
+                    f"Separation of duties: '{officer_name}' authored the change to ATM {tid} and cannot also approve it. "
+                    f"A different checker must approve."
+                )
+
+            # Determine approved figure and freeze it
+            indent_val = float(t.get("c1_net_indent", 0.0))
+            self.approved_indents[tid] = {
+                "approved_at": now_ts,
+                "approved_indent": round(indent_val, 0),
+                "approved_cycles": copy.deepcopy(t.get("refill_cycles", [])),
+                "notes": notes,
+                "actor": officer_name,
+                "maker_proposed": float(t.get("maker_proposed_indent", indent_val))
+            }
+
+            self.save_overrides()
+            recomputed = self.compute_fleet_replenishment()
+            return {
+                "status": "approved_and_scheduled",
+                "terminal_id": tid,
+                "approved_indent": round(indent_val, 0),
+                "schedule_status": "SCHEDULED",
+                "recomputed_summary": recomputed["summary"]
+            }
 
     def record_feedback(self, terminal_id: str, feedback_type: str, reason: str = "", comment: str = "", actor: str = "CMS Ops Operator") -> Dict[str, Any]:
-        tid = str(terminal_id).replace("ATM-", "").replace("ATM", "").strip()
-        now_ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        entry = {
-            "terminal_id": tid,
-            "feedback": feedback_type,
-            "reason": reason,
-            "comment": comment,
-            "actor": actor,
-            "timestamp": now_ts
-        }
-        self.feedback_logs.append(entry)
-        self.save_overrides()
-        return {"status": "feedback_recorded", "entry": entry, "total_feedback_count": len(self.feedback_logs)}
+        with self._lock:
+            tid = str(terminal_id).replace("ATM-", "").replace("ATM", "").strip()
+            now_ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            entry = {
+                "terminal_id": tid,
+                "feedback": feedback_type,
+                "reason": reason,
+                "comment": comment,
+                "actor": actor,
+                "timestamp": now_ts
+            }
+            self.feedback_logs.append(entry)
+            self.save_overrides()
+            return {"status": "feedback_recorded", "entry": entry, "total_feedback_count": len(self.feedback_logs)}
 
-    def apply_checker_override(self, terminal_id: str, new_indent: float, reason: str, actor: str = "Checker (AI Agent)") -> Dict[str, Any]:
-        tid = str(terminal_id).replace("ATM-", "").replace("ATM", "").strip()
-        now_ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    def apply_checker_override(self, terminal_id: str, new_indent: float, reason: str, actor: str = "Checker Officer") -> Dict[str, Any]:
+        with self._lock:
+            if self.is_manifest_locked:
+                raise PermissionError("Manifest is digitally locked. No modifications permitted while locked.")
 
-        current_data = self.compute_fleet_replenishment()
-        t = current_data["terminals"].get(tid)
-        if not t:
-            raise ValueError(f"Terminal '{terminal_id}' not found")
+            tid = str(terminal_id).replace("ATM-", "").replace("ATM", "").strip()
+            now_ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-        maker_indent = round(float(t.get("maker_proposed_indent", t.get("c1_net_indent", 0.0))) / 100.0) * 100.0
-        rounded_indent = round(float(new_indent) / 100.0) * 100.0
+            current_data = self.compute_fleet_replenishment()
+            t = current_data["terminals"].get(tid)
+            if not t:
+                raise ValueError(f"Terminal '{terminal_id}' not found")
 
-        self.checker_overrides[tid] = {
-            "terminal_id": tid,
-            "maker_proposed_indent": maker_indent,
-            "checker_custom_indent": rounded_indent,
-            "delta_rupees": round(rounded_indent - maker_indent, 0),
-            "reason": str(reason).strip(),
-            "actor": actor,
-            "timestamp": now_ts
-        }
+            phys_cap = get_physical_cassette_capacity(tid)
+            val = float(new_indent)
+            if val < 0.0:
+                raise ValueError(f"Indent amount cannot be negative: ₹{val:,.0f}")
+            if val > phys_cap:
+                raise ValueError(f"Indent amount ₹{val:,.0f} exceeds physical cassette capacity of ₹{phys_cap:,.0f}")
 
-        self.approved_indents[tid] = {
-            "approved_at": now_ts,
-            "approved_indent": rounded_indent,
-            "notes": f"Checker Override: {reason}",
-            "actor": actor
-        }
+            maker_indent = round(float(t.get("maker_proposed_indent", t.get("c1_net_indent", 0.0))) / 100.0) * 100.0
+            rounded_indent = round(val / 100.0) * 100.0
 
-        self.save_overrides()
-        recomputed = self.compute_fleet_replenishment()
-        return {
-            "status": "success",
-            "terminal_id": tid,
-            "maker_proposed_indent": maker_indent,
-            "new_indent": round(float(new_indent), 0),
-            "reason": reason,
-            "timestamp": now_ts,
-            "fleet_summary": recomputed["summary"]
-        }
+            self.checker_overrides[tid] = {
+                "terminal_id": tid,
+                "maker_proposed_indent": maker_indent,
+                "checker_custom_indent": rounded_indent,
+                "delta_rupees": round(rounded_indent - maker_indent, 0),
+                "reason": str(reason).strip(),
+                "actor": actor,
+                "timestamp": now_ts
+            }
+
+            # Maker/Checker rule: override is an amended proposal and does NOT self-approve!
+            if tid in self.approved_indents:
+                del self.approved_indents[tid]
+
+            self.save_overrides()
+            recomputed = self.compute_fleet_replenishment()
+            return {
+                "status": "override_recorded_pending_approval",
+                "terminal_id": tid,
+                "maker_proposed_indent": maker_indent,
+                "new_indent": rounded_indent,
+                "reason": reason,
+                "timestamp": now_ts,
+                "is_approved": False,
+                "fleet_summary": recomputed["summary"]
+            }
 
     def update_parameter(self, category: str, key: str, value: Any, sub_id: Optional[str] = None) -> Dict[str, Any]:
-        old_val = None
-        if category == "assumptions":
-            if key in self.assumptions:
-                old_val = self.assumptions[key]
-                if isinstance(old_val, float):
-                    self.assumptions[key] = float(value)
-                elif isinstance(old_val, int):
-                    self.assumptions[key] = int(value)
-                else:
-                    self.assumptions[key] = value
-            else:
-                self.assumptions[key] = value
-        elif category == "terminals":
-            tid = str(sub_id or key)
-            if tid in self.terminal_configs:
-                old_val = self.terminal_configs[tid].get(key)
-                if key in ["capacity"]:
-                    self.terminal_configs[tid][key] = float(value)
-                elif key in ["cycle_days"]:
-                    self.terminal_configs[tid][key] = int(value)
-                else:
-                    self.terminal_configs[tid][key] = value
-        elif category == "events":
-            for evt in self.exogenous_events:
-                if evt.get("id") == sub_id:
-                    old_val = evt.get(key)
-                    if key in ["demand_multiplier"]:
-                        evt[key] = float(value)
-                    else:
-                        evt[key] = value
-                    break
+        with self._lock:
+            if self.is_manifest_locked:
+                raise PermissionError("Manifest is digitally locked. No modifications permitted while locked.")
 
-        recomputed = self.compute_fleet_replenishment()
-        return {
-            "status": "updated",
-            "category": category,
-            "key": key,
-            "sub_id": sub_id,
-            "old_value": old_val,
-            "new_value": value,
-            "recomputed_summary": recomputed["summary"],
-            "delta_net_indent": recomputed["summary"]["delta_indent_vs_baseline"]
-        }
+            ALLOWED_ASSUMPTIONS = {
+                "holding_rate_annual": (0.01, 0.50),
+                "cit_trip_cost": (100.0, 50000.0),
+                "stockout_penalty_fixed": (0.0, 100000.0),
+                "emergency_refill_premium": (0.0, 50000.0),
+                "unmet_demand_penalty_rate": (0.001, 0.20),
+                "target_service_level": (0.80, 0.9999),
+                "target_cer_buffer": (0.1, 2.0),
+                "default_cassette_capacity": (500000.0, 10000000.0),
+                "min_sweep_threshold": (10000.0, 2000000.0),
+                "inter_atm_transfer_fee": (0.0, 50000.0),
+                "hood_threat_idle_cap": (500000.0, 10000000.0),
+                "reject_bin_warning_pct": (50.0, 95.0),
+                "reject_bin_critical_pct": (60.0, 100.0)
+            }
+
+            old_val = None
+            if category == "assumptions":
+                if key not in ALLOWED_ASSUMPTIONS:
+                    raise ValueError(f"Unknown assumption parameter '{key}'. Allowed keys: {list(ALLOWED_ASSUMPTIONS.keys())}")
+                min_v, max_v = ALLOWED_ASSUMPTIONS[key]
+                val = float(value)
+                if not (min_v <= val <= max_v):
+                    raise ValueError(f"Parameter '{key}' value {val} out of bounds [{min_v}, {max_v}]")
+                old_val = self.assumptions.get(key)
+                self.assumptions[key] = val
+                # Any global assumption edit invalidates all current approvals so they must be re-evaluated
+                self.approved_indents.clear()
+
+            elif category == "terminals":
+                tid = str(sub_id or key)
+                if tid not in self.terminal_configs and tid not in TERMINAL_OPERATIONAL_METADATA:
+                    raise ValueError(f"Terminal '{tid}' not found")
+                if tid not in self.terminal_configs:
+                    self.terminal_configs[tid] = {}
+
+                if key == "capacity":
+                    val = float(value)
+                    phys_cap = get_physical_cassette_capacity(tid)
+                    if val <= 0 or val > phys_cap:
+                        raise ValueError(f"Capacity must be between 1 and physical limit ₹{phys_cap:,.0f}")
+                    old_val = self.terminal_configs[tid].get("capacity")
+                    self.terminal_configs[tid]["capacity"] = val
+                elif key == "cycle_days":
+                    val = int(value)
+                    if val not in [3, 7, 14]:
+                        raise ValueError("cycle_days must be 3, 7, or 14")
+                    old_val = self.terminal_configs[tid].get("cycle_days")
+                    self.terminal_configs[tid]["cycle_days"] = val
+                elif key == "serviced_by":
+                    val = str(value).upper()
+                    if val not in ["CIT", "BRANCH"]:
+                        raise ValueError("serviced_by must be CIT or BRANCH")
+                    old_val = self.terminal_configs[tid].get("serviced_by")
+                    self.terminal_configs[tid]["serviced_by"] = val
+                else:
+                    raise ValueError(f"Invalid terminal parameter '{key}'. Allowed: ['capacity', 'cycle_days', 'serviced_by']")
+
+                # Terminal parameter edit invalidates its approval
+                if tid in self.approved_indents:
+                    del self.approved_indents[tid]
+
+            elif category == "events":
+                found = False
+                for evt in self.exogenous_events:
+                    if evt.get("id") == sub_id:
+                        found = True
+                        old_val = evt.get(key)
+                        if key in ["demand_multiplier"]:
+                            val = float(value)
+                            if not (0.1 <= val <= 5.0):
+                                raise ValueError("demand_multiplier must be between 0.1 and 5.0")
+                            evt[key] = val
+                        else:
+                            evt[key] = value
+                        break
+                if not found:
+                    raise ValueError(f"Event with id '{sub_id}' not found")
+                self.approved_indents.clear()
+            else:
+                raise ValueError(f"Invalid category '{category}'. Allowed: ['assumptions', 'terminals', 'events']")
+
+            self.save_overrides()
+            recomputed = self.compute_fleet_replenishment()
+            return {
+                "status": "updated",
+                "category": category,
+                "key": key,
+                "sub_id": sub_id,
+                "old_value": old_val,
+                "new_value": value,
+                "recomputed_summary": recomputed["summary"],
+                "delta_net_indent": recomputed["summary"]["delta_indent_vs_baseline"]
+            }
 
     def execute_inter_atm_sweep(self, donor_id: str, recipient_id: str, amount: float, actor: str = "Chief Treasury Officer") -> Dict[str, Any]:
-        """Executes an Inter-ATM Cash Balancing Transfer (Surplus Removal -> Starving ATM)."""
-        d_id = str(donor_id).replace("ATM-", "").replace("ATM", "").strip()
-        r_id = str(recipient_id).replace("ATM-", "").replace("ATM", "").strip()
-        transfer_amt = round(float(amount) / 100.0) * 100.0
-        now_ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        """Executes an Inter-ATM Cash Balancing Transfer (Surplus Removal -> Starving ATM) with strict cash conservation."""
+        with self._lock:
+            if self.is_manifest_locked:
+                raise PermissionError("Manifest is digitally locked. No modifications permitted while locked.")
 
-        current_data = self.compute_fleet_replenishment()
-        donor = current_data["terminals"].get(d_id)
-        recipient = current_data["terminals"].get(r_id)
+            d_id = str(donor_id).replace("ATM-", "").replace("ATM", "").strip()
+            r_id = str(recipient_id).replace("ATM-", "").replace("ATM", "").strip()
+            transfer_amt = round(float(amount) / 100.0) * 100.0
+            now_ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-        if not donor or not recipient:
-            raise ValueError(f"Invalid donor '{donor_id}' or recipient '{recipient_id}'")
+            if transfer_amt <= 0:
+                raise ValueError(f"Sweep transfer amount must be positive, got ₹{transfer_amt}")
 
-        sweep_record = {
-            "sweep_id": f"SWEEP-{datetime.now().strftime('%Y%m%d%H%M%S')}-{d_id}-{r_id}",
-            "donor_terminal_id": d_id,
-            "donor_site_name": donor["site_name"],
-            "recipient_terminal_id": r_id,
-            "recipient_site_name": recipient["site_name"],
-            "transfer_amount": transfer_amt,
-            "corridor": donor.get("corridor_route", "Corridor"),
-            "executed_at": now_ts,
-            "actor": actor,
-            "status": "EXECUTED",
-            "estimated_savings": {
-                "avoided_emergency_cit": 3500.0,
-                "avoided_stockout_penalty": 10000.0,
-                "transfer_fee": float(self.assumptions.get("inter_atm_transfer_fee", 1500.0)),
-                "net_benefit": 12000.0
+            current_data = self.compute_fleet_replenishment()
+            donor = current_data["terminals"].get(d_id)
+            recipient = current_data["terminals"].get(r_id)
+
+            if not donor or not recipient:
+                raise ValueError(f"Invalid donor '{donor_id}' or recipient '{recipient_id}'")
+            if d_id == r_id or donor.get("city") != recipient.get("city"):
+                raise ValueError(
+                    f"Sweep must move cash between two different ATMs in the same city "
+                    f"(donor {donor.get('city')}, recipient {recipient.get('city')})"
+                )
+
+            donor_cash = float(donor["existing_cash"])
+            recipient_cash = float(recipient["existing_cash"])
+            donor_min_reserve = float(donor.get("assumptions", {}).get("safety_buffer", 200000.0))
+            donor_max_transferable = max(0.0, donor_cash - donor_min_reserve)
+
+            if transfer_amt > donor_max_transferable:
+                raise ValueError(
+                    f"Transfer amount ₹{transfer_amt:,.0f} exceeds donor available cash ₹{donor_max_transferable:,.0f} "
+                    f"(current cash ₹{donor_cash:,.0f} minus safety reserve ₹{donor_min_reserve:,.0f})"
+                )
+
+            recipient_cap = float(recipient["capacity"])
+            if (recipient_cash + transfer_amt) > recipient_cap:
+                raise ValueError(
+                    f"Recipient capacity ₹{recipient_cap:,.0f} exceeded: "
+                    f"current ₹{recipient_cash:,.0f} + transfer ₹{transfer_amt:,.0f} = ₹{recipient_cash + transfer_amt:,.0f}"
+                )
+
+            # Strict cash conservation: money deducted from donor equals money added to recipient
+            new_donor_cash = donor_cash - transfer_amt
+            new_recipient_cash = recipient_cash + transfer_amt
+
+            # Update single source of truth across metadata, raw_bundle, and terminal_configs
+            if d_id in TERMINAL_OPERATIONAL_METADATA:
+                TERMINAL_OPERATIONAL_METADATA[d_id]["last_feed"]["end_cash_value"] = new_donor_cash
+            if d_id in self.raw_bundle.get("terminals", {}):
+                self.raw_bundle["terminals"][d_id]["existing_cash"] = new_donor_cash
+            if d_id not in self.terminal_configs:
+                self.terminal_configs[d_id] = {}
+            self.terminal_configs[d_id]["existing_cash"] = new_donor_cash
+
+            if r_id in TERMINAL_OPERATIONAL_METADATA:
+                TERMINAL_OPERATIONAL_METADATA[r_id]["last_feed"]["end_cash_value"] = new_recipient_cash
+            if r_id in self.raw_bundle.get("terminals", {}):
+                self.raw_bundle["terminals"][r_id]["existing_cash"] = new_recipient_cash
+            if r_id not in self.terminal_configs:
+                self.terminal_configs[r_id] = {}
+            self.terminal_configs[r_id]["existing_cash"] = new_recipient_cash
+
+            emergency_premium = float(self.assumptions.get("emergency_refill_premium", 3500.0))
+            transfer_fee = float(self.assumptions.get("inter_atm_transfer_fee", 1500.0))
+            net_savings = max(0.0, emergency_premium - transfer_fee)
+
+            sweep_record = {
+                "sweep_id": f"SWEEP-{datetime.now().strftime('%Y%m%d%H%M%S')}-{d_id}-{r_id}",
+                "donor_terminal_id": d_id,
+                "donor_site_name": donor["site_name"],
+                "recipient_terminal_id": r_id,
+                "recipient_site_name": recipient["site_name"],
+                "transfer_amount": transfer_amt,
+                "corridor": donor.get("corridor_route", "Corridor"),
+                "executed_at": now_ts,
+                "actor": actor,
+                "status": "EXECUTED",
+                "donor_cash_before": donor_cash,
+                "donor_cash_after": new_donor_cash,
+                "recipient_cash_before": recipient_cash,
+                "recipient_cash_after": new_recipient_cash,
+                "cash_conserved": (donor_cash + recipient_cash) == (new_donor_cash + new_recipient_cash),
+                "estimated_savings": {
+                    "avoided_emergency_cit": emergency_premium,
+                    "avoided_stockout_penalty": 10000.0,
+                    "transfer_fee": transfer_fee,
+                    "net_benefit": net_savings
+                }
             }
-        }
 
-        # Apply in-memory cash adjustments
-        if d_id in self.raw_bundle.get("terminals", {}):
-            cur_d = float(self.raw_bundle["terminals"][d_id].get("existing_cash", 1500000.0))
-            self.raw_bundle["terminals"][d_id]["existing_cash"] = max(200000.0, cur_d - transfer_amt)
+            self.executed_sweeps.append(sweep_record)
+            if d_id in self.approved_indents:
+                del self.approved_indents[d_id]
+            if r_id in self.approved_indents:
+                del self.approved_indents[r_id]
 
-        if r_id in self.raw_bundle.get("terminals", {}):
-            cur_r = float(self.raw_bundle["terminals"][r_id].get("existing_cash", 500000.0))
-            cap_r = float(self.raw_bundle["terminals"][r_id].get("capacity", 6000000.0))
-            self.raw_bundle["terminals"][r_id]["existing_cash"] = min(cap_r, cur_r + transfer_amt)
-
-        self.executed_sweeps.append(sweep_record)
-        self.save_overrides()
-        recomputed = self.compute_fleet_replenishment()
-
-        return {
-            "status": "sweep_executed",
-            "sweep_record": sweep_record,
-            "fleet_summary": recomputed["summary"]
-        }
+            self.save_overrides()
+            recomputed = self.compute_fleet_replenishment()
+            return {
+                "status": "sweep_executed",
+                "sweep_record": sweep_record,
+                "fleet_summary": recomputed["summary"]
+            }
 
     def execute_clear_reject_bin(self, terminal_id: str, actor: str = "Custodian Technician") -> Dict[str, Any]:
-        """Clears/resets the physical reject/retract bin counter to 0 notes."""
-        tid = str(terminal_id).replace("ATM-", "").replace("ATM", "").strip()
-        now_ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        """Clears/resets the physical reject/retract bin counter to 0 notes and persists across reloads."""
+        with self._lock:
+            if self.is_manifest_locked:
+                raise PermissionError("Manifest is digitally locked. No modifications permitted while locked.")
 
-        meta = TERMINAL_OPERATIONAL_METADATA.get(tid)
-        if meta and "reject_bin" in meta:
-            meta["reject_bin"]["current_notes"] = 0
-            meta["reject_bin"]["status"] = "NORMAL"
+            tid = str(terminal_id).replace("ATM-", "").replace("ATM", "").strip()
+            now_ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-        if meta and "human_errors" in meta:
-            meta["human_errors"]["reject_bin_unemptied"] = False
+            self.cleared_reject_bins.add(tid)
+            meta = TERMINAL_OPERATIONAL_METADATA.get(tid)
+            if meta and "reject_bin" in meta:
+                meta["reject_bin"]["current_notes"] = 0
+                meta["reject_bin"]["status"] = "NORMAL"
 
-        self.feedback_logs.append({
-            "terminal_id": tid,
-            "feedback": "REJECT_BIN_CLEARED",
-            "reason": "Purge bin emptied by field custodian technician",
-            "comment": "Counters reset to zero",
-            "actor": actor,
-            "timestamp": now_ts
-        })
-        self.save_overrides()
-        recomputed = self.compute_fleet_replenishment()
+            if meta and "human_errors" in meta:
+                meta["human_errors"]["reject_bin_unemptied"] = False
 
-        return {
-            "status": "reject_bin_cleared",
-            "terminal_id": tid,
-            "cleared_at": now_ts,
-            "fleet_summary": recomputed["summary"]
-        }
+            self.feedback_logs.append({
+                "terminal_id": tid,
+                "feedback": "REJECT_BIN_CLEARED",
+                "reason": "Purge bin emptied by field custodian technician",
+                "comment": "Counters reset to zero",
+                "actor": actor,
+                "timestamp": now_ts
+            })
+            self.save_overrides()
+            recomputed = self.compute_fleet_replenishment()
+
+            return {
+                "status": "reject_bin_cleared",
+                "terminal_id": tid,
+                "cleared_at": now_ts,
+                "fleet_summary": recomputed["summary"]
+            }
 
     def execute_emergency_indent(self, terminal_id: str, amount: Optional[float] = None, actor: str = "Emergency Dispatch Planner") -> Dict[str, Any]:
-        """Triggers an emergency hot-dispatch replenishment for an ATM facing imminent cashout or SLA breach."""
-        tid = str(terminal_id).replace("ATM-", "").replace("ATM", "").strip()
-        now_ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        """Triggers an emergency hot-dispatch replenishment for an ATM facing imminent cashout."""
+        with self._lock:
+            if self.is_manifest_locked:
+                raise PermissionError("Manifest is digitally locked. No modifications permitted while locked.")
 
-        current_data = self.compute_fleet_replenishment()
-        t = current_data["terminals"].get(tid)
-        if not t:
-            raise ValueError(f"Terminal '{terminal_id}' not found")
+            tid = str(terminal_id).replace("ATM-", "").replace("ATM", "").strip()
+            now_ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-        emergency_amt = round(float(amount or t.get("maker_proposed_indent", 1500000.0)) / 100.0) * 100.0
-        today_str = datetime.now().strftime("%Y-%m-%d")
+            current_data = self.compute_fleet_replenishment()
+            t = current_data["terminals"].get(tid)
+            if not t:
+                raise ValueError(f"Terminal '{terminal_id}' not found")
 
-        emergency_cycles = [
-            {
-                "cycle_id": 1,
-                "name": "⚡ Emergency Hot-Dispatch Drop",
-                "date": today_str,
-                "window": "Immediate Hot-Run (Within 2 Hours)",
-                "amount": emergency_amt,
-                "is_enabled": True,
-                "servicing": "CIT Emergency Carrier",
-                "status": "Scheduled",
-                "reason": "Emergency Hot-Dispatch to prevent stockout SLA breach"
-            }
-        ]
+            phys_cap = get_physical_cassette_capacity(tid)
+            emergency_amt = round(float(amount or t.get("maker_proposed_indent", 1000000.0)) / 100.0) * 100.0
+            if emergency_amt > phys_cap:
+                emergency_amt = phys_cap
 
-        self.amended_replenishments[tid] = {
-            "terminal_id": tid,
-            "strategy": "EMERGENCY_HOT_RUN",
-            "refill_cycles": emergency_cycles,
-            "amended_date": today_str,
-            "amended_window": "Immediate Hot-Run (Within 2 Hours)",
-            "amended_indent": emergency_amt,
-            "original_indent": float(t.get("c1_net_indent", 0.0)),
-            "notes": "Emergency Hot-Dispatch authorized to prevent regulatory downtime penalty",
-            "actor": actor,
-            "timestamp": now_ts
-        }
+            forecast_dates = t.get("dates", []) or ['2026-08-25', '2026-08-26', '2026-08-27', '2026-08-28', '2026-08-29', '2026-08-30', '2026-08-31']
+            emergency_date = forecast_dates[0]
 
-        self.approved_indents[tid] = {
-            "approved_at": now_ts,
-            "approved_indent": emergency_amt,
-            "notes": "Immediate Emergency Hot-Run Authorized",
-            "actor": actor
-        }
-
-        self.save_overrides()
-        recomputed = self.compute_fleet_replenishment()
-
-        return {
-            "status": "emergency_indent_scheduled",
-            "terminal_id": tid,
-            "emergency_amount": emergency_amt,
-            "scheduled_time": "Immediate Hot-Run (Within 2 Hours)",
-            "fleet_summary": recomputed["summary"]
-        }
-
-    def compute_fleet_replenishment(self) -> Dict[str, Any]:
-        """Dynamically recomputes indents, cassette physics, quantile forecasts, downtime factors, and disruption balancing."""
-        terminals_data = self.raw_bundle.get("terminals", {})
-        sla = float(self.assumptions.get("target_service_level", 0.99))
-        
-        if sla >= 0.999:
-            z_score = 3.09
-        elif sla >= 0.99:
-            z_score = 2.326
-        elif sla >= 0.98:
-            z_score = 2.054
-        elif sla >= 0.95:
-            z_score = 1.645
-        elif sla >= 0.90:
-            z_score = 1.282
-        else:
-            z_score = 1.0
-
-        holding_daily = float(self.assumptions.get("holding_rate_annual", 0.065)) / 365.0
-        cit_trip_cost = float(self.assumptions.get("cit_trip_cost", 2000.0))
-        stockout_penalty = float(self.assumptions.get("stockout_penalty_fixed", 10000.0))
-
-        recomputed_terminals = {}
-        total_existing_cash = 0.0
-        total_net_indent = 0.0
-        total_maker_proposed_indent = 0.0
-        total_baseline_indent = 0.0
-        critical_count = 0
-        scheduled_count = 0
-        healthy_count = 0
-
-        # Corridors for routing & inter-ATM balancing
-        corridor_groups: Dict[str, List[Dict[str, Any]]] = {}
-
-        for tid, base_t in terminals_data.items():
-            t_cfg = self.terminal_configs.get(tid, {})
-            meta = TERMINAL_OPERATIONAL_METADATA.get(tid, {})
-            meta = TERMINAL_OPERATIONAL_METADATA.get(tid, {})
-            capacity = float(t_cfg.get("capacity", base_t.get("capacity", 6000000.0)))
-            cycle_days = int(t_cfg.get("cycle_days", 7 if base_t.get("serviced_by") == "CIT" else 3))
-            existing_cash = float(t_cfg.get("existing_cash", meta.get("last_feed", {}).get("end_cash_value", base_t.get("existing_cash", 1500000.0))))
-
-            t_city = t_cfg.get("city", base_t.get("city", "MUMBAI")).upper()
-            location_tier = meta.get("location_tier", "Metro")
-            location_category = meta.get("location_category", "Metro Transit")
-
-            strat_preds = base_t.get("daily_preds", {})
-            if isinstance(strat_preds, dict):
-                c1_preds = (strat_preds.get("strategy_c") or strat_preds.get("lgb_uncensored") or list(strat_preds.values())[0])[:cycle_days]
-            elif isinstance(strat_preds, list):
-                c1_preds = strat_preds[:cycle_days]
-            else:
-                c1_preds = []
-            base_c1_demand = sum(c1_preds) if c1_preds else float(base_t.get("c1_pred_demand", 4000000.0))
-
-            # Apply Category-Sensitive Exogenous Multipliers
-            fwd_dates = (base_t.get("dates") or ['2026-08-25', '2026-08-26', '2026-08-27', '2026-08-28', '2026-08-29', '2026-08-30', '2026-08-31'])[:7]
-            fwd_day_names = ['Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun', 'Mon']
-
-            mult = 1.0
-            active_signals = []
-            for evt in self.exogenous_events:
-                evt_city = evt.get("city", "").upper()
-                evt_start = evt.get("start_date", "2026-08-01")
-                evt_end = evt.get("end_date", "2026-09-30")
-                
-                # Verify date overlap with the forecast window
-                date_overlaps = any(evt_start <= d <= evt_end for d in fwd_dates)
-                if (evt_city in ["ALL", t_city]) and date_overlaps:
-                    cat_mults = evt.get("category_multipliers", {})
-                    applied_mult = float(cat_mults.get(location_category, evt.get("demand_multiplier", 1.0)))
-                    mult *= applied_mult
-                    active_signals.append({
-                        "name": evt.get("name"),
-                        "multiplier": f"{applied_mult:.2f}x",
-                        "notes": evt.get("notes")
-                    })
-
-            adjusted_c1_demand = round(base_c1_demand * mult, 0)
-            daily_burn = round((adjusted_c1_demand / max(1, cycle_days)) / 100.0) * 100.0
-            daily_std = (adjusted_c1_demand / max(1, cycle_days)) * 0.22
-            sigma_h = daily_std * math.sqrt(cycle_days)
-            safety_buffer = round((z_score * sigma_h) / 100.0) * 100.0
-
-            # Quantile Demand Projections (P50, P80, P95)
-            p50_cycle_demand = round(adjusted_c1_demand / 100.0) * 100.0
-            p80_cycle_demand = round((adjusted_c1_demand + 0.84 * sigma_h) / 100.0) * 100.0
-            p95_cycle_demand = round((adjusted_c1_demand + 1.645 * sigma_h) / 100.0) * 100.0
-
-            gross_target = min(capacity, max(0.0, round((adjusted_c1_demand + safety_buffer) / 100.0) * 100.0))
-            raw_net_indent = max(0.0, gross_target - existing_cash)
-            system_maker_indent = round(raw_net_indent / 100.0) * 100.0
-            dcr_days = round(existing_cash / daily_burn, 2) if daily_burn > 0 else 99.0
-            dcr_hours = int(round(dcr_days * 24))
-
-            # Forward Daily Predictions
-            s_preds = base_t.get("daily_preds", {})
-            raw_pred_list = (s_preds.get("strategy_c") or s_preds.get("lgb_uncensored") or [daily_burn]*7)[:7]
-            if len(raw_pred_list) < 7:
-                raw_pred_list = [daily_burn] * 7
-            pred_list = [round(float(p) * mult, 0) for p in raw_pred_list]
-
-            # Servicing & Defaults
-            servicing_mode = t_cfg.get("serviced_by", base_t.get("serviced_by", "CIT"))
-            c1_default_date = meta.get("suggested_date", "2026-08-26")
-            c1_default_window = meta.get("suggested_time", "07:00 AM")
-            amended_info = self.amended_replenishments.get(tid)
-            is_amended = amended_info is not None
-            is_approved = tid in self.approved_indents
-
-            # Multi-cycle detection
-            b_sim = existing_cash
-            single_stockout_idx = None
-            single_breach_idx = None
-            for i in range(len(fwd_dates)):
-                if fwd_dates[i] == c1_default_date:
-                    b_sim = min(capacity, b_sim + system_maker_indent)
-                b_sim = max(0.0, b_sim - pred_list[i])
-                if b_sim == 0 and single_stockout_idx is None:
-                    single_stockout_idx = i
-                elif b_sim < safety_buffer and single_breach_idx is None:
-                    single_breach_idx = i
-
-            requires_second_cycle = (single_stockout_idx is not None) or (single_breach_idx is not None and single_breach_idx <= 4)
-            suggested_strategy = "2-CYCLE" if requires_second_cycle else "1-CYCLE"
-
-            # Build Suggested Refill Cycles
-            if requires_second_cycle:
-                c1_sugg_amt = round((system_maker_indent * 0.6) / 100.0) * 100.0
-                c2_sugg_amt = round((system_maker_indent * 0.5) / 100.0) * 100.0
-                suggested_cycles = [
-                    {
-                        "cycle_id": 1,
-                        "name": "Refill Cycle #1 (Mid-Week Primary)",
-                        "date": c1_default_date,
-                        "window": c1_default_window,
-                        "amount": max(300000.0, c1_sugg_amt),
-                        "is_enabled": True,
-                        "servicing": servicing_mode,
-                        "status": "Suggested",
-                        "reason": "Primary operational replenishment"
-                    },
-                    {
-                        "cycle_id": 2,
-                        "name": "Refill Cycle #2 (Weekend Surge Shield)",
-                        "date": fwd_dates[min(4, single_stockout_idx or 4)],
-                        "window": "07:00 AM – 09:15 AM",
-                        "amount": max(300000.0, c2_sugg_amt),
-                        "is_enabled": True,
-                        "servicing": servicing_mode,
-                        "status": "Suggested",
-                        "reason": "Auto-suggested to eliminate weekend stockout"
-                    }
-                ]
-            else:
-                suggested_cycles = [
-                    {
-                        "cycle_id": 1,
-                        "name": "Refill Cycle #1 (Weekly Main)",
-                        "date": c1_default_date,
-                        "window": c1_default_window,
-                        "amount": system_maker_indent,
-                        "is_enabled": True,
-                        "servicing": servicing_mode,
-                        "status": "Suggested",
-                        "reason": "Standard cyclical replenishment"
-                    }
-                ]
-
-            if amended_info and amended_info.get("refill_cycles"):
-                active_cycles = amended_info["refill_cycles"]
-                active_strategy = amended_info.get("strategy", suggested_strategy)
-            else:
-                active_cycles = suggested_cycles
-                active_strategy = suggested_strategy
-
-            # Schedule badges
-            if is_approved:
-                schedule_status = "SCHEDULED"
-                checker_badge_text = "✓ Approved"
-                schedule_badge = "SCHEDULED"
-                sched_date = active_cycles[0]["date"] if active_cycles else c1_default_date
-                sched_time = active_cycles[0].get("window", c1_default_window)
-                schedule_display = f"✓ Scheduled: {sched_date} · {sched_time}"
-            elif is_amended:
-                schedule_status = "AMENDED"
-                checker_badge_text = "Amended · Pending Approval"
-                schedule_badge = "AMENDED"
-                sched_date = active_cycles[0]["date"] if active_cycles else c1_default_date
-                sched_time = active_cycles[0].get("window", c1_default_window)
-                schedule_display = f"Amended: {sched_date} · {sched_time}"
-            else:
-                schedule_status = "SUGGESTED"
-                checker_badge_text = "Pending Review"
-                schedule_badge = "SUGGESTED"
-                sched_date = active_cycles[0]["date"] if active_cycles else c1_default_date
-                sched_time = active_cycles[0].get("window", c1_default_window)
-                schedule_display = f"Suggested: {sched_date} · {sched_time}"
-
-            # Net Indent and Overrides
-            override_info = self.checker_overrides.get(tid)
-            if override_info:
-                net_indent = round(float(override_info["checker_custom_indent"]) / 100.0) * 100.0
-                has_override = True
-            else:
-                net_indent = round(sum(float(c.get("amount", 0.0)) for c in active_cycles if c.get("is_enabled", True)) / 100.0) * 100.0
-                has_override = False
-
-            maker_total_indent = round(sum(float(c.get("amount", 0.0)) for c in suggested_cycles if c.get("is_enabled", True)) / 100.0) * 100.0
-
-            # -------------------------------------------------------------
-            # REJECT BIN & HARDWARE PHYSICS
-            # -------------------------------------------------------------
-            rb = meta.get("reject_bin", {"max_notes": 300, "current_notes": 45, "status": "NORMAL"})
-            rb_cap = int(rb.get("max_notes", 300))
-            rb_cur = int(rb.get("current_notes", 45))
-            rb_pct = round((rb_cur / max(1, rb_cap)) * 100.0, 1)
-            if rb_pct >= float(self.assumptions.get("reject_bin_critical_pct", 90.0)):
-                rb_stat = "CRITICAL_FAULT"
-            elif rb_pct >= float(self.assumptions.get("reject_bin_warning_pct", 75.0)):
-                rb_stat = "SATURATED"
-            else:
-                rb_stat = "NORMAL"
-
-            crm_col = meta.get("crm_collection_bin")
-            crm_col_notes = int(crm_col.get("current_notes", 0)) if crm_col else 0
-            crm_col_cap = int(crm_col.get("max_notes", 2000)) if crm_col else 2000
-            crm_col_pct = round((crm_col_notes / max(1, crm_col_cap)) * 100.0, 1) if crm_col else 0.0
-
-            # Denomination Note Mix for Net Indent
-            denom_weights = meta.get("denomination_weights", {"500": 0.70, "200": 0.20, "100": 0.10})
-            indent_500_notes = int(round((net_indent * denom_weights.get("500", 0.70)) / 500.0))
-            indent_200_notes = int(round((net_indent * denom_weights.get("200", 0.20)) / 200.0))
-            indent_100_notes = int(round((net_indent * denom_weights.get("100", 0.10)) / 100.0))
-            denom_mix_str = f"₹500: {indent_500_notes:,} notes (₹{indent_500_notes*500:,.0f}) | ₹200: {indent_200_notes:,} notes (₹{indent_200_notes*200:,.0f}) | ₹100: {indent_100_notes:,} notes (₹{indent_100_notes*100:,.0f})"
-
-            # -------------------------------------------------------------
-            # DISRUPTIONS & CRA SLA TRACKING
-            # -------------------------------------------------------------
-            cra_info = meta.get("cra_tracking", {"cra_status": "ON_SCHEDULE", "sla_penalty": 0.0})
-            cra_status = cra_info.get("cra_status", "ON_SCHEDULE")
-            cra_penalty = float(cra_info.get("sla_penalty", 0.0))
-
-            human_err = meta.get("human_errors", {})
-            has_shortfall = bool(human_err.get("has_shortfall", False))
-            shortfall_amt = float(human_err.get("shortfall_amount", 0.0))
-            reject_bin_unemptied = bool(human_err.get("reject_bin_unemptied", False))
-
-            threat = meta.get("threat_monitoring", {"threat_level": "LOW"})
-            threat_level = threat.get("threat_level", "LOW")
-
-            # -------------------------------------------------------------
-            # HYBRID DOWNTIME DETECTION & ANOMALY MODEL
-            # -------------------------------------------------------------
-            downtime_causes = []
-            risk_points = 0
-
-            # Deterministic hard factors
-            if dcr_hours < 12:
-                downtime_causes.append(f"Immediate Cash Exhaustion Risk (Runway: {dcr_hours}h)")
-                risk_points += 50
-            elif dcr_hours < 24:
-                downtime_causes.append(f"Low Cash Runway Warning ({dcr_hours}h remaining)")
-                risk_points += 25
-
-            if rb_stat == "CRITICAL_FAULT":
-                downtime_causes.append(f"Purge/Reject Bin Jam Fault ({rb_cur}/{rb_cap} notes, {rb_pct}%)")
-                risk_points += 40
-            elif rb_stat == "SATURATED":
-                downtime_causes.append(f"Reject Bin Saturated ({rb_cur}/{rb_cap} notes, {rb_pct}%)")
-                risk_points += 20
-
-            if cra_status == "MISSED_SLA_BREACH":
-                downtime_causes.append("CRA Missed Replenishment Visit — SLA Breached")
-                risk_points += 35
-
-            if has_shortfall:
-                downtime_causes.append(f"Custodian Loading Shortfall of ₹{shortfall_amt:,.0f} detected at supervisor latch")
-                risk_points += 15
-
-            if reject_bin_unemptied:
-                downtime_causes.append("Human Error: Reject bin unemptied during prior service cycle")
-                risk_points += 15
-
-            if meta.get("threat_monitoring", {}).get("curfew_active"):
-                downtime_causes.append(f"Site Facility Curfew Active ({meta.get('threat_monitoring', {}).get('curfew_hours', 'Night Shut')})")
-                risk_points += 10
-
-            # Telemetry anomalies
-            if tid == "3":
-                downtime_causes.append("Telemetry Anomaly: Sudden transaction spike (+38% vs weekday baseline)")
-                risk_points += 10
-            elif tid == "5":
-                downtime_causes.append("Dispenser Anomaly: Repeated note pick retries (6.2% reject rate)")
-                risk_points += 15
-
-            downtime_risk_score = min(100, risk_points)
-
-            # Determine Urgency Status
-            if dcr_days < 1.0 or cra_status == "MISSED_SLA_BREACH" or rb_stat == "CRITICAL_FAULT" or downtime_risk_score >= 80:
-                urgency = "CRITICAL"
-                critical_count += 1
-                deplete_text = f"Dry-out in {dcr_hours}h"
-            elif dcr_days <= 3.5 or rb_stat == "SATURATED" or downtime_risk_score >= 40:
-                urgency = "SCHEDULED"
-                scheduled_count += 1
-                deplete_text = f"{dcr_hours} hours runway"
-            else:
-                urgency = "HEALTHY"
-                healthy_count += 1
-                deplete_text = f"{dcr_hours} hours runway"
-
-            # Surplus Cash Identification
-            is_surplus_eligible = (dcr_days > (cycle_days * 1.5)) or (crm_col_pct >= 80.0) or (existing_cash >= 2500000.0 and dcr_days >= 6.0)
-            surplus_removable_amount = max(0.0, round((existing_cash - (adjusted_c1_demand * 0.7 + safety_buffer)) / 100.0) * 100.0) if is_surplus_eligible else 0.0
-
-            baseline_indent = round(float(base_t.get("c1_net_indent", system_maker_indent)) / 100.0) * 100.0
-            total_baseline_indent += baseline_indent
-            total_maker_proposed_indent += maker_total_indent
-            total_existing_cash += existing_cash
-            total_net_indent += net_indent
-
-            # Stockout Text & Days
-            if dcr_days <= 1.0:
-                stockout_text = "Tuesday, Aug 25 at ~22:00 IST"
-                stockout_day = "Tuesday (Today)"
-            elif dcr_days <= 2.2:
-                stockout_text = "Thursday, Aug 27 at ~15:30 IST"
-                stockout_day = "Thursday, Aug 27"
-            else:
-                stockout_text = "Sunday, Aug 30 or later"
-                stockout_day = "Sunday, Aug 30+"
-
-            # 7-Day History Simulation
-            past_dates = ['2026-08-18', '2026-08-19', '2026-08-20', '2026-08-21', '2026-08-22', '2026-08-23', '2026-08-24']
-            past_day_names = ['Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun', 'Mon']
-            actual_vals = (base_t.get("actual_demands") or [620000, 840000, 490000, 970000, 810000, 830000, 690000])[-7:]
-            if len(actual_vals) < 7:
-                actual_vals = [daily_burn * 0.95] * 7
-
-            history_rows = []
-            curr_running = existing_cash
-            temp_hist = []
-            for i in range(6, -1, -1):
-                dt = past_dates[i]
-                dname = past_day_names[i]
-                wdraw = float(actual_vals[i])
-                is_reload = (i == 2)
-                reload_amt = 2500000.0 if is_reload else 0.0
-                open_b = curr_running + wdraw - reload_amt
-                temp_hist.append({
-                    "date": dt,
-                    "day": dname,
-                    "opening_cash": round(open_b, 0),
-                    "actual_withdrawal": round(wdraw, 0),
-                    "refill_amount": reload_amt,
-                    "closing_cash": round(curr_running, 0),
-                    "utilization_pct": min(100.0, round((curr_running / capacity) * 100, 1)),
-                    "status": "Healthy" if curr_running >= safety_buffer else "Safety Floor Breach"
-                })
-                curr_running = open_b
-            history_rows = list(reversed(temp_hist))
-
-            # 7-Day Forward Forecast Simulation
-            forecast_rows = []
-            b_without = existing_cash
-            b_with = existing_cash
-            holding_cost_7d = 0.0
-
-            for i in range(len(fwd_dates)):
-                dt = fwd_dates[i]
-                dname = fwd_day_names[i % 7]
-                p_demand = float(pred_list[i])
-                b_without = max(0.0, b_without - p_demand)
-                
-                drop_today = 0.0
-                cycle_tags = []
-                for cyc in active_cycles:
-                    if cyc.get("is_enabled", True) and cyc.get("date") == dt:
-                        amt = float(cyc.get("amount", 0.0))
-                        drop_today += amt
-                        c_num = cyc.get("cycle_id", 1)
-                        c_ico = "🚚" if c_num == 1 else "⚡"
-                        cycle_tags.append(f"{c_ico} Refill #{c_num} (+₹{amt:,.0f})")
-
-                if drop_today > 0:
-                    b_with = min(capacity, b_with + drop_today)
-
-                b_with = max(0.0, b_with - p_demand)
-                daily_holding = round(b_with * holding_daily, 0)
-                holding_cost_7d += daily_holding
-
-                r_stat = "CRITICAL STOCKOUT" if b_with == 0 else ("BUFFER BREACH" if b_with < safety_buffer else "NORMAL")
-                r_stat_without = "CRITICAL STOCKOUT" if b_without == 0 else ("BUFFER BREACH" if b_without < safety_buffer else "NORMAL")
-
-                forecast_rows.append({
-                    "date": dt,
-                    "day": dname,
-                    "projected_demand": round(p_demand, 0),
-                    "balance_without_refill": round(b_without, 0),
-                    "balance_with_refill": round(b_with, 0),
-                    "daily_holding_cost": daily_holding,
-                    "risk_status": r_stat,
-                    "risk_status_without": r_stat_without,
-                    "event_tag": ", ".join(cycle_tags) if cycle_tags else "Standard Transit",
-                    "refill_amount_today": drop_today
-                })
-
-            avg_balance_7d = round(sum(r["balance_with_refill"] for r in forecast_rows) / 7.0, 0)
-            active_trips_count = sum(1 for c in active_cycles if c.get("is_enabled", True) and float(c.get("amount", 0.0)) > 0)
-            cit_trip_costs_7d = active_trips_count * cit_trip_cost
-            total_logistics_and_carry_cost = round(holding_cost_7d + cit_trip_costs_7d, 0)
-            stockout_days_count = sum(1 for r in forecast_rows if r["balance_with_refill"] == 0)
-            sla_projected_pct = 100.0 if stockout_days_count == 0 else round((7 - stockout_days_count) / 7.0 * 100, 1)
-
-            # Historical 3-Cycle Efficacy Quad
-            past_cycle_metrics = [
+            emergency_cycles = [
                 {
-                    "cycle_label": "Cycle t-1 (Aug 15 - Aug 21)",
-                    "predicted_demand": round(adjusted_c1_demand * 0.94, 0),
-                    "actual_demand": round(adjusted_c1_demand * 0.97, 0),
-                    "effectiveness_pct": 94.6,
-                    "ending_residual_cash": round(safety_buffer * 1.15, 0),
-                    "stockout_hours": 0,
-                    "cra_sla_status": "ON_TIME",
-                    "cycle_status": "OPTIMAL"
-                },
-                {
-                    "cycle_label": "Cycle t-2 (Aug 08 - Aug 14)",
-                    "predicted_demand": round(adjusted_c1_demand * 1.02, 0),
-                    "actual_demand": round(adjusted_c1_demand * 0.98, 0),
-                    "effectiveness_pct": 92.1,
-                    "ending_residual_cash": round(safety_buffer * 1.30, 0),
-                    "stockout_hours": 0,
-                    "cra_sla_status": "ON_TIME",
-                    "cycle_status": "OVER_BUFFERED"
-                },
-                {
-                    "cycle_label": "Cycle t-3 (Aug 01 - Aug 07)",
-                    "predicted_demand": round(adjusted_c1_demand * 0.88, 0),
-                    "actual_demand": round(adjusted_c1_demand * 0.91, 0),
-                    "effectiveness_pct": 95.8,
-                    "ending_residual_cash": round(safety_buffer * 0.95, 0),
-                    "stockout_hours": 0 if tid != "3" else 3,
-                    "cra_sla_status": "ON_TIME" if tid != "3" else "DELAYED",
-                    "cycle_status": "OPTIMAL" if tid != "3" else "VOLATILE"
+                    "cycle_id": 1,
+                    "name": "⚡ Emergency Hot-Dispatch Drop",
+                    "date": emergency_date,
+                    "window": "Immediate Hot-Run (Within 2 Hours)",
+                    "amount": emergency_amt,
+                    "is_enabled": True,
+                    "servicing": "CIT Emergency Carrier",
+                    "status": "Scheduled",
+                    "reason": "Emergency Hot-Dispatch to prevent stockout SLA breach"
                 }
             ]
 
-            avg_cycle_eff = round(sum(c["effectiveness_pct"] for c in past_cycle_metrics) / 3.0, 1)
-            overall_cycle_rating = "OPTIMAL" if avg_cycle_eff >= 93.0 else ("VOLATILE" if any(c["stockout_hours"] > 0 for c in past_cycle_metrics) else "ACCEPTABLE")
-
-            # Neanderthal Ops Directive
-            if urgency == "CRITICAL" and cra_status == "MISSED_SLA_BREACH":
-                directive_action = f"⚡ ACTION: Trigger Emergency Hot-Dispatch or Corridor Cash Sweep (Starving ATM: ₹{existing_cash:,.0f})"
-                directive_alert = f"🚨 CRA MISSED VISIT SLA BREACH: Dry-out in {dcr_hours} hours without emergency action!"
-            elif urgency == "CRITICAL":
-                directive_action = f"⚡ ACTION: Immediate Hot-Run Indent of ₹{net_indent:,.0f} on {sched_date}"
-                directive_alert = f"⚠️ OUT OF CASH IN {dcr_hours} HOURS: {stockout_text}"
-            elif is_surplus_eligible:
-                directive_action = f"📦 ACTION: Recommend Surplus Cash Sweep of ₹{surplus_removable_amount:,.0f} to starving corridor neighbor"
-                directive_alert = f"SURPLUS CASH DETECTED: {dcr_hours} Hours Runway (Holding cost drag)"
-            else:
-                directive_action = f"ACTION: Load ₹{net_indent:,.0f} on {sched_date} ({sched_time})"
-                directive_alert = f"HEALTHY: {dcr_hours} Hours Runway"
-
-            # Assemble Terminal Record
-            t_obj = {
+            self.amended_replenishments[tid] = {
                 "terminal_id": tid,
-                "terminal_code": meta.get("terminal_code", f"SYNATM000{tid}"),
-                "site_name": base_t.get("site_name"),
-                "site_type": t_cfg.get("site_type", base_t.get("site_type")),
-                "city": t_city,
-                "serviced_by": t_cfg.get("serviced_by", base_t.get("serviced_by")),
-                "capacity": capacity,
-                "existing_cash": existing_cash,
-                "usable_balance": existing_cash,
-                "cycle_days": cycle_days,
-                
-                # Classification & Location
-                "location_tier": location_tier,
-                "location_category": location_category,
-                "device_type": meta.get("device_type", "Non-CRM"),
-                "is_crm": meta.get("is_crm", False),
-                "avg_ticket_size": meta.get("avg_ticket_size", {"daily": 3000, "weekly": 3000, "monthly": 3000}),
-                "denomination_weights": denom_weights,
-                "denomination_mix": denom_mix_str,
-                "indent_notes_split": {
-                    "500": indent_500_notes,
-                    "200": indent_200_notes,
-                    "100": indent_100_notes
-                },
-
-                # Physical Cassette & Hopper Values
-                "cassettes": meta.get("cassettes", []),
-                "reject_bin": {
-                    "max_notes": rb_cap,
-                    "current_notes": rb_cur,
-                    "pct_full": rb_pct,
-                    "status": rb_stat
-                },
-                "crm_collection_bin": {
-                    "max_notes": crm_col_cap,
-                    "current_notes": crm_col_notes,
-                    "pct_full": crm_col_pct,
-                    "status": "SATURATED" if crm_col_pct >= 80.0 else "NORMAL"
-                } if meta.get("is_crm") else None,
-
-                # Downtime & Anomaly Metrics
-                "downtime_risk_score": downtime_risk_score,
-                "downtime_causes": downtime_causes,
-                "urgency_status": urgency,
-                "status_color": "var(--crimson)" if urgency == "CRITICAL" else ("var(--amber)" if urgency == "SCHEDULED" else "var(--emerald)"),
-                "status_label": "CRITICAL" if urgency == "CRITICAL" else ("WARNING" if urgency == "SCHEDULED" else "HEALTHY"),
-
-                # CRA & Operational Tracking
-                "cra_tracking": {
-                    "scheduled_date": sched_date,
-                    "window": sched_time,
-                    "cra_status": cra_status,
-                    "sla_penalty_amount": cra_penalty,
-                    "provider": cra_info.get("provider", "CIT Carrier")
-                },
-                "human_error_audit": human_err,
-                "threat_monitoring": threat,
-                "last_feed": meta.get("last_feed", {
-                    "timestamp": "2026-08-24 18:30 IST",
-                    "end_cash_value": existing_cash,
-                    "supervisor_access": "2026-08-20 08:00 IST"
-                }),
-
-                # Quantile Demand Projections
-                "quantile_forecast": {
-                    "p50_demand": p50_cycle_demand,
-                    "p80_demand": p80_cycle_demand,
-                    "p95_demand": p95_cycle_demand
-                },
-                "quantiles": {
-                    "p50_demand": p50_cycle_demand,
-                    "p80_demand": p80_cycle_demand,
-                    "p95_demand": p95_cycle_demand
-                },
-
-                # Surplus & Balancing
-                "is_surplus_eligible": is_surplus_eligible,
-                "surplus_removable_amount": surplus_removable_amount,
-
-                # Cycle Efficacy
-                "last_3_cycles_efficacy": past_cycle_metrics,
-                "overall_cycle_rating": overall_cycle_rating,
-                "past_cycles_efficacy": {
-                    "cycles": past_cycle_metrics,
-                    "cycle_rating": overall_cycle_rating,
-                    "avg_accuracy_pct": round(sum(c.get("effectiveness_pct", 94.0) for c in past_cycle_metrics) / max(1, len(past_cycle_metrics)), 1)
-                },
-
-                # Schedule & Amend Tracking
-                "schedule_status": schedule_status,
-                "schedule_display": schedule_display,
-                "schedule_badge": schedule_badge,
-                "checker_badge_text": checker_badge_text,
-                "is_amended": is_amended,
-                "amended_info": amended_info,
-                "suggested_date": sched_date,
-                "suggested_time": sched_time,
-                
-                # Geographical & Route Info
-                "lat": meta.get("lat", base_t.get("lat")),
-                "lng": meta.get("lng", base_t.get("lng")),
-                "coords_str": meta.get("coords_str", f"{meta.get('lat', 18.9)}° N, {meta.get('lng', 72.8)}° E"),
-                "address": meta.get("address", base_t.get("address", "Terminal Location")),
-                "serving_vault": meta.get("serving_vault", "Main Regional Currency Chest"),
-                "vault_lat": meta.get("vault_lat", 19.0657),
-                "vault_lng": meta.get("vault_lng", 72.8686),
-                "vault_distance_km": meta.get("vault_distance_km", 10.0),
-                "transit_offpeak_min": meta.get("transit_offpeak_min", 20),
-                "transit_peak_min": meta.get("transit_peak_min", 45),
-                "corridor_route": meta.get("corridor_route", base_t.get("corridor_name", "Main Route")),
-                "assigned_van": meta.get("assigned_van", "CIT Van #MH-01-CIT"),
-                "van_capacity_cr": meta.get("van_capacity_cr", 4.50),
-                "working_hours": meta.get("working_hours", "24 Hours / 7 Days"),
-                "optimal_window": meta.get("optimal_window", "06:00 AM – 08:30 AM"),
-                "avoid_window": meta.get("avoid_window", "12:00 PM – 02:30 PM"),
-                "telemetry_last_sync": meta.get("telemetry_last_sync", "2026-08-24 18:30 IST"),
-                "telemetry_status": meta.get("telemetry_status", "ONLINE_HEALTHY"),
-
-                # Ops Directive & Why This Exact Figure
-                "ops_directive": {
-                    "stockout_alert": directive_alert,
-                    "day_of_stockout": stockout_day,
-                    "stockout_time_exact": stockout_text,
-                    "action_required": directive_action,
-                    "post_refill_runway_days": 7.0 if stockout_days_count == 0 else round(dcr_days, 1),
-                    "post_refill_plain_explanation": f"Loading ₹{net_indent/100000:.1f} Lakhs guarantees full cycle coverage.",
-                    "buffer_floor_warning": f"Safety buffer ₹{safety_buffer:,.0f} active."
-                },
-
-                # History & Forecast Rows
-                "history_7d": history_rows,
-                "forecast_7d": forecast_rows,
-
-                # Cycles & Financials
-                "refill_cycles": active_cycles,
-                "active_strategy": active_strategy,
-                "requires_second_cycle": requires_second_cycle,
-                "holding_cost_7d": round(holding_cost_7d, 0),
-                "avg_balance_7d": avg_balance_7d,
-                "holding_rate_annual": float(self.assumptions.get("holding_rate_annual", 0.065)),
-                "cit_trip_costs_7d": cit_trip_costs_7d,
-                "total_logistics_and_carry_cost": total_logistics_and_carry_cost,
-                "forecast_sla_pct": sla_projected_pct,
-                "stockout_days_count": stockout_days_count,
-                
-                # Pillars
-                "facts": {
-                    "vault_cash_now": existing_cash,
-                    "atm_safe_cash_now": existing_cash,
-                    "cassette_cap": capacity,
-                    "servicing_mode": t_cfg.get("serviced_by", base_t.get("serviced_by")),
-                    "cycle_days": cycle_days,
-                    "dcr_days": dcr_days,
-                    "dcr_hours": dcr_hours,
-                    "deplete_text": deplete_text
-                },
-                "observations": {
-                    "pred_demand_7d": round(adjusted_c1_demand / 100.0) * 100.0,
-                    "daily_burn": round(daily_burn / 100.0) * 100.0,
-                    "daily_volatility_std": round(daily_std / 100.0) * 100.0,
-                    "primary_driver": "Cycle Demand & Location Multiplier",
-                    "active_signals": active_signals
-                },
-                "assumptions": {
-                    "target_sla": sla,
-                    "z_score": z_score,
-                    "safety_buffer": safety_buffer,
-                    "holding_rate_annual": self.assumptions.get("holding_rate_annual", 0.065),
-                    "cit_trip_cost": cit_trip_cost,
-                    "stockout_penalty": stockout_penalty
-                },
-                
-                # Indents & Maker/Checker
-                "maker_proposed_indent": maker_total_indent,
-                "maker_single_cycle_indent": system_maker_indent,
-                "c1_gross_target": gross_target,
-                "c1_net_indent": net_indent,
-                "has_override": has_override,
-                "override_details": override_info,
-                "is_approved": is_approved,
-                "approval_info": self.approved_indents.get(tid),
-                "dcr_days": dcr_days,
-                "dcr_hours": dcr_hours,
-                "holding_cost_est": holding_cost_7d,
-                "trip_cost_est": cit_trip_costs_7d,
-                "daily_preds": base_t.get("daily_preds", {}),
-                "dates": base_t.get("dates", []),
-                "actual_demands": base_t.get("actual_demands", []),
-                "cycles": base_t.get("cycles", []),
-                "corridor_name": base_t.get("corridor_name", ""),
-                "corridor_id": base_t.get("corridor_id", ""),
-                "formula_ledger": {
-                    "current_cash": existing_cash,
-                    "net_indent": net_indent,
-                    "expected_demand": adjusted_c1_demand,
-                    "end_buffer_reserve": safety_buffer,
-                    "post_refill_balance": min(capacity, existing_cash + net_indent)
-                }
+                "strategy": "EMERGENCY_HOT_RUN",
+                "refill_cycles": emergency_cycles,
+                "amended_date": emergency_date,
+                "amended_window": "Immediate Hot-Run (Within 2 Hours)",
+                "amended_indent": emergency_amt,
+                "original_indent": float(t.get("c1_net_indent", 0.0)),
+                "notes": "Emergency Hot-Dispatch authorized to prevent regulatory downtime penalty",
+                "actor": actor,
+                "timestamp": now_ts
             }
 
-            recomputed_terminals[tid] = t_obj
+            # Emergency indent requires Checker approval: do not auto-approve
+            if tid in self.approved_indents:
+                del self.approved_indents[tid]
 
-            # Group by corridor for Inter-ATM pairing
-            c_route = t_obj.get("corridor_route", "Route")
-            if c_route not in corridor_groups:
-                corridor_groups[c_route] = []
-            corridor_groups[c_route].append(t_obj)
+            self.save_overrides()
+            recomputed = self.compute_fleet_replenishment()
 
-        # -------------------------------------------------------------
-        # INTER-ATM CASH BALANCING PROPOSALS (SURPLUS REMOVAL)
-        # -------------------------------------------------------------
-        inter_atm_rebalancing_proposals = []
-        for c_route, term_list in corridor_groups.items():
-            donors = [t for t in term_list if t["is_surplus_eligible"] and t["surplus_removable_amount"] >= float(self.assumptions.get("min_sweep_threshold", 200000.0))]
-            starving = [t for t in term_list if t["urgency_status"] == "CRITICAL" or t["dcr_hours"] < 24 or t["cra_tracking"]["cra_status"] == "MISSED_SLA_BREACH"]
+            return {
+                "status": "emergency_indent_scheduled_pending_checker",
+                "terminal_id": tid,
+                "emergency_amount": emergency_amt,
+                "emergency_date": emergency_date,
+                "scheduled_time": "Immediate Hot-Run (Within 2 Hours)",
+                "is_approved": False,
+                "fleet_summary": recomputed["summary"]
+            }
 
-            for d in donors:
-                for r in starving:
-                    transfer_amt = min(d["surplus_removable_amount"], max(200000.0, r["c1_net_indent"]))
-                    transfer_amt = round(transfer_amt / 100.0) * 100.0
-                    if transfer_amt >= float(self.assumptions.get("min_sweep_threshold", 200000.0)):
-                        inter_atm_rebalancing_proposals.append({
-                            "donor_terminal_id": d["terminal_id"],
-                            "donor_terminal_code": d["terminal_code"],
-                            "donor_site_name": d["site_name"],
-                            "donor_usable_balance": d["usable_balance"],
-                            "recipient_terminal_id": r["terminal_id"],
-                            "recipient_terminal_code": r["terminal_code"],
-                            "recipient_site_name": r["site_name"],
-                            "recipient_usable_balance": r["usable_balance"],
-                            "recipient_runway_hours": r["dcr_hours"],
-                            "suggested_transfer_amount": transfer_amt,
-                            "corridor_route": c_route,
-                            "reason": f"Sweep ₹{transfer_amt/100000:.1f}L excess cash from {d['terminal_code']} to eliminate immediate stockout at {r['terminal_code']}",
-                            "avoided_emergency_cost": 3500.0 + 10000.0,
-                            "handling_fee": float(self.assumptions.get("inter_atm_transfer_fee", 1500.0)),
-                            "net_savings": 12000.0
-                        })
+    def compute_fleet_replenishment(self) -> Dict[str, Any]:
+        """Dynamically recomputes indents, cassette physics, quantile forecasts, downtime factors, and disruption balancing."""
+        with self._lock:
+            terminals_data = self.raw_bundle.get("terminals", {})
+            sla = float(self.assumptions.get("target_service_level", 0.99))
+            
+            # Exact z-score from normal distribution (Finding A8)
+            z_score = round(NormalDist().inv_cdf(min(0.9999, max(0.80, sla))), 3)
 
-        # -------------------------------------------------------------
-        # TWO-TIER PRIORITIZATION: CRITICAL QUEUE FIRST
-        # -------------------------------------------------------------
-        critical_queue = [
-            t for t in recomputed_terminals.values()
-            if t["urgency_status"] == "CRITICAL" or t["downtime_risk_score"] >= 70 or t["cra_tracking"]["cra_status"] == "MISSED_SLA_BREACH" or t["reject_bin"]["status"] != "NORMAL"
-        ]
-        # Sort critical queue by highest downtime risk score first
-        critical_queue.sort(key=lambda x: x["downtime_risk_score"], reverse=True)
+            holding_daily = float(self.assumptions.get("holding_rate_annual", 0.065)) / 365.0
+            cit_trip_cost = float(self.assumptions.get("cit_trip_cost", 2000.0))
+            stockout_penalty = float(self.assumptions.get("stockout_penalty_fixed", 10000.0))
 
-        delta_vs_baseline = total_net_indent - total_baseline_indent
+            recomputed_terminals = {}
+            total_existing_cash = 0.0
+            total_net_indent = 0.0
+            total_maker_proposed_indent = 0.0
+            total_baseline_indent = 0.0
 
-        # Network Health Metrics
-        uptime_pct = round(((len(recomputed_terminals) - len(critical_queue)) / max(1, len(recomputed_terminals))) * 100.0, 1)
-        total_sla_penalties = sum(t["cra_tracking"]["sla_penalty_amount"] for t in recomputed_terminals.values())
+            # Corridors for routing & inter-ATM balancing
+            corridor_groups: Dict[str, List[Dict[str, Any]]] = {}
 
-        summary = {
-            "total_terminals": len(recomputed_terminals),
-            "total_existing_cash": round(total_existing_cash, 0),
-            "total_net_indent": round(total_net_indent, 0),
-            "total_maker_proposed_indent": round(total_maker_proposed_indent, 0),
-            "total_baseline_indent": round(total_baseline_indent, 0),
-            "delta_indent_vs_baseline": round(delta_vs_baseline, 0),
-            "total_holding_cost_7d": round(sum(t.get("holding_cost_7d", 0.0) for t in recomputed_terminals.values()), 0),
-            "critical_count": len(critical_queue),
-            "scheduled_count": scheduled_count,
-            "healthy_count": healthy_count,
-            "approved_count": len(self.approved_indents),
-            "override_count": len(self.checker_overrides),
-            "network_uptime_pct": uptime_pct,
-            "total_sla_penalties": total_sla_penalties,
-            "active_rebalancing_proposals_count": len(inter_atm_rebalancing_proposals),
-            "active_sla": sla,
-            "cit_cutoff_time": "18:00 IST",
-            "is_manifest_locked": self.is_manifest_locked,
-            "manifest_lock_info": self.manifest_lock_info
-        }
+            for tid, base_t in terminals_data.items():
+                t_cfg = self.terminal_configs.get(tid, {})
+                meta = TERMINAL_OPERATIONAL_METADATA.get(tid, {})
+                
+                # Physical Cassette Capacity (Finding A1)
+                phys_cap = get_physical_cassette_capacity(tid)
+                cfg_cap = float(t_cfg.get("capacity", phys_cap))
+                capacity = min(cfg_cap, phys_cap)
+                
+                servicing_mode = t_cfg.get("serviced_by", base_t.get("serviced_by", "CIT"))
+                cycle_days = int(t_cfg.get("cycle_days", 7 if servicing_mode == "CIT" else 3))
+                existing_cash = float(t_cfg.get("existing_cash", meta.get("last_feed", {}).get("end_cash_value", base_t.get("existing_cash", 1500000.0))))
 
-        return {
-            "summary": summary,
-            "terminals": recomputed_terminals,
-            "critical_queue": critical_queue,
-            "inter_atm_rebalancing_proposals": inter_atm_rebalancing_proposals,
-            "rebalancing_proposals": inter_atm_rebalancing_proposals,
-            "executed_sweeps": self.executed_sweeps,
-            "corridors": self.raw_bundle.get("corridors", []),
-            "portfolio": self.raw_bundle.get("portfolio", {}),
-            "assumptions": self.assumptions,
-            "terminal_configs": self.terminal_configs,
-            "exogenous_events": self.exogenous_events,
-            "holidays": self.holidays,
-            "checker_overrides": self.checker_overrides
-        }
+                t_city = t_cfg.get("city", base_t.get("city", "MUMBAI")).upper()
+                location_tier = meta.get("location_tier", "Metro")
+                location_category = meta.get("location_category", "Metro Transit")
+
+                # Forward Daily Predictions
+                fwd_dates = (base_t.get("dates") or ['2026-08-25', '2026-08-26', '2026-08-27', '2026-08-28', '2026-08-29', '2026-08-30', '2026-08-31'])[:7]
+                fwd_day_names = ['Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun', 'Mon']
+
+                s_preds = base_t.get("daily_preds", {})
+                raw_pred_list = (s_preds.get("strategy_c") or s_preds.get("lgb_uncensored") or (list(s_preds.values())[0] if s_preds else [500000.0]*7))[:7]
+                if len(raw_pred_list) < 7:
+                    raw_pred_list = list(raw_pred_list) + [raw_pred_list[-1] if raw_pred_list else 500000.0] * (7 - len(raw_pred_list))
+
+                # Apply Category-Sensitive Exogenous Multipliers per-day only within cycle (Finding A6)
+                pred_list = []
+                active_signals = []
+                for i in range(len(fwd_dates)):
+                    dt = fwd_dates[i]
+                    day_mult = 1.0
+                    # Event multipliers only apply to dates within cycle_days (Finding A6)
+                    if i < cycle_days:
+                        for evt in self.exogenous_events:
+                            evt_city = evt.get("city", "").upper()
+                            evt_start = evt.get("start_date", "2026-08-01")
+                            evt_end = evt.get("end_date", "2026-09-30")
+                            if (evt_city in ["ALL", t_city]) and (evt_start <= dt <= evt_end):
+                                cat_mults = evt.get("category_multipliers", {})
+                                applied_mult = float(cat_mults.get(location_category, evt.get("demand_multiplier", 1.0)))
+                                day_mult *= applied_mult
+                                sig_entry = {
+                                    "name": evt.get("name"),
+                                    "multiplier": f"{applied_mult:.2f}x",
+                                    "date": dt,
+                                    "notes": evt.get("notes")
+                                }
+                                if not any(s["name"] == sig_entry["name"] for s in active_signals):
+                                    active_signals.append(sig_entry)
+
+                    pred_list.append(round(float(raw_pred_list[i]) * day_mult, 0))
+
+                # Replenishment Order-Up-To Formula with Lead Time (Finding A7)
+                c1_default_date = meta.get("suggested_date", "2026-08-26")
+                c1_default_window = meta.get("suggested_time", "07:00 AM")
+                lead_time_days = fwd_dates.index(c1_default_date) if c1_default_date in fwd_dates else 0
+                lead_time_demand = sum(pred_list[:lead_time_days])
+                cash_at_c1 = max(0.0, existing_cash - lead_time_demand)
+
+                refill_end_idx = min(len(pred_list), lead_time_days + cycle_days)
+                demand_from_c1 = sum(pred_list[lead_time_days:refill_end_idx])
+                
+                daily_burn = round((demand_from_c1 / max(1, cycle_days)) / 100.0) * 100.0
+                daily_std = (demand_from_c1 / max(1, cycle_days)) * 0.22
+                sigma_h = daily_std * math.sqrt(cycle_days)
+                safety_buffer = round((z_score * sigma_h) / 100.0) * 100.0
+
+                # Quantile Demand Projections
+                p50_cycle_demand = round(demand_from_c1 / 100.0) * 100.0
+                p80_cycle_demand = round((demand_from_c1 + 0.84 * sigma_h) / 100.0) * 100.0
+                p95_cycle_demand = round((demand_from_c1 + 1.645 * sigma_h) / 100.0) * 100.0
+
+                # Target order-up-to at C1 arrival (Finding A1: bounded by physical capacity)
+                target_order_up_to = min(capacity, demand_from_c1 + safety_buffer)
+                raw_net_indent = max(0.0, target_order_up_to - cash_at_c1)
+                system_maker_indent = round(raw_net_indent / 100.0) * 100.0
+
+                # Dynamic runway hours and days (Finding A9, A11)
+                rem_cash = existing_cash
+                exact_hours = 0
+                for d_idx, d_dem in enumerate(pred_list):
+                    if rem_cash <= 0:
+                        break
+                    if rem_cash >= d_dem:
+                        exact_hours += 24
+                        rem_cash -= d_dem
+                    else:
+                        frac = rem_cash / max(1.0, d_dem)
+                        exact_hours += int(round(frac * 24))
+                        rem_cash = 0.0
+                        break
+                if rem_cash > 0:
+                    exact_hours += int(round((rem_cash / max(1.0, daily_burn)) * 24))
+                dcr_hours = exact_hours
+                dcr_days = round(dcr_hours / 24.0, 2)
+
+                # Dynamic Stockout Timestamp (Finding A11)
+                base_time = datetime(2026, 8, 25, 0, 0)
+                stockout_dt = base_time + timedelta(hours=dcr_hours)
+                if dcr_hours <= 24:
+                    stockout_text = stockout_dt.strftime("%A, %b %d at ~%H:00 IST")
+                    stockout_day = "Tuesday (Today)"
+                elif dcr_hours <= 72:
+                    stockout_text = stockout_dt.strftime("%A, %b %d at ~%H:00 IST")
+                    stockout_day = stockout_dt.strftime("%A, %b %d")
+                else:
+                    stockout_text = stockout_dt.strftime("%A, %b %d or later")
+                    stockout_day = stockout_dt.strftime("%A, %b %d+")
+
+                # Multi-cycle evaluation (Finding A3, A4, A5)
+                # Simulate single refill over the terminal's actual operational horizon (Finding A5)
+                sim_horizon = cycle_days if servicing_mode == "BRANCH" else len(fwd_dates)
+                b_sim = existing_cash
+                single_stockout_idx = None
+                single_breach_idx = None
+                for i in range(sim_horizon):
+                    if fwd_dates[i] == c1_default_date:
+                        b_sim = min(capacity, b_sim + system_maker_indent)
+                    b_sim = max(0.0, b_sim - pred_list[i])
+                    if b_sim == 0 and single_stockout_idx is None:
+                        single_stockout_idx = i
+                    elif b_sim < safety_buffer and single_breach_idx is None:
+                        single_breach_idx = i
+
+                # Branch/3-day ATMs with adequate cash do NOT need second cycle (Finding A5)
+                requires_second_cycle = (single_stockout_idx is not None or (single_breach_idx is not None and single_breach_idx <= 4)) and cycle_days > 3
+                suggested_strategy = "2-CYCLE" if requires_second_cycle else "1-CYCLE"
+
+                # 2-cycle arithmetic & sequencing (Finding A4)
+                if requires_second_cycle:
+                    c1_idx = lead_time_days
+                    # Cycle 2 strictly after Cycle 1 (Finding A4)
+                    c2_idx = max(c1_idx + 1, min(len(fwd_dates) - 1, single_stockout_idx if single_stockout_idx is not None else (c1_idx + 3)))
+                    c2_date = fwd_dates[c2_idx]
+
+                    # Segment 1: from C1 to C2
+                    dem_seg1 = sum(pred_list[c1_idx:c2_idx])
+                    need1 = max(0.0, min(capacity, dem_seg1 + safety_buffer) - cash_at_c1)
+                    
+                    # Segment 2: from C2 to cycle end
+                    dem_seg2 = sum(pred_list[c2_idx:sim_horizon])
+                    cash_entering_c2 = max(0.0, (cash_at_c1 + need1) - dem_seg1)
+                    need2 = max(0.0, min(capacity, dem_seg2 + safety_buffer) - cash_entering_c2)
+
+                    c1_sugg_amt = round(need1 / 100.0) * 100.0
+                    c2_sugg_amt = round(need2 / 100.0) * 100.0
+
+                    suggested_cycles = [
+                        {
+                            "cycle_id": 1,
+                            "name": "Refill Cycle #1 (Mid-Week Primary)",
+                            "date": c1_default_date,
+                            "window": c1_default_window,
+                            "amount": c1_sugg_amt,
+                            "is_enabled": True,
+                            "servicing": servicing_mode,
+                            "status": "Suggested",
+                            "reason": "Primary operational replenishment"
+                        },
+                        {
+                            "cycle_id": 2,
+                            "name": "Refill Cycle #2 (Weekend Surge Shield)",
+                            "date": c2_date,
+                            "window": "07:00 AM – 09:15 AM",
+                            "amount": c2_sugg_amt,
+                            "is_enabled": True,
+                            "servicing": servicing_mode,
+                            "status": "Suggested",
+                            "reason": "Secondary cycle to prevent buffer exhaustion"
+                        }
+                    ]
+                else:
+                    suggested_cycles = [
+                        {
+                            "cycle_id": 1,
+                            "name": "Refill Cycle #1 (Cyclical Main)",
+                            "date": c1_default_date,
+                            "window": c1_default_window,
+                            "amount": system_maker_indent,
+                            "is_enabled": True,
+                            "servicing": servicing_mode,
+                            "status": "Suggested",
+                            "reason": "Standard cyclical replenishment"
+                        }
+                    ]
+
+                amended_info = self.amended_replenishments.get(tid)
+                is_amended = amended_info is not None
+                is_approved = tid in self.approved_indents
+
+                if amended_info and amended_info.get("refill_cycles"):
+                    active_cycles = amended_info["refill_cycles"]
+                    active_strategy = amended_info.get("strategy", suggested_strategy)
+                else:
+                    active_cycles = suggested_cycles
+                    active_strategy = suggested_strategy
+
+                # Schedule badges
+                sched_date = active_cycles[0]["date"] if active_cycles else c1_default_date
+                sched_time = active_cycles[0].get("window", c1_default_window)
+                if is_approved:
+                    schedule_status = "SCHEDULED"
+                    checker_badge_text = "✓ Approved"
+                    schedule_badge = "SCHEDULED"
+                    schedule_display = f"✓ Scheduled: {sched_date} · {sched_time}"
+                elif is_amended:
+                    schedule_status = "AMENDED"
+                    checker_badge_text = "Amended · Pending Approval"
+                    schedule_badge = "AMENDED"
+                    schedule_display = f"Amended: {sched_date} · {sched_time}"
+                else:
+                    schedule_status = "SUGGESTED"
+                    checker_badge_text = "Pending Review"
+                    schedule_badge = "SUGGESTED"
+                    schedule_display = f"Suggested: {sched_date} · {sched_time}"
+
+                # Net Indent & Overrides
+                override_info = self.checker_overrides.get(tid)
+                if override_info:
+                    net_indent = min(capacity, round(float(override_info["checker_custom_indent"]) / 100.0) * 100.0)
+                    has_override = True
+                    # Keep cycles, simulation and the approval snapshot equal to the overridden total:
+                    # scale each enabled cycle pro rata, rounding remainder on the last one.
+                    enabled_idx = [i for i, c in enumerate(active_cycles) if c.get("is_enabled", True)]
+                    base_total = sum(float(active_cycles[i].get("amount", 0.0)) for i in enabled_idx)
+                    if enabled_idx:
+                        scaled = [dict(c) for c in active_cycles]
+                        running = 0.0
+                        for i in enabled_idx[:-1]:
+                            share = float(scaled[i].get("amount", 0.0)) / base_total if base_total > 0 else 0.0
+                            scaled[i]["amount"] = round(net_indent * share / 100.0) * 100.0
+                            running += scaled[i]["amount"]
+                        scaled[enabled_idx[-1]]["amount"] = net_indent - running
+                        for i in enabled_idx:
+                            scaled[i]["status"] = "Overridden"
+                        active_cycles = scaled
+                else:
+                    net_indent = round(sum(float(c.get("amount", 0.0)) for c in active_cycles if c.get("is_enabled", True)) / 100.0) * 100.0
+                    has_override = False
+
+                maker_total_indent = round(sum(float(c.get("amount", 0.0)) for c in suggested_cycles if c.get("is_enabled", True)) / 100.0) * 100.0
+
+                # Reject bin & Hardware Physics
+                rb = meta.get("reject_bin", {"max_notes": 300, "current_notes": 45, "status": "NORMAL"})
+                rb_cap = int(rb.get("max_notes", 300))
+                rb_cur = 0 if tid in self.cleared_reject_bins else int(rb.get("current_notes", 45))
+                rb_pct = round((rb_cur / max(1, rb_cap)) * 100.0, 1)
+                if rb_pct >= float(self.assumptions.get("reject_bin_critical_pct", 90.0)):
+                    rb_stat = "CRITICAL_FAULT"
+                elif rb_pct >= float(self.assumptions.get("reject_bin_warning_pct", 75.0)):
+                    rb_stat = "SATURATED"
+                else:
+                    rb_stat = "NORMAL"
+
+                crm_col = meta.get("crm_collection_bin")
+                crm_col_notes = int(crm_col.get("current_notes", 0)) if crm_col else 0
+                crm_col_cap = int(crm_col.get("max_notes", 2000)) if crm_col else 2000
+                crm_col_pct = round((crm_col_notes / max(1, crm_col_cap)) * 100.0, 1) if crm_col else 0.0
+
+                # Denomination Note Mix per Cassette Slot (Finding A2)
+                denom_weights = meta.get("denomination_weights", {"500": 0.70, "200": 0.20, "100": 0.10})
+                denom_alloc = allocate_denomination_mix(net_indent, tid, denom_weights)
+                denom_mix_str = denom_alloc["denomination_mix"]
+                indent_500_notes = denom_alloc["500_notes"]
+                indent_200_notes = denom_alloc["200_notes"]
+                indent_100_notes = denom_alloc["100_notes"]
+
+                # Disruptions & CRA SLA
+                cra_info = meta.get("cra_tracking", {"cra_status": "ON_SCHEDULE", "sla_penalty": 0.0})
+                cra_status = cra_info.get("cra_status", "ON_SCHEDULE")
+                cra_penalty = float(cra_info.get("sla_penalty", 0.0))
+
+                human_err = meta.get("human_errors", {})
+                has_shortfall = bool(human_err.get("has_shortfall", False))
+                shortfall_amt = float(human_err.get("shortfall_amount", 0.0))
+                reject_bin_unemptied = bool(human_err.get("reject_bin_unemptied", False)) and (tid not in self.cleared_reject_bins)
+
+                threat = meta.get("threat_monitoring", {"threat_level": "LOW"})
+
+                # Downtime detection (Finding C2: remove hardcoded tid 3/5 anomalies)
+                downtime_causes = []
+                risk_points = 0
+                if dcr_hours < 12:
+                    downtime_causes.append(f"Immediate Cash Exhaustion Risk (Runway: {dcr_hours}h)")
+                    risk_points += 50
+                elif dcr_hours < 24:
+                    downtime_causes.append(f"Low Cash Runway Warning ({dcr_hours}h remaining)")
+                    risk_points += 25
+
+                if rb_stat == "CRITICAL_FAULT":
+                    downtime_causes.append(f"Purge/Reject Bin Jam Fault ({rb_cur}/{rb_cap} notes, {rb_pct}%)")
+                    risk_points += 40
+                elif rb_stat == "SATURATED":
+                    downtime_causes.append(f"Reject Bin Saturated ({rb_cur}/{rb_cap} notes, {rb_pct}%)")
+                    risk_points += 20
+
+                if cra_status == "MISSED_SLA_BREACH":
+                    downtime_causes.append("CRA Missed Replenishment Visit — SLA Breached")
+                    risk_points += 35
+
+                if has_shortfall:
+                    downtime_causes.append(f"Custodian Loading Shortfall of ₹{shortfall_amt:,.0f} detected at supervisor latch")
+                    risk_points += 15
+
+                if reject_bin_unemptied:
+                    downtime_causes.append("Human Error: Reject bin unemptied during prior service cycle")
+                    risk_points += 15
+
+                downtime_risk_score = min(100, risk_points)
+
+                # Mutually Exclusive Urgency Status (Finding C3)
+                if dcr_hours < 24 or cra_status == "MISSED_SLA_BREACH" or rb_stat == "CRITICAL_FAULT" or downtime_risk_score >= 70:
+                    urgency = "CRITICAL"
+                    deplete_text = f"Dry-out in {dcr_hours}h"
+                elif dcr_hours < 48 or rb_stat == "SATURATED" or downtime_risk_score >= 40:
+                    urgency = "SCHEDULED"
+                    deplete_text = f"{dcr_hours} hours runway"
+                else:
+                    urgency = "HEALTHY"
+                    deplete_text = f"{dcr_hours} hours runway"
+
+                # Surplus cash eligibility excludes deposit bins (Finding A10)
+                is_surplus_eligible = (dcr_days > (cycle_days * 1.5)) and (existing_cash >= 2000000.0)
+                surplus_removable_amount = max(0.0, round((existing_cash - (demand_from_c1 * 0.7 + safety_buffer)) / 100.0) * 100.0) if is_surplus_eligible else 0.0
+
+                baseline_indent = round(float(base_t.get("c1_net_indent", system_maker_indent)) / 100.0) * 100.0
+                total_baseline_indent += baseline_indent
+                total_maker_proposed_indent += maker_total_indent
+                total_existing_cash += existing_cash
+                total_net_indent += net_indent
+
+                # 7-Day History from actual recorded telemetry (Finding C2: remove fake ₹25L reload)
+                past_dates = ['2026-08-18', '2026-08-19', '2026-08-20', '2026-08-21', '2026-08-22', '2026-08-23', '2026-08-24']
+                past_day_names = ['Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun', 'Mon']
+                actual_vals = (base_t.get("actual_demands") or [daily_burn * 0.95]*7)[-7:]
+                if len(actual_vals) < 7:
+                    actual_vals = [daily_burn * 0.95] * 7
+
+                history_rows = []
+                curr_running = existing_cash
+                temp_hist = []
+                for i in range(6, -1, -1):
+                    dt = past_dates[i]
+                    dname = past_day_names[i]
+                    wdraw = float(actual_vals[i])
+                    open_b = curr_running + wdraw
+                    temp_hist.append({
+                        "date": dt,
+                        "day": dname,
+                        "opening_cash": round(open_b, 0),
+                        "actual_withdrawal": round(wdraw, 0),
+                        "refill_amount": 0.0,
+                        "closing_cash": round(curr_running, 0),
+                        "utilization_pct": min(100.0, round((curr_running / capacity) * 100, 1)),
+                        "status": "Healthy" if curr_running >= safety_buffer else "Safety Floor Breach",
+                        "data_tag": "Measured Telemetry"
+                    })
+                    curr_running = open_b
+                history_rows = list(reversed(temp_hist))
+
+                # 7-Day Forward Forecast & Plan Verification (Finding A3)
+                forecast_rows = []
+                b_without = existing_cash
+                b_with = existing_cash
+                holding_cost_7d = 0.0
+
+                for i in range(len(fwd_dates)):
+                    dt = fwd_dates[i]
+                    dname = fwd_day_names[i % 7]
+                    p_demand = float(pred_list[i])
+                    b_without = max(0.0, b_without - p_demand)
+
+                    drop_today = 0.0
+                    cycle_tags = []
+                    for cyc in active_cycles:
+                        if cyc.get("is_enabled", True) and cyc.get("date") == dt:
+                            amt = float(cyc.get("amount", 0.0))
+                            drop_today += amt
+                            c_num = cyc.get("cycle_id", 1)
+                            c_ico = "🚚" if c_num == 1 else "⚡"
+                            cycle_tags.append(f"{c_ico} Refill #{c_num} (+₹{amt:,.0f})")
+
+                    if drop_today > 0:
+                        # Physical capacity bounds the refill (Finding A1)
+                        b_with = min(capacity, b_with + drop_today)
+
+                    b_with = max(0.0, b_with - p_demand)
+                    daily_holding = round(b_with * holding_daily, 0)
+                    holding_cost_7d += daily_holding
+
+                    r_stat = "CRITICAL STOCKOUT" if b_with == 0 else ("BUFFER BREACH" if b_with < safety_buffer else "NORMAL")
+                    r_stat_without = "CRITICAL STOCKOUT" if b_without == 0 else ("BUFFER BREACH" if b_without < safety_buffer else "NORMAL")
+
+                    forecast_rows.append({
+                        "date": dt,
+                        "day": dname,
+                        "projected_demand": round(p_demand, 0),
+                        "balance_without_refill": round(b_without, 0),
+                        "balance_with_refill": round(b_with, 0),
+                        "daily_holding_cost": daily_holding,
+                        "risk_status": r_stat,
+                        "risk_status_without": r_stat_without,
+                        "event_tag": ", ".join(cycle_tags) if cycle_tags else "Standard Transit",
+                        "refill_amount_today": drop_today,
+                        "data_tag": "Modeled Projection"
+                    })
+
+                avg_balance_7d = round(sum(r["balance_with_refill"] for r in forecast_rows) / 7.0, 0)
+                active_trips_count = sum(1 for c in active_cycles if c.get("is_enabled", True) and float(c.get("amount", 0.0)) > 0)
+                cit_trip_costs_7d = active_trips_count * cit_trip_cost
+                total_logistics_and_carry_cost = round(holding_cost_7d + cit_trip_costs_7d, 0)
+                
+                # Check plan stockouts (Finding A3)
+                plan_stockout_days = sum(1 for r in forecast_rows if r["balance_with_refill"] == 0)
+                sla_projected_pct = 100.0 if plan_stockout_days == 0 else round((7 - plan_stockout_days) / 7.0 * 100, 1)
+
+                # Honest Ops Directive (Finding A3)
+                if plan_stockout_days == 0:
+                    plain_explanation = f"Loading ₹{net_indent/100000:.1f} Lakhs provides complete cycle coverage without stockout."
+                else:
+                    plain_explanation = f"⚠️ Physical capacity limit (₹{capacity/100000:.1f}L) reached: plan leaves {plan_stockout_days} potential stockout day(s)."
+
+                # Prior cycle efficacy: accurately label as unmeasured where not measured (Finding C2)
+                past_cycle_metrics = [
+                    {
+                        "cycle_label": "Cycle t-1 (Aug 15 - Aug 21)",
+                        "predicted_demand": round(demand_from_c1 * 0.95, 0),
+                        "actual_demand": "N/A (Unmeasured)",
+                        "effectiveness_pct": 0.0,
+                        "ending_residual_cash": round(existing_cash, 0),
+                        "stockout_hours": 0,
+                        "cra_sla_status": "HISTORICAL_BASELINE",
+                        "cycle_status": "UNMEASURED"
+                    },
+                    {
+                        "cycle_label": "Cycle t-2 (Aug 08 - Aug 14)",
+                        "predicted_demand": round(demand_from_c1 * 1.0, 0),
+                        "actual_demand": "N/A (Unmeasured)",
+                        "effectiveness_pct": 0.0,
+                        "ending_residual_cash": round(existing_cash, 0),
+                        "stockout_hours": 0,
+                        "cra_sla_status": "HISTORICAL_BASELINE",
+                        "cycle_status": "UNMEASURED"
+                    },
+                    {
+                        "cycle_label": "Cycle t-3 (Aug 01 - Aug 07)",
+                        "predicted_demand": round(demand_from_c1 * 0.9, 0),
+                        "actual_demand": "N/A (Unmeasured)",
+                        "effectiveness_pct": 0.0,
+                        "ending_residual_cash": round(existing_cash, 0),
+                        "stockout_hours": 0,
+                        "cra_sla_status": "HISTORICAL_BASELINE",
+                        "cycle_status": "UNMEASURED"
+                    }
+                ]
+                overall_cycle_rating = "UNMEASURED (Telemetry baseline only)"
+
+                # Neanderthal Ops Directive
+                if urgency == "CRITICAL" and cra_status == "MISSED_SLA_BREACH":
+                    directive_action = f"⚡ ACTION: Trigger Emergency Hot-Dispatch or Corridor Cash Sweep (Starving ATM: ₹{existing_cash:,.0f})"
+                    directive_alert = f"🚨 CRA MISSED VISIT SLA BREACH: Dry-out in {dcr_hours} hours without emergency action!"
+                elif urgency == "CRITICAL":
+                    directive_action = f"⚡ ACTION: Immediate Hot-Run Indent of ₹{net_indent:,.0f} on {sched_date}"
+                    directive_alert = f"⚠️ OUT OF CASH IN {dcr_hours} HOURS: {stockout_text}"
+                elif is_surplus_eligible:
+                    directive_action = f"📦 ACTION: Recommend Surplus Cash Sweep of ₹{surplus_removable_amount:,.0f} to starving corridor neighbor"
+                    directive_alert = f"SURPLUS CASH DETECTED: {dcr_hours} Hours Runway (Holding cost drag)"
+                else:
+                    directive_action = f"ACTION: Load ₹{net_indent:,.0f} on {sched_date} ({sched_time})"
+                    directive_alert = f"HEALTHY: {dcr_hours} Hours Runway"
+
+                t_obj = {
+                    "terminal_id": tid,
+                    "terminal_code": meta.get("terminal_code", f"SYNATM000{tid}"),
+                    "site_name": base_t.get("site_name"),
+                    "site_type": t_cfg.get("site_type", base_t.get("site_type")),
+                    "city": t_city,
+                    "serviced_by": servicing_mode,
+                    "capacity": capacity,
+                    "physical_capacity": phys_cap,
+                    "free_capacity": denom_alloc["free_capacity"],
+                    "capacity_overflow_warning": denom_alloc.get("overflow_warning"),
+                    "existing_cash": existing_cash,
+                    "usable_balance": existing_cash,
+                    "cycle_days": cycle_days,
+                    
+                    # Classification & Location
+                    "location_tier": location_tier,
+                    "location_category": location_category,
+                    "device_type": meta.get("device_type", "Non-CRM"),
+                    "is_crm": meta.get("is_crm", False),
+                    "avg_ticket_size": meta.get("avg_ticket_size", {"daily": 3000, "weekly": 3000, "monthly": 3000}),
+                    "denomination_weights": denom_weights,
+                    "denomination_mix": denom_mix_str,
+                    "indent_notes_split": {
+                        "500": indent_500_notes,
+                        "200": indent_200_notes,
+                        "100": indent_100_notes
+                    },
+
+                    # Physical Cassette & Hopper Values
+                    "cassettes": meta.get("cassettes", []),
+                    "reject_bin": {
+                        "max_notes": rb_cap,
+                        "current_notes": rb_cur,
+                        "pct_full": rb_pct,
+                        "status": rb_stat
+                    },
+                    "crm_collection_bin": {
+                        "max_notes": crm_col_cap,
+                        "current_notes": crm_col_notes,
+                        "pct_full": crm_col_pct,
+                        "status": "SATURATED" if crm_col_pct >= 80.0 else "NORMAL"
+                    } if meta.get("is_crm") else None,
+
+                    # Downtime & Anomaly Metrics
+                    "downtime_risk_score": downtime_risk_score,
+                    "downtime_causes": downtime_causes,
+                    "urgency_status": urgency,
+                    "status_color": "var(--crimson)" if urgency == "CRITICAL" else ("var(--amber)" if urgency == "SCHEDULED" else "var(--emerald)"),
+                    "status_label": "CRITICAL" if urgency == "CRITICAL" else ("WARNING" if urgency == "SCHEDULED" else "HEALTHY"),
+
+                    # CRA & Operational Tracking
+                    "cra_tracking": {
+                        "scheduled_date": sched_date,
+                        "window": sched_time,
+                        "cra_status": cra_status,
+                        "sla_penalty_amount": cra_penalty,
+                        "provider": cra_info.get("provider", "CIT Carrier")
+                    },
+                    "human_error_audit": human_err,
+                    "threat_monitoring": threat,
+                    "last_feed": meta.get("last_feed", {
+                        "timestamp": "2026-08-24 18:30 IST",
+                        "end_cash_value": existing_cash,
+                        "supervisor_access": "2026-08-20 08:00 IST"
+                    }),
+
+                    # Quantile Demand Projections
+                    "quantile_forecast": {
+                        "p50_demand": p50_cycle_demand,
+                        "p80_demand": p80_cycle_demand,
+                        "p95_demand": p95_cycle_demand
+                    },
+                    "quantiles": {
+                        "p50_demand": p50_cycle_demand,
+                        "p80_demand": p80_cycle_demand,
+                        "p95_demand": p95_cycle_demand
+                    },
+
+                    # Surplus & Balancing
+                    "is_surplus_eligible": is_surplus_eligible,
+                    "surplus_removable_amount": surplus_removable_amount,
+
+                    # Cycle Efficacy
+                    "last_3_cycles_efficacy": past_cycle_metrics,
+                    "overall_cycle_rating": overall_cycle_rating,
+                    "past_cycles_efficacy": {
+                        "cycles": past_cycle_metrics,
+                        "cycle_rating": overall_cycle_rating,
+                        "avg_accuracy_pct": 0.0
+                    },
+
+                    # Schedule & Amend Tracking
+                    "schedule_status": schedule_status,
+                    "schedule_display": schedule_display,
+                    "schedule_badge": schedule_badge,
+                    "checker_badge_text": checker_badge_text,
+                    "is_amended": is_amended,
+                    "amended_info": amended_info,
+                    "suggested_date": sched_date,
+                    "suggested_time": sched_time,
+                    
+                    # Geographical & Route Info
+                    "lat": meta.get("lat", base_t.get("lat")),
+                    "lng": meta.get("lng", base_t.get("lng")),
+                    "coords_str": meta.get("coords_str", f"{meta.get('lat', 18.9)}° N, {meta.get('lng', 72.8)}° E"),
+                    "address": meta.get("address", base_t.get("address", "Terminal Location")),
+                    "serving_vault": meta.get("serving_vault", "Main Regional Currency Chest"),
+                    "vault_lat": meta.get("vault_lat", 19.0657),
+                    "vault_lng": meta.get("vault_lng", 72.8686),
+                    "vault_distance_km": meta.get("vault_distance_km", 10.0),
+                    "transit_offpeak_min": meta.get("transit_offpeak_min", 20),
+                    "transit_peak_min": meta.get("transit_peak_min", 45),
+                    "corridor_route": meta.get("corridor_route", base_t.get("corridor_name", "Main Route")),
+                    "assigned_van": meta.get("assigned_van", "CIT Van #MH-01-CIT"),
+                    "van_capacity_cr": meta.get("van_capacity_cr", 4.50),
+                    "working_hours": meta.get("working_hours", "24 Hours / 7 Days"),
+                    "optimal_window": meta.get("optimal_window", "06:00 AM – 08:30 AM"),
+                    "avoid_window": meta.get("avoid_window", "12:00 PM – 02:30 PM"),
+                    "telemetry_last_sync": meta.get("telemetry_last_sync", "2026-08-24 18:30 IST"),
+                    "telemetry_status": meta.get("telemetry_status", "ONLINE_HEALTHY"),
+
+                    # Ops Directive
+                    "ops_directive": {
+                        "stockout_alert": directive_alert,
+                        "day_of_stockout": stockout_day,
+                        "stockout_time_exact": stockout_text,
+                        "action_required": directive_action,
+                        "post_refill_runway_days": 7.0 if plan_stockout_days == 0 else round(dcr_days, 1),
+                        "post_refill_plain_explanation": plain_explanation,
+                        "buffer_floor_warning": f"Safety buffer ₹{safety_buffer:,.0f} active."
+                    },
+
+                    # History & Forecast Rows
+                    "history_7d": history_rows,
+                    "forecast_7d": forecast_rows,
+
+                    # Cycles & Financials
+                    "refill_cycles": active_cycles,
+                    "active_strategy": active_strategy,
+                    "requires_second_cycle": requires_second_cycle,
+                    "holding_cost_7d": round(holding_cost_7d, 0),
+                    "avg_balance_7d": avg_balance_7d,
+                    "holding_rate_annual": float(self.assumptions.get("holding_rate_annual", 0.065)),
+                    "cit_trip_costs_7d": cit_trip_costs_7d,
+                    "total_logistics_and_carry_cost": total_logistics_and_carry_cost,
+                    "forecast_sla_pct": sla_projected_pct,
+                    "stockout_days_count": plan_stockout_days,
+                    
+                    # Pillars
+                    "facts": {
+                        "vault_cash_now": existing_cash,
+                        "atm_safe_cash_now": existing_cash,
+                        "cassette_cap": capacity,
+                        "physical_capacity": phys_cap,
+                        "servicing_mode": servicing_mode,
+                        "cycle_days": cycle_days,
+                        "dcr_days": dcr_days,
+                        "dcr_hours": dcr_hours,
+                        "deplete_text": deplete_text
+                    },
+                    "observations": {
+                        "pred_demand_7d": round(demand_from_c1 / 100.0) * 100.0,
+                        "daily_burn": round(daily_burn / 100.0) * 100.0,
+                        "daily_volatility_std": round(daily_std / 100.0) * 100.0,
+                        "primary_driver": "Cycle Demand & Location Multiplier",
+                        "active_signals": active_signals
+                    },
+                    "assumptions": {
+                        "target_sla": sla,
+                        "z_score": z_score,
+                        "safety_buffer": safety_buffer,
+                        "holding_rate_annual": self.assumptions.get("holding_rate_annual", 0.065),
+                        "cit_trip_cost": cit_trip_cost,
+                        "stockout_penalty": stockout_penalty
+                    },
+                    
+                    # Indents & Maker/Checker
+                    "maker_proposed_indent": maker_total_indent,
+                    "maker_single_cycle_indent": system_maker_indent,
+                    "c1_gross_target": target_order_up_to,
+                    "c1_net_indent": net_indent,
+                    "has_override": has_override,
+                    "override_details": override_info,
+                    "is_approved": is_approved,
+                    "approval_info": self.approved_indents.get(tid),
+                    "dcr_days": dcr_days,
+                    "dcr_hours": dcr_hours,
+                    "holding_cost_est": holding_cost_7d,
+                    "trip_cost_est": cit_trip_costs_7d,
+                    "daily_preds": base_t.get("daily_preds", {}),
+                    "dates": base_t.get("dates", []),
+                    "actual_demands": base_t.get("actual_demands", []),
+                    "cycles": base_t.get("cycles", []),
+                    "corridor_name": base_t.get("corridor_name", ""),
+                    "corridor_id": base_t.get("corridor_id", ""),
+                    "formula_ledger": {
+                        "current_cash": existing_cash,
+                        "net_indent": net_indent,
+                        "expected_demand": demand_from_c1,
+                        "end_buffer_reserve": safety_buffer,
+                        "post_refill_balance": min(capacity, existing_cash + net_indent)
+                    }
+                }
+
+                recomputed_terminals[tid] = t_obj
+
+                # Group by corridor for Inter-ATM pairing
+                c_route = t_obj.get("corridor_route", "Route")
+                if c_route not in corridor_groups:
+                    corridor_groups[c_route] = []
+                corridor_groups[c_route].append(t_obj)
+
+            # Proposals for inter-ATM balancing
+            inter_atm_rebalancing_proposals = []
+            for c_route, term_list in corridor_groups.items():
+                donors = [t for t in term_list if t["is_surplus_eligible"] and t["surplus_removable_amount"] >= float(self.assumptions.get("min_sweep_threshold", 200000.0))]
+                starving = [t for t in term_list if t["urgency_status"] == "CRITICAL" or t["dcr_hours"] < 24 or t["cra_tracking"]["cra_status"] == "MISSED_SLA_BREACH"]
+
+                for d in donors:
+                    for r in starving:
+                        transfer_amt = min(d["surplus_removable_amount"], max(200000.0, r["c1_net_indent"]))
+                        transfer_amt = round(transfer_amt / 100.0) * 100.0
+                        if transfer_amt >= float(self.assumptions.get("min_sweep_threshold", 200000.0)):
+                            inter_atm_rebalancing_proposals.append({
+                                "donor_terminal_id": d["terminal_id"],
+                                "donor_terminal_code": d["terminal_code"],
+                                "donor_site_name": d["site_name"],
+                                "donor_usable_balance": d["usable_balance"],
+                                "recipient_terminal_id": r["terminal_id"],
+                                "recipient_terminal_code": r["terminal_code"],
+                                "recipient_site_name": r["site_name"],
+                                "recipient_usable_balance": r["usable_balance"],
+                                "recipient_runway_hours": r["dcr_hours"],
+                                "suggested_transfer_amount": transfer_amt,
+                                "corridor_route": c_route,
+                                "reason": f"Sweep ₹{transfer_amt/100000:.1f}L excess cash from {d['terminal_code']} to eliminate immediate stockout at {r['terminal_code']}",
+                                "avoided_emergency_cost": 3500.0 + 10000.0,
+                                "handling_fee": float(self.assumptions.get("inter_atm_transfer_fee", 1500.0)),
+                                "net_savings": 12000.0
+                            })
+
+            critical_queue = [t for t in recomputed_terminals.values() if t["urgency_status"] == "CRITICAL"]
+            critical_queue.sort(key=lambda x: x["downtime_risk_score"], reverse=True)
+
+            delta_vs_baseline = total_net_indent - total_baseline_indent
+
+            # Status counts partition the fleet cleanly (Finding C3)
+            crit_count = sum(1 for t in recomputed_terminals.values() if t["urgency_status"] == "CRITICAL")
+            sched_count = sum(1 for t in recomputed_terminals.values() if t["urgency_status"] == "SCHEDULED")
+            hlth_count = sum(1 for t in recomputed_terminals.values() if t["urgency_status"] == "HEALTHY")
+
+            # Real hardware telemetry availability (Finding C3)
+            online_count = sum(1 for t in recomputed_terminals.values() if t["telemetry_status"] == "ONLINE_HEALTHY")
+            uptime_pct = round((online_count / max(1, len(recomputed_terminals))) * 100.0, 1)
+            total_sla_penalties = sum(t["cra_tracking"]["sla_penalty_amount"] for t in recomputed_terminals.values())
+
+            summary = {
+                "total_terminals": len(recomputed_terminals),
+                "total_existing_cash": round(total_existing_cash, 0),
+                "total_net_indent": round(total_net_indent, 0),
+                "total_maker_proposed_indent": round(total_maker_proposed_indent, 0),
+                "total_baseline_indent": round(total_baseline_indent, 0),
+                "delta_indent_vs_baseline": round(delta_vs_baseline, 0),
+                "total_holding_cost_7d": round(sum(t.get("holding_cost_7d", 0.0) for t in recomputed_terminals.values()), 0),
+                "critical_count": crit_count,
+                "scheduled_count": sched_count,
+                "healthy_count": hlth_count,
+                "approved_count": len(self.approved_indents),
+                "override_count": len(self.checker_overrides),
+                "network_uptime_pct": uptime_pct,
+                "total_sla_penalties": total_sla_penalties,
+                "active_rebalancing_proposals_count": len(inter_atm_rebalancing_proposals),
+                "active_sla": sla,
+                "cit_cutoff_time": "18:00 IST",
+                "is_manifest_locked": self.is_manifest_locked,
+                "manifest_lock_info": self.manifest_lock_info
+            }
+
+            return {
+                "summary": summary,
+                "terminals": recomputed_terminals,
+                "critical_queue": critical_queue,
+                "inter_atm_rebalancing_proposals": inter_atm_rebalancing_proposals,
+                "rebalancing_proposals": inter_atm_rebalancing_proposals,
+                "executed_sweeps": self.executed_sweeps,
+                "corridors": self.raw_bundle.get("corridors", []),
+                "portfolio": self.raw_bundle.get("portfolio", {}),
+                "assumptions": self.assumptions,
+                "terminal_configs": self.terminal_configs,
+                "exogenous_events": self.exogenous_events,
+                "holidays": self.holidays,
+                "checker_overrides": self.checker_overrides
+            }
 
     # =========================================================================
     # COMPREHENSIVE REPORT GENERATION & DOWNLOAD ENGINE
@@ -2064,7 +2409,7 @@ class MastersManager:
         return bio.getvalue()
 
     def generate_predictions_csv(self) -> str:
-        """Exports historical predictions vs actual demand with WAPE and error metrics."""
+        """Exports historical predictions vs actual demand with truthful metrics (no synthetic np.random noise)."""
         res = self.compute_fleet_replenishment()
         terminals = res["terminals"]
 
@@ -2072,116 +2417,164 @@ class MastersManager:
         writer = csv.writer(out, quoting=csv.QUOTE_MINIMAL)
         writer.writerow([
             "ATM Code", "Date", "Day", "Projected Demand (₹)", "Actual Demand (₹)",
-            "Absolute Error (₹)", "Percentage Error (%)", "Balance With Refill (₹)", "Risk Status"
+            "Absolute Error (₹)", "Percentage Error (%)", "Balance With Refill (₹)", "Risk Status", "Data Source"
         ])
 
         for tid, t in sorted(terminals.items(), key=lambda x: int(x[0])):
             for f_row in t.get("forecast_7d", []):
                 p_dem = f_row["projected_demand"]
-                # Match corresponding actual if available
-                act_dem = round(p_dem * np.random.uniform(0.92, 1.06), 0)
-                err = abs(act_dem - p_dem)
-                ape = round((err / max(1.0, act_dem)) * 100.0, 1)
-
+                # Future forecast dates have no measured actuals yet (Finding C1: truthful reporting)
                 writer.writerow([
                     t["terminal_code"],
                     f_row["date"],
                     f_row["day"],
                     p_dem,
-                    act_dem,
-                    err,
-                    f"{ape}%",
+                    "N/A (Future Forecast)",
+                    "N/A",
+                    "N/A",
                     f_row["balance_with_refill"],
-                    f_row["risk_status"]
+                    f_row["risk_status"],
+                    "Modeled Projection"
                 ])
 
         return out.getvalue()
 
     def generate_dispatch_manifest(self, checker_name: str = "Chief Treasury Officer", notes: str = "Authorized for CIT Dispatch") -> Dict[str, Any]:
-        """Generates the official Digital CIT Dispatch Manifest & Chest Pull Slip."""
-        res = self.compute_fleet_replenishment()
-        terminals = res["terminals"]
-        corridors = res["corridors"]
+        """Generates the official Digital CIT Dispatch Manifest & Chest Pull Slip.
+        Only includes approved figures for CIT-serviced ATMs (Finding B6).
+        Returns frozen snapshot if locked (Finding B8).
+        """
+        with self._lock:
+            if self.is_manifest_locked and self.locked_manifest_snapshot is not None:
+                return copy.deepcopy(self.locked_manifest_snapshot)
 
-        now_ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        manifest_id = f"CIT-MANIFEST-{datetime.now().strftime('%Y%m%d')}-MAH-01"
+            res = self.compute_fleet_replenishment()
+            terminals = res["terminals"]
+            corridors = res["corridors"]
 
-        total_pull_rupees = sum(t["c1_net_indent"] for t in terminals.values())
+            now_ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            manifest_id = f"CIT-MANIFEST-{datetime.now().strftime('%Y%m%d')}-MAH-01"
 
-        route_manifests = []
-        for corr in corridors:
-            route_tids = [str(x) for x in corr.get("terminals", [])]
-            route_stops = []
-            route_cash_total = 0.0
+            route_manifests = []
+            total_pull_rupees = 0.0
+            # Each approved cycle is pulled from the chest on its own date, not all on day one
+            pull_by_date: Dict[str, float] = {}
 
-            for tid in route_tids:
-                if tid in terminals:
-                    t = terminals[tid]
-                    route_stops.append({
-                        "terminal_id": tid,
-                        "terminal_code": t["terminal_code"],
-                        "site_name": t["site_name"],
-                        "city": t["city"],
-                        "existing_cash": t["existing_cash"],
-                        "indent_amount": t["c1_net_indent"],
-                        "denomination_mix": t["denomination_mix"],
-                        "maker_recommended": t["maker_proposed_indent"],
-                        "has_override": t["has_override"],
-                        "override_reason": t["override_details"].get("reason") if t["has_override"] else None,
-                        "serviced_by": t["serviced_by"],
-                        "status": t["urgency_status"]
-                    })
-                    route_cash_total += t["c1_net_indent"]
+            for corr in corridors:
+                route_tids = [str(x) for x in corr.get("terminals", [])]
+                route_stops = []
+                route_cash_total = 0.0
 
-            route_manifests.append({
-                "route_id": corr.get("id"),
-                "route_name": corr.get("name"),
-                "city": corr.get("city"),
-                "stop_count": len(route_stops),
-                "route_total_cash": route_cash_total,
-                "stops": route_stops
-            })
+                for tid in route_tids:
+                    if tid in terminals:
+                        t = terminals[tid]
+                        is_cit = (t.get("serviced_by") == "CIT")
+                        is_appr = (tid in self.approved_indents)
+                        approved_info = self.approved_indents.get(tid)
 
-        overrides_log = list(self.checker_overrides.values())
-        sign_string = f"{manifest_id}|{total_pull_rupees}|{now_ts}|{checker_name}"
-        sig_hash = hashlib.sha256(sign_string.encode("utf-8")).hexdigest()[:16].upper()
+                        stop_cycles = []
+                        if is_cit and is_appr and approved_info:
+                            indent_amt = float(approved_info.get("approved_indent", 0.0))
+                            status_text = "APPROVED"
+                            stop_cycles = [
+                                {"date": c["date"], "amount": float(c["amount"])}
+                                for c in approved_info.get("approved_cycles", []) if c.get("is_enabled", True)
+                            ]
+                            for c in stop_cycles:
+                                pull_by_date[c["date"]] = pull_by_date.get(c["date"], 0.0) + c["amount"]
+                        elif not is_cit:
+                            # Branch serviced ATMs are not serviced by CIT armored vans (Finding B6)
+                            indent_amt = 0.0
+                            status_text = "BRANCH_SERVICED (EXCLUDED)"
+                        else:
+                            indent_amt = 0.0
+                            status_text = "PENDING_APPROVAL (EXCLUDED)"
 
-        manifest = {
-            "manifest_id": manifest_id,
-            "generated_at": now_ts,
-            "cutoff_deadline": "18:00 IST",
-            "bank_entity": "State Bank Commercial Cash Operations",
-            "currency_chest_origin": "Mumbai Main Fort Chest",
-            "logistics_agency": "SecureArmored CIT Logistics Ltd.",
-            "total_vault_pull_rupees": total_pull_rupees,
-            "total_terminals": len(terminals),
-            "checker_signoff": {
-                "officer_name": checker_name,
-                "notes": notes,
-                "digital_signature_token": f"SIG-AUTH-{sig_hash}",
-                "authorized_at": now_ts,
-                "role": "Authorized Checker / Chief Treasury Manager"
-            },
-            "routes": route_manifests,
-            "logged_checker_overrides": overrides_log,
-            "is_locked": self.is_manifest_locked
-        }
+                        route_stops.append({
+                            "terminal_id": tid,
+                            "terminal_code": t["terminal_code"],
+                            "site_name": t["site_name"],
+                            "city": t["city"],
+                            "existing_cash": t["existing_cash"],
+                            "indent_amount": indent_amt,
+                            "denomination_mix": t["denomination_mix"],
+                            "maker_recommended": t["maker_proposed_indent"],
+                            "approved_indent": float(approved_info.get("approved_indent", 0.0)) if approved_info else 0.0,
+                            "cycles": stop_cycles,
+                            "has_override": t["has_override"],
+                            "override_reason": t["override_details"].get("reason") if t["has_override"] else None,
+                            "serviced_by": t["serviced_by"],
+                            "status": status_text,
+                            "is_approved": is_appr
+                        })
+                        route_cash_total += indent_amt
 
-        return manifest
+                total_pull_rupees += route_cash_total
+                route_manifests.append({
+                    "route_id": corr.get("id"),
+                    "route_name": corr.get("name"),
+                    "city": corr.get("city"),
+                    "stop_count": len(route_stops),
+                    "route_total_cash": route_cash_total,
+                    "stops": route_stops
+                })
+
+            overrides_log = list(self.checker_overrides.values())
+            sign_string = f"{manifest_id}|{total_pull_rupees}|{now_ts}|{checker_name}"
+            # HMAC-SHA256 signature; the key lives outside the source so it cannot be read from the repo
+            audit_secret = os.environ.get("CMS_SIGNING_KEY", "")
+            sig_hash = (
+                hmac.new(audit_secret.encode("utf-8"), sign_string.encode("utf-8"), hashlib.sha256).hexdigest()[:24].upper()
+                if audit_secret else "UNSIGNED"
+            )
+
+            manifest = {
+                "manifest_id": manifest_id,
+                "generated_at": now_ts,
+                "cutoff_deadline": "18:00 IST",
+                "bank_entity": "State Bank Commercial Cash Operations",
+                "currency_chest_origin": "Mumbai Main Fort Chest",
+                "logistics_agency": "SecureArmored CIT Logistics Ltd.",
+                "total_vault_pull_rupees": total_pull_rupees,
+                "vault_pull_by_date": dict(sorted(pull_by_date.items())),
+                "total_terminals": len(terminals),
+                "checker_signoff": {
+                    "officer_name": checker_name,
+                    "notes": notes,
+                    "digital_signature_token": f"SIG-HMAC-{sig_hash}",
+                    "authorized_at": now_ts,
+                    "role": "Authorized Checker / Chief Treasury Manager"
+                },
+                "routes": route_manifests,
+                "logged_checker_overrides": overrides_log,
+                "is_locked": self.is_manifest_locked
+            }
+
+            return manifest
 
     def lock_manifest(self, checker_name: str = "Chief Treasury Officer", notes: str = "Authorized for CIT Dispatch") -> Dict[str, Any]:
-        """Locks the dispatch manifest permanently."""
-        manifest = self.generate_dispatch_manifest(checker_name=checker_name, notes=notes)
-        self.is_manifest_locked = True
-        self.manifest_lock_info = {
-            "manifest_id": manifest["manifest_id"],
-            "locked_at": manifest["generated_at"],
-            "officer_name": checker_name,
-            "total_rupees": manifest["total_vault_pull_rupees"],
-            "digital_signature": manifest["checker_signoff"]["digital_signature_token"]
-        }
-        self.save_overrides()
-        return {"status": "locked", "manifest": manifest}
+        """Locks the dispatch manifest permanently; freezes snapshot and blocks subsequent writes (Finding B8)."""
+        with self._lock:
+            if self.is_manifest_locked and self.locked_manifest_snapshot is not None:
+                return {"status": "already_locked", "manifest": copy.deepcopy(self.locked_manifest_snapshot)}
+
+            if not os.environ.get("CMS_SIGNING_KEY"):
+                raise ValueError("Cannot sign the manifest: CMS_SIGNING_KEY is not set on the server.")
+            manifest = self.generate_dispatch_manifest(checker_name=checker_name, notes=notes)
+            if manifest["total_vault_pull_rupees"] <= 0:
+                raise ValueError("Cannot lock a manifest with no approved CIT indents.")
+            self.is_manifest_locked = True
+            manifest["is_locked"] = True
+            self.locked_manifest_snapshot = copy.deepcopy(manifest)
+            self.manifest_lock_info = {
+                "manifest_id": manifest["manifest_id"],
+                "locked_at": manifest["generated_at"],
+                "officer_name": checker_name,
+                "total_rupees": manifest["total_vault_pull_rupees"],
+                "digital_signature": manifest["checker_signoff"]["digital_signature_token"]
+            }
+            self.save_overrides()
+            return {"status": "locked", "manifest": copy.deepcopy(self.locked_manifest_snapshot)}
 
 
 # Singleton manager instance

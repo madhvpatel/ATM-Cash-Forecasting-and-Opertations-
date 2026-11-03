@@ -5,3 +5,4 @@ __pycache__/
 *.pyc
 .DS_Store
 *.bak
+live_portal_v2/users.json
