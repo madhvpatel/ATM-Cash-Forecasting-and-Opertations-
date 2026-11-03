@@ -121,11 +121,61 @@ ATMs were held out in 5 groups of 20 across 7 origins (700 ATM-weeks). The model
 - Capacity and visit frequency are unknown for 92 of the ATMs, so this scores forecasts and buffer size, not rupee cost.
 - The comparison with "industry" is approximate. Published ATM competitions (e.g. NN5) report daily per-ATM error, which compares to the 18.2% daily figure here, not the 8.8% weekly one.
 
+## Noise floor: how much accuracy is left? (4 Nov 2026)
+
+`python3 scripts/noise_floor.py` (~3 s) → `outputs/scorecard_100/noise_floor.json`
+
+**Question:** some day-to-day noise is pure luck that no model can predict. How close is `lgb_holiday` to that limit?
+
+**Method:** the data generator is not in this repo, so the floor is measured from the data.
+- **Plain days only:** no holiday within 3 days, no payday, no month end, no 2nd/4th Saturday.
+- **Remove the weekday pattern:** subtract each ATM's average for that weekday from its log demand.
+- **Compare days by gap:** measure how different two days are as the gap between them grows. Level drift, the month cycle and the seasons barely change from one day to the next. So the difference extrapolated to a gap of zero is the pure noise. This is done per ATM.
+
+**Result:**
+
+| | `lgb_holiday` | Floor | Room left |
+| --- | --- | --- | --- |
+| Plain days, daily WAPE | 17.0% | 16.4% | 0.7 pts |
+| Holiday-free weeks, weekly WAPE (3,082 weeks) | 7.3% | 6.3% | 1.0 pt |
+| All weeks, weekly WAPE | 8.2% | not measured | — |
+
+- Day-to-day noise is about ±21% per day (log σ 0.19–0.23 across ATMs). That is the simulator's own randomness.
+- **On ordinary weeks the model is within about 1 point of perfect.** The floor assumes a forecaster that knows each ATM's true level exactly, so the reachable gap is smaller still.
+- **The model has almost no week-wide level error.** 18% of the variance in its daily errors is shared across the week. Independent errors would already give 1/7 = 14%, so the true level error is only about 4 points.
+- The difference between 8.2% (all weeks) and 7.3% (holiday-free weeks) is the holiday weeks. That is where forecast room is left.
+
+**Buffer**, on the scorecard's basis (sum of P99 loads ÷ sum of actual demand − 1):
+
+| | Value |
+| --- | --- |
+| Holiday-free weeks, today's buffer | +30.8% extra cash |
+| Holiday-free weeks, perfect forecast | +19.8% (floor) |
+| P99 of actual/forecast on holiday-free weeks | ×1.24 |
+| P99 of actual/forecast on weeks with a holiday in them or within 3 days (2,418 weeks, 44%) | ×1.36 |
+| P99 pooled over all weeks, which every week gets today | ×1.31 |
+
+The pooled multiplier is set by holiday weeks and then applied to quiet weeks too. Noise size barely differs between ATMs (log σ 0.19–0.23), so a separate buffer per ATM would gain little. **A buffer per week type** (holiday-touched vs. not) would cut quiet-week extra cash from about 31% towards 24%. That figure uses ratios over the whole backtest, not a rolling window, so it needs confirming in a proper backtest.
+
+**What went wrong in the first attempt:** I first compared each day with the same weekday one week either side. That "floor" came out at 20%, above the model's 17%, which is impossible. The cause: the data has a monthly cycle (days 14 apart differ most, days 28 apart differ least), so that comparison counted the cycle as noise. The script now asserts that the floor stays below the model, so this mistake would be caught.
+
+**Caveats:**
+- If demand spills across midnight, neighbouring days would be negatively correlated, and the floor would then be slightly lower than shown.
+- The weekly floor treats each week's days as equal in size, which slightly understates it.
+- Holiday-day noise is not measured.
+
+**So:** better day-to-day features or a bigger model will not pay off on this data. Both remaining gains come from holiday weeks: their forecast error (step 1 below) and the buffer they inflate for every other week (step 2).
+
 ## Next steps
 
-1. ~~Holiday features~~ (done, see above). Follow-up: damp the prior-year lift towards the family-wide lift.
-2. ~~Wire `lgb_holiday` + conformal bounds into the portal and engine~~ (done, see above). Re-run the scorecard before the portal whenever data changes, because the buffer reads its output.
-3. **Add a drift alarm** that switches an ATM to the ratio model when its 14-day bias exceeds ±10%.
+Re-ordered after the noise-floor result above.
+
+1. **Damp the prior-year holiday lift towards the family-wide lift.** Holiday weeks are where the remaining forecast error is.
+2. **Calibrate the buffer by week type.** In `buffer_multiplier`, compute the rolling P99 separately for weeks that touch a holiday and weeks that don't, and use the multiplier for this week's type. Expected: holiday-free weeks go from +31% towards +24% extra cash. The floor is +20%.
+3. **Add a drift alarm** that switches an ATM to the ratio model when its 14-day bias exceeds ±10%. This is protection for real data, not an accuracy gain here.
+4. Done:
+   - ~~Holiday features~~
+   - ~~Wire `lgb_holiday` and the conformal bounds into the portal and engine~~. Re-run the scorecard before the portal whenever data changes, because the buffer reads its output.
 
 ## How to re-run
 
