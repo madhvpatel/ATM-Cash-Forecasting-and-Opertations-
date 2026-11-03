@@ -6,3 +6,4 @@ __pycache__/
 .DS_Store
 *.bak
 live_portal_v2/users.json
+outputs/scorecard_100/predictions_daily.csv

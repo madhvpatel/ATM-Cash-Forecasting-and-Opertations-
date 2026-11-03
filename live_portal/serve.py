@@ -193,7 +193,7 @@ def compute_new_atm_forecast(
             },
             "strategy_b": {
                 "name": "Site Metadata Profiler",
-                "tag": "Zero-Shot Location",
+                "tag": "Location Profile",
                 **res_b,
             },
             "strategy_c": {

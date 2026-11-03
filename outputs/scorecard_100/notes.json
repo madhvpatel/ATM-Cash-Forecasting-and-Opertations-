@@ -1,0 +1,25 @@
+{
+  "atms": 100,
+  "days": 754,
+  "origins": 55,
+  "first_cutoff": "2025-08-31",
+  "last_cutoff": "2026-09-13",
+  "target": "observed net_demand (Cash_Out), not uncensored",
+  "pilot_flag_agreement": {
+    "demand": 1.0,
+    "is_payday": 1.0,
+    "is_2_4_sat": 1.0,
+    "is_regional_holiday": 1.0,
+    "pre_holiday": 1.0
+  },
+  "conformal": "P95/P99 of actual/forecast 7-day ratios, past 26 weeks, >= 8 weeks required",
+  "recency_half_life_days": 90,
+  "models": {
+    "seasonal_naive": "same weekday last week",
+    "seasonal_mean_4w": "mean of the same weekday over the last 4 weeks",
+    "lgb_level": "global LightGBM on rupees (current approach, as in run_rolling_origin.py)",
+    "lgb_holiday": "lgb_level plus holiday family, next holiday, bank-closure run and last year's lift for the same holiday",
+    "lgb_ratio": "global LightGBM on demand / trailing 28-day mean, recency-weighted",
+    "blend": "mean of lgb_ratio, lgb_level and seasonal_mean_4w"
+  }
+}
