@@ -324,7 +324,8 @@ def _forecast_week(cutoff: pd.Timestamp) -> pd.DataFrame:
     model, x_test, test = _fit_week(cutoff)
     pred = np.clip(model.predict(x_test), 0, None)
     out = test[["terminal_id", "target_date", "horizon"]].assign(pred=pred)
-    out["holiday_week"] = is_holiday_day(test["days_to_holiday"]).groupby(test["terminal_id"]).transform("any")
+    out["holiday_day"] = is_holiday_day(test["days_to_holiday"])
+    out["holiday_week"] = out["holiday_day"].groupby(out["terminal_id"]).transform("any")
     return out.reset_index(drop=True)
 
 
@@ -336,7 +337,7 @@ def is_holiday_day(days_to_holiday: pd.Series) -> pd.Series:
 def forecast_week(cutoff) -> pd.DataFrame:
     """Forecast for every ATM, horizons 1-7 after the cutoff.
 
-    Columns: terminal_id, target_date, horizon, pred, holiday_week (same for all 7 rows of an ATM).
+    Columns: terminal_id, target_date, horizon, pred, holiday_day, holiday_week (same for all 7 rows of an ATM).
     """
     return _forecast_week(pd.Timestamp(cutoff)).copy()
 
@@ -375,15 +376,31 @@ def conformal_multiplier(ratio: pd.Series, past: pd.Series, origin: pd.Series, s
     return None
 
 
-def buffer_multiplier(cutoff, holiday_week: bool, service_level: float = 0.99) -> tuple[float, bool]:
-    """Load multiplier on the 7-day forecast that met the service level in past backtest weeks.
+@functools.lru_cache(maxsize=None)
+def _scorecard_totals(days: int) -> pd.DataFrame:
+    """Backtest totals over the first `days` days after each origin, one row per ATM and origin."""
+    if days == 7:
+        return _scorecard_weekly()
+    daily_file = SCORECARD_WEEKLY.with_name("predictions_daily.csv")
+    if not daily_file.exists():
+        raise FileNotFoundError(f"{daily_file} is missing; run python3 scripts/run_scorecard_100.py first")
+    daily = pd.read_csv(daily_file, usecols=["terminal_id", "origin_date", "horizon", "demand", "days_to_holiday", MODEL_NAME],
+                        parse_dates=["origin_date"])
+    daily = daily[daily["horizon"] <= days].assign(holiday_week=lambda d: is_holiday_day(d["days_to_holiday"]))
+    return daily.groupby(["terminal_id", "origin_date"], as_index=False).agg(
+        demand=("demand", "sum"), **{MODEL_NAME: (MODEL_NAME, "sum")}, holiday_week=("holiday_week", "any"))
 
-    Calibrated separately for weeks that touch a holiday and weeks that don't. Uses only weeks whose
-    last day is on or before the cutoff. Returns (multiplier, calibrated).
+
+def buffer_multiplier(cutoff, holiday_week: bool, service_level: float = 0.99, days: int = 7) -> tuple[float, bool]:
+    """Load multiplier on the `days`-day forecast that met the service level in past backtest origins.
+
+    Calibrated on totals of the same length as the refill cycle, separately for windows that touch a
+    holiday and windows that don't. Uses only windows whose last day is on or before the cutoff.
+    Returns (multiplier, calibrated).
     """
     cutoff = pd.Timestamp(cutoff)
-    weekly = _scorecard_weekly()
-    week_end = weekly["origin_date"] + pd.Timedelta(days=7)
+    weekly = _scorecard_totals(int(days))
+    week_end = weekly["origin_date"] + pd.Timedelta(days=int(days))
     past = (week_end <= cutoff) & (weekly["origin_date"] > cutoff - pd.Timedelta(weeks=CONFORMAL_WINDOW_WEEKS))
     ratio = weekly["demand"] / weekly[MODEL_NAME].replace(0, np.nan)
     same_type = weekly["holiday_week"] == bool(holiday_week)
@@ -393,8 +410,10 @@ def buffer_multiplier(cutoff, holiday_week: bool, service_level: float = 0.99) -
     return multiplier, True
 
 
-def cycle_multiplier(buffers: dict, tid) -> float:
-    """P99 multiplier for this ATM in one portal cycle: holiday-week or quiet-week calibration."""
+def cycle_multiplier(buffers: dict, tid, days: int = 7) -> float:
+    """P99 multiplier for this ATM in one portal cycle: holiday or quiet calibration for a `days`-day refill."""
+    if days != 7:
+        buffers = buffers["by_cycle_days"][str(days)]
     holiday = int(tid) in buffers["holiday_week_atms"]
     return buffers["p99_multiplier_holiday_week" if holiday else "p99_multiplier_quiet_week"]
 

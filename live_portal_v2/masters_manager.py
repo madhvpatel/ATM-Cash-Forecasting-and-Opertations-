@@ -60,15 +60,16 @@ DEFAULT_ASSUMPTIONS = {
     "reject_bin_critical_pct": 90.0        # 90% reject bin saturation shutdown fault
 }
 
+# Capacity and cycle_days default to the measured values in the bundle (measured_cadence)
 DEFAULT_TERMINAL_CONFIGS = {
-    "1": {"capacity": 2860000.0, "serviced_by": "CIT", "cycle_days": 7, "site_type": "RAILWAY STATION CONCOURSE", "city": "MUMBAI"},
-    "2": {"capacity": 2860000.0, "serviced_by": "CIT", "cycle_days": 7, "site_type": "AIRPORT TERMINAL T2", "city": "MUMBAI"},
-    "3": {"capacity": 2860000.0, "serviced_by": "CIT", "cycle_days": 7, "site_type": "CITY CENTRE MALL", "city": "PUNE"},
-    "4": {"capacity": 2860000.0, "serviced_by": "BRANCH", "cycle_days": 3, "site_type": "IT TECH PARK CAMPUS", "city": "PUNE"},
-    "5": {"capacity": 2860000.0, "serviced_by": "CIT", "cycle_days": 7, "site_type": "COMMERCIAL CBD / FUEL PLAZA", "city": "NAGPUR"},
-    "6": {"capacity": 2860000.0, "serviced_by": "CIT", "cycle_days": 7, "site_type": "TOURIST PROMENADE", "city": "NAGPUR"},
-    "7": {"capacity": 2860000.0, "serviced_by": "CIT", "cycle_days": 7, "site_type": "METRO STATION CONCOURSE", "city": "NASHIK"},
-    "8": {"capacity": 2860000.0, "serviced_by": "BRANCH", "cycle_days": 3, "site_type": "MIDC INDUSTRIAL ESTATE", "city": "NASHIK"},
+    "1": {"serviced_by": "CIT", "site_type": "RAILWAY STATION CONCOURSE", "city": "MUMBAI"},
+    "2": {"serviced_by": "CIT", "site_type": "AIRPORT TERMINAL T2", "city": "MUMBAI"},
+    "3": {"serviced_by": "CIT", "site_type": "CITY CENTRE MALL", "city": "PUNE"},
+    "4": {"serviced_by": "BRANCH", "site_type": "IT TECH PARK CAMPUS", "city": "PUNE"},
+    "5": {"serviced_by": "CIT", "site_type": "COMMERCIAL CBD / FUEL PLAZA", "city": "NAGPUR"},
+    "6": {"serviced_by": "CIT", "site_type": "TOURIST PROMENADE", "city": "NAGPUR"},
+    "7": {"serviced_by": "CIT", "site_type": "METRO STATION CONCOURSE", "city": "NASHIK"},
+    "8": {"serviced_by": "BRANCH", "site_type": "MIDC INDUSTRIAL ESTATE", "city": "NASHIK"},
 }
 
 TERMINAL_OPERATIONAL_METADATA = {
@@ -474,18 +475,24 @@ DEFAULT_EXOGENOUS_EVENTS: List[Dict[str, Any]] = []
 def get_physical_cassette_capacity(tid: str) -> float:
     """Calculates physical capacity as sum over cassettes of max_notes * denomination."""
     meta = TERMINAL_OPERATIONAL_METADATA.get(str(tid), {})
+    if "measured_capacity" in meta:
+        return float(meta["measured_capacity"])
     cassettes = meta.get("cassettes", [])
     if cassettes:
         return float(sum(c.get("max_notes", 2200) * c.get("denomination", 500) for c in cassettes))
     return 2860000.0
 
 
-def sync_feed_to_snapshot(meta: Dict[str, Any], end_cash: float) -> None:
-    """Point last_feed and cassette notes at the raw cutoff-day End_Cash.
+def sync_feed_to_snapshot(meta: Dict[str, Any], end_cash: float, max_balance: float) -> None:
+    """Point last_feed and cassette notes at the raw cutoff-day End_Cash; capacity at the highest balance seen.
+
+    ponytail: the highest balance in 28 days is a lower bound on the real cassette limit (no device
+    master exists). Replace with rated capacity when the bank supplies it.
 
     ponytail: the raw files carry no per-denomination split, so the typed per-slot
     shares are kept and rescaled to the real total. Replace with hopper-level data when supplied.
     """
+    meta["measured_capacity"] = max_balance
     meta["last_feed"]["timestamp"] = "2026-08-24 23:45 IST (raw snapshot)"
     meta["last_feed"]["end_cash_value"] = end_cash
     cassettes = meta.get("cassettes", [])
@@ -625,7 +632,8 @@ class MastersManager:
                 self.raw_bundle = json.load(f)
         for tid, base_t in self.raw_bundle.get("terminals", {}).items():
             if tid in TERMINAL_OPERATIONAL_METADATA:
-                sync_feed_to_snapshot(TERMINAL_OPERATIONAL_METADATA[tid], float(base_t["existing_cash"]))
+                sync_feed_to_snapshot(TERMINAL_OPERATIONAL_METADATA[tid], float(base_t["existing_cash"]),
+                                      float(base_t["measured_cadence"]["max_balance"]))
 
     def _load_holidays(self):
         holidays_file = DATA_MASTERS_DIR / "holidays.json"
@@ -1019,8 +1027,8 @@ class MastersManager:
                     self.terminal_configs[tid]["capacity"] = val
                 elif key == "cycle_days":
                     val = int(value)
-                    if val not in [3, 7, 14]:
-                        raise ValueError("cycle_days must be 3, 7, or 14")
+                    if not 1 <= val <= 7:
+                        raise ValueError("cycle_days must be between 1 and 7 (the forecast covers 7 days)")
                     old_val = self.terminal_configs[tid].get("cycle_days")
                     self.terminal_configs[tid]["cycle_days"] = val
                 elif key == "serviced_by":
@@ -1312,7 +1320,7 @@ class MastersManager:
                 capacity = min(cfg_cap, phys_cap)
                 
                 servicing_mode = t_cfg.get("serviced_by", base_t.get("serviced_by", "CIT"))
-                cycle_days = int(t_cfg.get("cycle_days", 7 if servicing_mode == "CIT" else 3))
+                cycle_days = int(t_cfg.get("cycle_days", base_t["measured_cadence"]["cycle_days"]))
                 # Operator-entered or swept cash first, else End_Cash from the raw cutoff-day snapshot
                 existing_cash = float(t_cfg.get("existing_cash", base_t["existing_cash"]))
 
@@ -1367,11 +1375,9 @@ class MastersManager:
                 demand_from_c1 = sum(pred_list[lead_time_days:refill_end_idx])
                 
                 daily_burn = round((demand_from_c1 / max(1, cycle_days)) / 100.0) * 100.0
-                # P99 multiplier calibrated on 7-day backtest totals, holiday or quiet week.
-                # ponytail: sqrt(7/days) scaling for 3-day cycles assumes independent days;
-                # conservative if days are correlated. Calibrate on 3-day totals if branch volume grows.
-                p99_multiplier = demand_model.cycle_multiplier(cycle_buffers, tid)
-                p99_multiplier = 1.0 + (p99_multiplier - 1.0) * math.sqrt(7 / min(cycle_days, 7))
+                # P99 multiplier calibrated on backtest totals of this cycle's length (capped at the
+                # 7-day forecast), holiday or quiet window
+                p99_multiplier = demand_model.cycle_multiplier(cycle_buffers, tid, min(cycle_days, 7))
                 sigma_h = demand_model.equivalent_sigma(demand_from_c1, p99_multiplier, 0.99)
                 daily_std = sigma_h / math.sqrt(cycle_days)
                 safety_buffer = round((z_score * sigma_h) / 100.0) * 100.0

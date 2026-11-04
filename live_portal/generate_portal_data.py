@@ -666,6 +666,16 @@ def build_portal_data():
             "p99_multiplier_holiday_week": round(holiday_mult, 4),
             "calibrated": quiet_cal and holiday_cal,
             "holiday_week_atms": sorted(int(t) for t in week.loc[week["holiday_week"], "terminal_id"].unique()),
+            # Shorter refill cycles (measured cadence, scripts/measure_refill_cadence.py) are calibrated on
+            # totals of their own length; holiday = any day of that window near a holiday.
+            "by_cycle_days": {
+                str(k): {
+                    "p99_multiplier_quiet_week": round(demand_model.buffer_multiplier(cycle_cutoff, False, config.target_service_level, k)[0], 4),
+                    "p99_multiplier_holiday_week": round(demand_model.buffer_multiplier(cycle_cutoff, True, config.target_service_level, k)[0], 4),
+                    "holiday_week_atms": sorted(int(t) for t in week.loc[week["holiday_day"] & (week["horizon"] <= k), "terminal_id"].unique()),
+                }
+                for k in range(1, 7)
+            },
         }
     holiday_preds = pd.concat(holiday_weeks)
     holiday_pred_map = {
@@ -703,6 +713,15 @@ def build_portal_data():
     # Opening cash = End_Cash in the last 15-minute snapshot of the cutoff day
     existing_cash_map = end_of_day_cash(cutoff_date)
     print(f"Loaded {len(existing_cash_map)} end-of-day cash balances from the raw {cutoff_date.date()} 23:45 snapshot")
+    # Refill cadence and highest balance seen in the 28 days to the cutoff (scripts/measure_refill_cadence.py)
+    cadence_df = pd.read_csv(CMS_ROOT / "data" / "processed" / "refill_cadence.csv")
+    cadence_map = {int(r["terminal_id"]): {
+        "cycle_days": int(r["cycle_days"]),
+        "refills_per_week": round(float(r["refills_per_week"]), 2),
+        "max_balance": float(r["max_balance"]),
+        "median_post_refill": float(r["median_post_refill"]),
+        "window": f"{r['window_start']} to {r['window_end']}",
+    } for _, r in cadence_df.iterrows()}
 
     def build_executive_explainability(
         tid,
@@ -1120,6 +1139,7 @@ def build_portal_data():
             "corridor_name": corridor_name,
             "capacity": capacity,
             "existing_cash": round(existing_cash, 0),
+            "measured_cadence": cadence_map[tid],
             "dcr_days": dcr_days,
             "urgency_status": urgency_status,
             "status_color": status_color,

@@ -42,12 +42,14 @@ class TestPhysicalCapacityAndDenominations(unittest.TestCase):
     def setUp(self):
         fresh_state()
 
-    def test_a1_configured_capacity_caps_at_physical_cassette_limit(self):
-        """A1: Configured capacity must equal physical cassette capacity (₹28.6L for 4 cassettes x 2200 notes)."""
+    def test_a1_capacity_is_highest_measured_balance(self):
+        """A1: Capacity is the highest balance seen in the raw data, and indents never load above it."""
+        res = masters_mgr.compute_fleet_replenishment()
         for tid in ["1", "2", "3", "4", "5", "6", "7", "8"]:
-            phys_cap = get_physical_cassette_capacity(tid)
-            self.assertEqual(phys_cap, 2860000.0, f"ATM {tid} physical capacity must be 28.6L")
-            self.assertLessEqual(masters_mgr.terminal_configs[tid]["capacity"], 2860000.0)
+            measured = masters_mgr.raw_bundle["terminals"][tid]["measured_cadence"]["max_balance"]
+            self.assertEqual(get_physical_cassette_capacity(tid), measured)
+            t = res["terminals"][tid]
+            self.assertLessEqual(t["usable_balance"] + t["c1_net_indent"], measured + 100.0)
 
     def test_a2_denomination_split_matches_exact_rupees_and_slot_bounds(self):
         """A2: Denomination split must sum exactly to net indent and respect cassette free slots."""
@@ -117,14 +119,15 @@ class TestPolicyCalculationEngine(unittest.TestCase):
         self.assertNotIn("Salary Surge", t4.get("active_exogenous_events", []))
         self.assertNotIn("Salary Surge", t8.get("active_exogenous_events", []))
 
-    def test_a5_branch_atm_t4_3day_horizon_zero_indent(self):
-        """A5: Branch ATM T4 is sized on its 3-day horizon only (no phantom 7-day stockout or second cycle)."""
-        t4 = MastersManager().compute_fleet_replenishment()["terminals"]["4"]
-        self.assertEqual(t4["cycle_days"], 3)
+    def test_a5_branch_atm_t4_sized_on_measured_cycle(self):
+        """A5: Branch ATM T4 is sized on its measured refill cycle only (no phantom 7-day stockout or second cycle)."""
+        mgr = MastersManager()
+        t4 = mgr.compute_fleet_replenishment()["terminals"]["4"]
+        self.assertEqual(t4["cycle_days"], mgr.raw_bundle["terminals"]["4"]["measured_cadence"]["cycle_days"])
         self.assertEqual(t4["serviced_by"], "BRANCH")
         self.assertEqual(t4["active_strategy"], "1-CYCLE")
-        three_day_need = t4["quantile_forecast"]["p50_demand"] + t4["assumptions"]["safety_buffer"] - t4["usable_balance"]
-        self.assertAlmostEqual(t4["c1_net_indent"], max(0.0, three_day_need), delta=200.0)
+        target = min(t4["capacity"], t4["quantile_forecast"]["p50_demand"] + t4["assumptions"]["safety_buffer"])
+        self.assertAlmostEqual(t4["c1_net_indent"], max(0.0, target - t4["usable_balance"]), delta=200.0)
 
     def test_a4_two_cycle_arithmetic_and_sequencing(self):
         """A4: 2-cycle plans must sequence Cycle 2 strictly after Cycle 1 without artificial 110% inflation."""
@@ -230,8 +233,8 @@ class TestMakerCheckerControlsAndLocks(unittest.TestCase):
 
     def test_b8_manifest_lock_freezes_state_and_rejects_edits(self):
         """B8: Manifest lock freezes snapshot with HMAC-SHA256 signature and rejects modifications."""
-        # Approve ATM 1
-        masters_mgr.approve_terminal_indent("1", officer_name="Chief Treasury Officer")
+        # Approve ATM 2, the CIT ATM that needs cash on the measured daily cycle
+        masters_mgr.approve_terminal_indent("2", officer_name="Chief Treasury Officer")
         lock_res = masters_mgr.lock_manifest(checker_name="Chief Treasury Officer")
         self.assertTrue(masters_mgr.is_manifest_locked)
         sig = lock_res["manifest"]["checker_signoff"]["digital_signature_token"]
@@ -247,7 +250,7 @@ class TestMakerCheckerControlsAndLocks(unittest.TestCase):
 
         # Subsequent approval must raise PermissionError
         with self.assertRaises(PermissionError):
-            masters_mgr.approve_terminal_indent("2", officer_name="Chief Treasury Officer")
+            masters_mgr.approve_terminal_indent("3", officer_name="Chief Treasury Officer")
 
     def test_b7_parameter_edits_invalidate_approvals(self):
         """B7: Editing economic assumptions invalidates prior approvals."""
