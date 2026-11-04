@@ -2128,7 +2128,9 @@ class MastersManager:
             # Last 3 cycles string
             past_c = t.get("last_3_cycles_efficacy", [])
             past_str = " | ".join([
-                f"{c['cycle_label']}: Pred ₹{c['predicted_demand']/100000:.1f}L vs Act ₹{c['actual_demand']/100000:.1f}L ({c['effectiveness_pct']}% Eff, {c['stockout_hours']}h stockout, {c['cra_sla_status']})"
+                f"{c['cycle_label']}: Pred ₹{c['predicted_demand']/100000:.1f}L vs Act "
+                + (f"₹{c['actual_demand']/100000:.1f}L" if isinstance(c['actual_demand'], (int, float)) else "N/A")
+                + f" ({c['effectiveness_pct']}% Eff, {c['stockout_hours']}h stockout, {c['cra_sla_status']})"
                 for c in past_c
             ])
             past_str += f" => Rating: {t.get('overall_cycle_rating', 'OPTIMAL')}"

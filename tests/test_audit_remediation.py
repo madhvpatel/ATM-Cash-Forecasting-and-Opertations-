@@ -168,6 +168,14 @@ class TestVarianceAndAuditDataIntegrity(unittest.TestCase):
             f"Status counts must sum to 8: Critical({crit}) + Scheduled({sched}) + Healthy({health})",
         )
 
+    def test_unmeasured_cycle_actuals_render_without_crashing(self):
+        """Daily action report and agent cycle explainer must handle unmeasured actuals."""
+        report = masters_mgr.generate_daily_cash_action_report_data()
+        self.assertEqual(len(report["rows"]), 8)
+        self.assertIn("Act N/A", report["rows"][0][11])
+        import agent
+        self.assertIn("Actual N/A", agent.explain_atm_performance_and_cycles.invoke({"terminal_id": "1"}))
+
     def test_c2_no_fake_fixed_cycle_efficacy(self):
         """C2: Cycle efficacy should report unmeasured/N/A rather than hardcoded 94.6%."""
         res = masters_mgr.compute_fleet_replenishment()

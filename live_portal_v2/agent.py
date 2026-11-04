@@ -655,8 +655,9 @@ def explain_atm_performance_and_cycles(terminal_id: str = "1") -> str:
         stk = c.get("stockout_hours", 0)
         sla_s = c.get("cra_sla_status") or c.get("cra_on_time_status", "ON_TIME")
         stat = c.get("cycle_status") or "OPTIMAL"
+        act_str = f"₹{act_d:,.0f}" if isinstance(act_d, (int, float)) else "N/A"
         c_rows.append(
-            f"  • **{c_label}**: Predicted ₹{pred_d:,.0f} vs Actual ₹{act_d:,.0f} | "
+            f"  • **{c_label}**: Predicted ₹{pred_d:,.0f} vs Actual {act_str} | "
             f"Accuracy: **{eff}%** | Residual Ending: ₹{res_cash:,.0f} | Stockout: {stk}h | SLA: `{sla_s}` ({stat})"
         )
     cycles_str = "\n".join(c_rows) if c_rows else "  • No historical cycles logged."
