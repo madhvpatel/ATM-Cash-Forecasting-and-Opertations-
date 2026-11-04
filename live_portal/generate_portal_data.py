@@ -7,10 +7,10 @@ Forecast horizon: 31 days (2026-08-25 to 2026-09-24).
 from __future__ import annotations
 
 import json
-import os
 import json
 import math
 import sys
+import tarfile
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -25,6 +25,23 @@ import lightgbm as lgb
 from replenishment_engine.config import ReplenishmentConfig
 from replenishment_engine.uncensoring import load_uncensored_panel
 from replenishment_engine.optimizer import CashLoadOptimizer, norm_ppf, norm_cdf
+from replenishment_engine import demand_model
+
+OPERATIONAL_MODEL = demand_model.MODEL_NAME
+cycle_multiplier = demand_model.cycle_multiplier
+
+
+RAW_DIR = CMS_ROOT / "data" / "raw"
+
+
+def end_of_day_cash(day: pd.Timestamp) -> dict:
+    """End_Cash per terminal from the day's 23:45 snapshot inside the monthly raw archive."""
+    member = f"cashfiles/{day:%Y/%m}/KVB_Cashfile_{day:%Y%m%d}234500.xlsx"
+    for archive in RAW_DIR.glob(f"*/ATM_CashFiles_15Min_XLSX_{day:%Y%m}01_*.tar.gz"):
+        with tarfile.open(archive) as tar:
+            snap = pd.read_excel(tar.extractfile(member))
+        return {int(atm[-4:]): float(cash) for atm, cash in zip(snap["ATM_ID"], snap["End_Cash"])}
+    raise FileNotFoundError(f"no raw archive holds {member}")
 
 ATM_GEO_METADATA = {
     1: {
@@ -341,36 +358,31 @@ def build_portal_data():
     panel["base_median_vol"] = panel["terminal_id"].astype(int).map(base_median_map)
     panel["event_lift_ratio"] = panel["uncensored_demand"] / panel["base_median_vol"]
 
-    panel["prior_festival_multiplier"] = 1.0
-    panel["site_prior_festival_multiplier"] = 1.0
+    # Prior-occurrence lift for the same festival, using only what is known at forecast time:
+    # the source occurrence must be on or before the cutoff and at least
+    # FESTIVAL_MIN_GAP_DAYS before the row (i.e. last year's occurrence, never an
+    # earlier day of the same in-window festival). Same-day siblings are averaged,
+    # never read across rows.
+    FESTIVAL_MIN_GAP_DAYS = 30
 
-    # 1. Terminal-specific prior festival multiplier (Strictly causal, prior occurrences only)
-    for tid, tgrp in panel.groupby("terminal_id"):
-        t_sorted = tgrp.sort_values("date")
-        history_events = {}
-        for idx, row in t_sorted.iterrows():
-            fkey = row["festival_key"]
-            dt = row["date"]
-            if fkey != "NONE":
-                if fkey in history_events and len(history_events[fkey]) > 0:
-                    panel.loc[idx, "prior_festival_multiplier"] = history_events[fkey][-1][1]
-                else:
-                    panel.loc[idx, "prior_festival_multiplier"] = 1.0
-                history_events.setdefault(fkey, []).append((dt, row["event_lift_ratio"]))
+    def causal_prior_lift(group_col):
+        events = panel.loc[panel["festival_key"] != "NONE"]
+        occurrences = events.groupby(
+            [events[group_col].astype(str), "festival_key", "date"], observed=True
+        )["event_lift_ratio"].mean()
+        lifts = pd.Series(1.0, index=panel.index)
+        for idx, row in events.iterrows():
+            history = occurrences.loc[(str(row[group_col]), row["festival_key"])]
+            known_by = min(row["date"] - pd.Timedelta(days=FESTIVAL_MIN_GAP_DAYS), cutoff_date)
+            eligible = history[history.index <= known_by]
+            if len(eligible):
+                lifts.loc[idx] = eligible.iloc[-1]
+        return lifts
 
-    # 2. Site-type prior festival multiplier (Aggregated across typology for zero-shot cold start)
-    for st, sgrp in panel.groupby("site_type"):
-        s_sorted = sgrp.sort_values("date")
-        site_history_events = {}
-        for idx, row in s_sorted.iterrows():
-            fkey = row["festival_key"]
-            dt = row["date"]
-            if fkey != "NONE":
-                if fkey in site_history_events and len(site_history_events[fkey]) > 0:
-                    panel.loc[idx, "site_prior_festival_multiplier"] = site_history_events[fkey][-1][1]
-                else:
-                    panel.loc[idx, "site_prior_festival_multiplier"] = 1.0
-                site_history_events.setdefault(fkey, []).append((dt, row["event_lift_ratio"]))
+    # 1. Terminal-specific prior festival multiplier
+    panel["prior_festival_multiplier"] = causal_prior_lift("terminal_id")
+    # 2. Site-type prior festival multiplier (aggregated across typology)
+    panel["site_prior_festival_multiplier"] = causal_prior_lift("site_type")
 
     train = panel[panel["date"] <= cutoff_date].copy()
     test = panel[panel["date"] > cutoff_date].copy()
@@ -481,6 +493,18 @@ def build_portal_data():
     lgb_b.fit(train_b[features_b], train_b["uncensored_demand"])
     test["pred_strategy_b"] = np.maximum(0.0, lgb_b.predict(test_b[features_b]))
     lgb_b.booster_.save_model(str(HERE / "model_strategy_b.txt"))
+
+    # Unseen-ATM accuracy: leave each ATM out of training and score it.
+    # This is the evidence behind any new-ATM claim; in-sample WAPE is not.
+    loao_abs_err, loao_actual = 0.0, 0.0
+    for tid in sorted(train_b["terminal_id"].astype(int).unique()):
+        held_out = train_b["terminal_id"].astype(int) != tid
+        lgb_loao = lgb.LGBMRegressor(**lgb_b.get_params())
+        lgb_loao.fit(train_b.loc[held_out, features_b], train_b.loc[held_out, "uncensored_demand"])
+        te = test_b[test_b["terminal_id"].astype(int) == tid]
+        loao_abs_err += float(np.abs(np.maximum(0.0, lgb_loao.predict(te[features_b])) - te["uncensored_demand"]).sum())
+        loao_actual += float(te["uncensored_demand"].sum())
+    strategy_b_unseen_atm_wape_pct = round(loao_abs_err / loao_actual * 100, 2)
 
     # Precalculate Strategy B Site Profiles across all (site_type, city) pairs
     unique_site_types = sorted(list(train["site_type"].unique()))
@@ -607,10 +631,12 @@ def build_portal_data():
     test["pred_lgb_censored"] = np.maximum(0.0, lgb_cens.predict(test_exo[exo_features]))
 
     # Model 7: Naive Baseline (Last week repeating)
+    # Same target as every other model; a missing weekday falls back to the
+    # terminal's training median (known at the cutoff), never to the actual value.
     last_week_sub = train[train["date"] > (cutoff_date - pd.Timedelta(days=7))]
-    dow_last_week = last_week_sub.groupby(["terminal_id", "dow"])["demand"].mean().to_dict()
+    dow_last_week = last_week_sub.groupby(["terminal_id", "dow"], observed=True)["uncensored_demand"].mean().to_dict()
     test["pred_naive_baseline"] = test.apply(
-        lambda r: dow_last_week.get((r["terminal_id"], r["dow"]), r["demand"]),
+        lambda r: dow_last_week.get((r["terminal_id"], r["dow"]), base_median_map[r["terminal_id"]]),
         axis=1
     )
 
@@ -623,12 +649,47 @@ def build_portal_data():
         {"cycle_id": 5, "name": "Remainder (Sep 22 - Sep 24)", "start": "2026-09-22", "end": "2026-09-24", "days": 3},
     ]
 
+    # Operational model: holiday-aware LightGBM trained on all 100 ATMs (replenishment_engine.demand_model),
+    # re-forecast at each cycle's own cutoff (the day before it starts), as weekly dispatch planning runs.
+    # Its buffer is the backtest P99 of actual/forecast 7-day totals, not in-sample residuals.
+    cycle_buffers = {}
+    holiday_weeks = []
+    for c in cycle_defs:
+        cycle_cutoff = pd.Timestamp(c["start"]) - pd.Timedelta(days=1)
+        week = demand_model.forecast_week(cycle_cutoff)
+        holiday_weeks.append(week[week["target_date"] <= pd.Timestamp(c["end"])])
+        quiet_mult, quiet_cal = demand_model.buffer_multiplier(cycle_cutoff, False, config.target_service_level)
+        holiday_mult, holiday_cal = demand_model.buffer_multiplier(cycle_cutoff, True, config.target_service_level)
+        cycle_buffers[c["cycle_id"]] = {
+            "forecast_cutoff": str(cycle_cutoff.date()),
+            "p99_multiplier_quiet_week": round(quiet_mult, 4),
+            "p99_multiplier_holiday_week": round(holiday_mult, 4),
+            "calibrated": quiet_cal and holiday_cal,
+            "holiday_week_atms": sorted(int(t) for t in week.loc[week["holiday_week"], "terminal_id"].unique()),
+            # Shorter refill cycles (measured cadence, scripts/measure_refill_cadence.py) are calibrated on
+            # totals of their own length; holiday = any day of that window near a holiday.
+            "by_cycle_days": {
+                str(k): {
+                    "p99_multiplier_quiet_week": round(demand_model.buffer_multiplier(cycle_cutoff, False, config.target_service_level, k)[0], 4),
+                    "p99_multiplier_holiday_week": round(demand_model.buffer_multiplier(cycle_cutoff, True, config.target_service_level, k)[0], 4),
+                    "holiday_week_atms": sorted(int(t) for t in week.loc[week["holiday_day"] & (week["horizon"] <= k), "terminal_id"].unique()),
+                }
+                for k in range(1, 7)
+            },
+        }
+    holiday_preds = pd.concat(holiday_weeks)
+    holiday_pred_map = {
+        (int(t), d): p for t, d, p in zip(holiday_preds["terminal_id"], holiday_preds["target_date"], holiday_preds["pred"])
+    }
+    test["pred_lgb_holiday"] = [holiday_pred_map[(int(t), d)] for t, d in zip(test["terminal_id"], test["date"])]
+
     terminals = sorted(test["terminal_id"].unique())
     terminal_data = {}
 
-    # Comprehensive Model Roster: 3 Zero-Retrain Strategies + 4 Baselines
+    # Comprehensive Model Roster: operational model + 3 Zero-Retrain Strategies + 4 Baselines
     models = [
-        "strategy_b",       # ⭐ Site Metadata Profiler (Zero-Shot Cold Start)
+        OPERATIONAL_MODEL,  # Holiday-aware LightGBM, 100-ATM training, weekly re-forecast (drives indents)
+        "strategy_b",       # Site Metadata Profiler
         "pure_exogenous",   # Reference Baseline (Calendar + RBI Holidays)
         "strategy_c",       # ⚡ Telemetry-Adaptive (Dynamic Rolling Lags)
         "strategy_a",       # 🔄 Volume-Normalized Multiplier (Index * Base)
@@ -649,17 +710,18 @@ def build_portal_data():
 
     portfolio_month_actual = sum(portfolio_daily_actual)
 
-    # Load real inventory checkpoint quality data for existing cash at cutoff date
-    checkpoint_path = CMS_ROOT / "data" / "processed" / "inventory_checkpoint_quality.csv"
-    existing_cash_map = {}
-    if checkpoint_path.exists():
-        cp_df = pd.read_csv(checkpoint_path)
-        cp_cutoff = cp_df[cp_df["calendar_date"] == str(cutoff_date.date())]
-        for _, row in cp_cutoff.iterrows():
-            existing_cash_map[int(row["terminal_id"])] = float(row["maximum_reported_end_cash"])
-        print(f"Loaded {len(existing_cash_map)} reported terminal cash balances from checkpoint quality data at {cutoff_date.date()}")
-    else:
-        print("Warning: inventory_checkpoint_quality.csv not found, using baseline estimates")
+    # Opening cash = End_Cash in the last 15-minute snapshot of the cutoff day
+    existing_cash_map = end_of_day_cash(cutoff_date)
+    print(f"Loaded {len(existing_cash_map)} end-of-day cash balances from the raw {cutoff_date.date()} 23:45 snapshot")
+    # Refill cadence and highest balance seen in the 28 days to the cutoff (scripts/measure_refill_cadence.py)
+    cadence_df = pd.read_csv(CMS_ROOT / "data" / "processed" / "refill_cadence.csv")
+    cadence_map = {int(r["terminal_id"]): {
+        "cycle_days": int(r["cycle_days"]),
+        "refills_per_week": round(float(r["refills_per_week"]), 2),
+        "max_balance": float(r["max_balance"]),
+        "median_post_refill": float(r["median_post_refill"]),
+        "window": f"{r['window_start']} to {r['window_end']}",
+    } for _, r in cadence_df.iterrows()}
 
     def build_executive_explainability(
         tid,
@@ -674,7 +736,7 @@ def build_portal_data():
         safety_buffer,
         gross_target,
         net_indent,
-        sigma_daily,
+        buffer_note,
         train_sub,
         cycle_name="Cycle 1",
     ):
@@ -683,8 +745,8 @@ def build_portal_data():
         daily_avg_pred = pred_sum / max(1, c_days)
 
         weekend_mask = c_sub["is_weekend"] == 1
-        weekend_avg = float(c_sub[weekend_mask]["pred_pure_exogenous"].mean()) if weekend_mask.any() else daily_avg_pred
-        weekday_avg = float(c_sub[~weekend_mask]["pred_pure_exogenous"].mean()) if (~weekend_mask).any() else daily_avg_pred
+        weekend_avg = float(c_sub[weekend_mask][f"pred_{OPERATIONAL_MODEL}"].mean()) if weekend_mask.any() else daily_avg_pred
+        weekday_avg = float(c_sub[~weekend_mask][f"pred_{OPERATIONAL_MODEL}"].mean()) if (~weekend_mask).any() else daily_avg_pred
         weekend_boost_pct = round(((weekend_avg - weekday_avg) / max(1.0, weekday_avg)) * 100, 1)
 
         payday_count = int(c_sub["is_payday"].sum()) if "is_payday" in c_sub.columns else 0
@@ -747,7 +809,7 @@ def build_portal_data():
         ]
 
         buffer_drivers = [
-            {"name": "99.0% SLA Safety Buffer", "effect": f"+₹{safety_buffer:,.0f}", "detail": f"Protective margin for Z=2.326 × ₹{sigma_daily:,.0f}/d residual volatility"},
+            {"name": "99.0% SLA Safety Buffer", "effect": f"+₹{safety_buffer:,.0f}", "detail": buffer_note},
             {"name": "Cassette Vault Capacity", "effect": f"₹{capacity:,.0f} Max Limit", "detail": f"Target gross load: ₹{gross_target:,.0f} (Capacity OK)"},
             {"name": "Net Indent Formula", "effect": f"₹{net_indent:,.0f}", "detail": f"Max(0, Target ₹{gross_target:,.0f} - Cash ₹{initial_cash:,.0f})"}
         ]
@@ -831,7 +893,7 @@ def build_portal_data():
         serviced_by_val = geo.get("serviced_by", "CIT")
         cycle_days_val = geo.get("replenishment_cycle_days", 7)
 
-        existing_cash = existing_cash_map.get(tid, 2000000.0)
+        existing_cash = existing_cash_map[tid]
 
         dates_str = [str(d.date()) for d in t_sub["date"]]
         actual_demands = [round(x, 0) for x in t_sub["uncensored_demand"].tolist()]
@@ -878,15 +940,20 @@ def build_portal_data():
             c_actual_sum = sum(c_actuals)
             c_days = len(c_sub)
             sigma_c = sigma_daily * math.sqrt(c_days)
+            c_multiplier = cycle_multiplier(cycle_buffers[c["cycle_id"]], tid)
 
             c_model_perf = {}
             for m in models:
                 c_preds = c_sub[f"pred_{m}"].tolist()
                 c_pred_sum = sum(c_preds)
 
-                # Optimizer calculation (Dual Objective 99% SLA)
-                z = 2.326 # 99% SLA
-                safety_buffer = z * sigma_c
+                if m == OPERATIONAL_MODEL:
+                    # ponytail: the 7-day multiplier is reused for the 3-day remainder cycle (conservative).
+                    safety_buffer = c_pred_sum * (c_multiplier - 1.0)
+                else:
+                    # Comparison models keep the legacy in-sample buffer (99% SLA, z=2.326)
+                    z = 2.326
+                    safety_buffer = z * sigma_c
                 gross_recommended_load = min(capacity, max(0.0, c_pred_sum + safety_buffer))
                 
                 # NET TOP-UP INDENT FORMULA:
@@ -933,6 +1000,14 @@ def build_portal_data():
                     "trajectory": trajectory,
                 }
 
+            op = c_model_perf[OPERATIONAL_MODEL]
+            buffer_note = (
+                f"Load = forecast × {c_multiplier:.3f}: the 99th percentile of actual/forecast over the past "
+                f"{demand_model.CONFORMAL_WINDOW_WEEKS} backtest weeks (100 ATMs), "
+                f"{'holiday' if int(tid) in cycle_buffers[c['cycle_id']]['holiday_week_atms'] else 'quiet'} weeks only"
+                if cycle_buffers[c["cycle_id"]]["calibrated"]
+                else f"Uncalibrated default ×{c_multiplier:.2f} (fewer than {demand_model.MIN_PAST_WEEKS} backtest weeks)"
+            )
             # Compute Executive Explainability for this cycle
             explain_obj = build_executive_explainability(
                 tid=tid,
@@ -943,17 +1018,17 @@ def build_portal_data():
                 capacity=capacity,
                 initial_cash=cycle_initial_cash,
                 c_sub=c_sub,
-                pred_sum=c_model_perf["pure_exogenous"]["pred_sum"],
-                safety_buffer=c_model_perf["pure_exogenous"]["safety_buffer"],
-                gross_target=c_model_perf["pure_exogenous"]["gross_recommended_load"],
-                net_indent=c_model_perf["pure_exogenous"]["net_topup_indent"],
-                sigma_daily=sigma_daily,
+                pred_sum=op["pred_sum"],
+                safety_buffer=op["safety_buffer"],
+                gross_target=op["gross_recommended_load"],
+                net_indent=op["net_topup_indent"],
+                buffer_note=buffer_note,
                 train_sub=train_sub,
                 cycle_name=c["name"],
             )
 
-            # Update initial cash for next cycle based on pure_exogenous ending cash
-            cycle_initial_cash = c_model_perf["pure_exogenous"]["ending_cash"]
+            # Next cycle starts from the operational model's ending cash
+            cycle_initial_cash = op["ending_cash"]
 
             cycles_detail.append({
                 "cycle_id": c["cycle_id"],
@@ -968,17 +1043,21 @@ def build_portal_data():
             })
 
         # Cost Trade-Off Curve across Service Levels (Cycle 1 as reference)
-        ref_pred_sum = cycles_detail[0]["models"]["pure_exogenous"]["pred_sum"]
-        ref_daily_preds = t_sub.loc[0:6, "pred_pure_exogenous"].tolist()
+        ref_pred_sum = cycles_detail[0]["models"][OPERATIONAL_MODEL]["pred_sum"]
+        ref_daily_preds = t_sub.loc[0:6, f"pred_{OPERATIONAL_MODEL}"].tolist()
+        # Sigma that reproduces the calibrated P99 load; other frontier levels assume a normal shape.
+        op_sigma_7 = demand_model.equivalent_sigma(
+            ref_pred_sum, cycle_multiplier(cycle_buffers[1], tid), config.target_service_level
+        )
         frontier = optimizer.compute_cost_frontier(
             predicted_7day_sum=ref_pred_sum,
             daily_predictions=ref_daily_preds,
-            sigma_7=sigma_daily * math.sqrt(7),
+            sigma_7=op_sigma_7,
             terminal_id=tid,
         )
 
         # Operational Triage Metrics for Cycle 1 (Immediate replenishment horizon)
-        c1_exo = cycles_detail[0]["models"]["pure_exogenous"]
+        c1_exo = cycles_detail[0]["models"][OPERATIONAL_MODEL]
         c1_pred = c1_exo["pred_sum"]
         daily_avg_demand = c1_pred / 7.0 if c1_pred > 0 else 1.0
         dcr_days = round(existing_cash / daily_avg_demand, 2)
@@ -997,14 +1076,16 @@ def build_portal_data():
             status_label = "🟢 Healthy (> 4.0d)"
 
         # Day 1 & Month 1 Triage Metrics
-        day1_pred = t_sub["pred_pure_exogenous"].iloc[0]
+        # ponytail: day and month buffers scale the calibrated weekly sigma by sqrt(days) (normal shape)
+        op_sigma_daily = op_sigma_7 / math.sqrt(7)
+        day1_pred = t_sub[f"pred_{OPERATIONAL_MODEL}"].iloc[0]
         day1_actual = t_sub["uncensored_demand"].iloc[0]
-        day1_buffer = 2.326 * sigma_daily
+        day1_buffer = 2.326 * op_sigma_daily
         day1_target = min(capacity, day1_pred + day1_buffer)
         day1_net_indent = max(0.0, day1_target - existing_cash)
 
-        month_pred = sum(t_sub["pred_pure_exogenous"])
-        month_buffer = 2.326 * sigma_daily * math.sqrt(31)
+        month_pred = sum(t_sub[f"pred_{OPERATIONAL_MODEL}"])
+        month_buffer = 2.326 * op_sigma_daily * math.sqrt(31)
         month_target = month_pred + month_buffer
         month_net_indent = max(0.0, month_target - existing_cash)
 
@@ -1018,7 +1099,7 @@ def build_portal_data():
         for _, r in t_sub.iterrows():
             d_str = str(r["date"].date())
             dow_name = r["date"].strftime("%A")
-            pred_val = float(r["pred_pure_exogenous"])
+            pred_val = float(r[f"pred_{OPERATIONAL_MODEL}"])
             diff_from_base = pred_val - baseline_m
             diff_pct = round((diff_from_base / max(1.0, baseline_m)) * 100, 1)
 
@@ -1058,6 +1139,7 @@ def build_portal_data():
             "corridor_name": corridor_name,
             "capacity": capacity,
             "existing_cash": round(existing_cash, 0),
+            "measured_cadence": cadence_map[tid],
             "dcr_days": dcr_days,
             "urgency_status": urgency_status,
             "status_color": status_color,
@@ -1087,16 +1169,17 @@ def build_portal_data():
         }
 
     # Aggregate Portfolio-Level Metrics
+    # Headline WAPE is per ATM-day: cash is loaded per ATM, so errors must not
+    # cancel across terminals. The netted network-total WAPE is kept separately.
+    first_week = test["date"] <= test_dates[min(6, n_test_days - 1)]
     portfolio_metrics = {}
     for m in models:
         total_p = sum(portfolio_daily_preds[m])
-        wape = np.sum(np.abs(np.array(portfolio_daily_actual) - np.array(portfolio_daily_preds[m]))) / portfolio_month_actual
+        abs_err = np.abs(test[f"pred_{m}"] - test["uncensored_demand"])
+        wape = abs_err.sum() / test["uncensored_demand"].sum()
+        wape_7d = abs_err[first_week].sum() / max(1.0, test.loc[first_week, "uncensored_demand"].sum())
+        network_wape = np.sum(np.abs(np.array(portfolio_daily_actual) - np.array(portfolio_daily_preds[m]))) / portfolio_month_actual
         bias = (total_p - portfolio_month_actual) / portfolio_month_actual
-
-        # 7-day Portfolio WAPE
-        p_act_7d = portfolio_daily_actual[:7]
-        p_pred_7d = portfolio_daily_preds[m][:7]
-        wape_7d = np.sum(np.abs(np.array(p_act_7d) - np.array(p_pred_7d))) / max(1.0, sum(p_act_7d))
 
         portfolio_metrics[m] = {
             "total_pred": round(total_p, 0),
@@ -1104,6 +1187,7 @@ def build_portal_data():
             "wape_7d_pct": round(wape_7d * 100, 2),
             "wape_pct": round(wape * 100, 2),
             "accuracy_pct": round(max(0.0, (1 - wape) * 100), 2),
+            "network_total_wape_pct": round(network_wape * 100, 2),
             "bias_pct": round(bias * 100, 2),
         }
 
@@ -1123,17 +1207,12 @@ def build_portal_data():
         "scheduled_count": scheduled_count,
         "healthy_count": healthy_count,
         "total_terminals": len(terminals),
-        "total_pred_month": round(sum(portfolio_daily_preds["pure_exogenous"]), 0),
+        "total_pred_month": round(sum(portfolio_daily_preds[OPERATIONAL_MODEL]), 0),
         "total_actual_month": round(portfolio_month_actual, 0),
     }
 
-    # Resolve CARTO Basemaps API Key from .env or environment
-    carto_api_key = os.environ.get("CARTO_API_KEY", "cb1_4shp_1_67853029428fcaa9c51011a8")
-    env_file = CMS_ROOT / ".env"
-    if env_file.exists():
-        for line in env_file.read_text().splitlines():
-            if line.startswith("CARTO_API_KEY="):
-                carto_api_key = line.split("=", 1)[1].strip()
+    # Public CARTO basemaps need no key; never write one into the committed bundle
+    carto_api_key = ""
 
     portal_bundle = {
         "metadata": {
@@ -1144,6 +1223,21 @@ def build_portal_data():
             "holdout_duration_days": n_test_days,
             "total_terminals": len(terminals),
             "cycle_definitions": cycle_defs,
+            "operational_model": {
+                "id": OPERATIONAL_MODEL,
+                "name": "Holiday-aware LightGBM (100-ATM training)",
+                "drives": "all indents, cycle cash chain, explainability and cost frontier",
+                "forecast": "re-forecast at each cycle's own cutoff (the day before the cycle starts); other models use the single 2026-08-24 cutoff",
+                "target": "observed Cash_Out across all 100 cash-file ATMs; scored here against uncensored_demand",
+                "buffer": (
+                    "P99 of actual/forecast 7-day totals over the past 26 backtest weeks (outputs/scorecard_100), "
+                    "calibrated separately for weeks touching a holiday and quiet weeks"
+                ),
+                "cycle_buffers": cycle_buffers,
+                # Real split-gain shares of the cycle-1 model (one model for all 100 ATMs)
+                "feature_importance_cutoff": str(cutoff_date.date()),
+                "feature_importance": demand_model.feature_importance(cutoff_date),
+            },
             "default_holding_rate": config.holding_rate_annual,
             "default_cit_cost": config.cit_trip_cost,
             "default_stockout_penalty": config.stockout_penalty_fixed,
@@ -1177,8 +1271,14 @@ def build_portal_data():
             "strategy_b": {
                 "id": "strategy_b",
                 "name": "Site Metadata Profiler",
-                "tag": "Zero-Shot Location & Operations",
-                "description": "Tree-based split on site characteristics (transit concourse, airport, mall, hospital, fuel plaza), city tier, and operational replenishment channel (CIT 7-day vs Branch 3-day) without terminal_id.",
+                "tag": "Location & Operations Profile",
+                "description": (
+                    "Tree-based split on site characteristics (transit concourse, airport, mall, hospital, fuel plaza), "
+                    "city tier, and operational replenishment channel (CIT 7-day vs Branch 3-day) without terminal_id. "
+                    f"On an ATM it has never seen, per-ATM-day WAPE is {strategy_b_unseen_atm_wape_pct:.1f}% "
+                    "(leave-one-ATM-out); each pilot site type is a single ATM, so treat new-ATM forecasts as a rough starting level."
+                ),
+                "unseen_atm_wape_pct": strategy_b_unseen_atm_wape_pct,
                 "formula": "Pred(t) = LightGBM(Site_Type, City, RBI_Region, Serviced_By, Capacity, Cycle_Days, Calendar_t, Holiday_t)",
                 "features": features_b,
                 "portfolio_wape_7d_pct": portfolio_metrics["strategy_b"]["wape_7d_pct"],
@@ -1208,20 +1308,21 @@ def build_portal_data():
     }
 
 
-    # Write files
-    json_path = HERE / "portal_data.json"
-    js_path = HERE / "portal_data.js"
+    # Write files: live_portal_v2 is the operational portal; live_portal keeps a demo copy
+    for out_dir in (CMS_ROOT / "live_portal_v2", HERE):
+        json_path = out_dir / "portal_data.json"
+        js_path = out_dir / "portal_data.js"
 
-    with open(json_path, "w") as f:
-        json.dump(portal_bundle, f, indent=2, cls=NumpyEncoder)
-    print(f"Exported JSON: {json_path} ({json_path.stat().st_size / 1024:.1f} KB)")
+        with open(json_path, "w") as f:
+            json.dump(portal_bundle, f, indent=2, cls=NumpyEncoder)
+        print(f"Exported JSON: {json_path} ({json_path.stat().st_size / 1024:.1f} KB)")
 
-    with open(js_path, "w", encoding="utf-8") as f:
-        f.write("// Live Portal Data Bundle (Cutoff 2026-08-24, Holdout Month 2026-08-25 to 2026-09-24)\n")
-        f.write("window.LIVE_PORTAL_DATA = ")
-        json.dump(portal_bundle, f, cls=NumpyEncoder)
-        f.write(";\n")
-    print(f"Exported JS: {js_path} ({js_path.stat().st_size / 1024:.1f} KB)")
+        with open(js_path, "w", encoding="utf-8") as f:
+            f.write("// Live Portal Data Bundle (Cutoff 2026-08-24, Holdout Month 2026-08-25 to 2026-09-24)\n")
+            f.write("window.LIVE_PORTAL_DATA = ")
+            json.dump(portal_bundle, f, cls=NumpyEncoder)
+            f.write(";\n")
+        print(f"Exported JS: {js_path} ({js_path.stat().st_size / 1024:.1f} KB)")
 
     return portal_bundle
 

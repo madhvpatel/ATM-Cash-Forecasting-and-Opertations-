@@ -13,6 +13,7 @@ import numpy as np
 import pandas as pd
 import lightgbm as lgb
 
+from replenishment_engine import demand_model
 from replenishment_engine.config import ReplenishmentConfig
 
 
@@ -85,6 +86,8 @@ class ReplenishmentForecaster:
             is_payday, is_regional_holiday, pre_holiday
         ) = self._extract_calendar_series(group)
 
+        terminal_id = int(group["terminal_id"].iloc[0]) if "terminal_id" in group.columns else None
+
         rows = []
         # Need at least 28 days of history for rolling statistics
         for i in range(28, n - horizon):
@@ -106,10 +109,13 @@ class ReplenishmentForecaster:
             for h in range(1, horizon + 1):
                 target_idx = i + h
                 rows.append({
+                    "terminal_id": terminal_id,
                     "cutoff_date": cutoff_date,
                     "target_date": dates[target_idx],
                     "horizon": h,
                     "target": demand[target_idx],
+                    # Same weekday, latest week known at the cutoff
+                    "seasonal_naive": demand[target_idx - 7 * ((h + 6) // 7)],
                     "lag_1": lag_1,
                     "lag_7": lag_7,
                     "lag_14": lag_14,
@@ -149,17 +155,22 @@ class ReplenishmentForecaster:
         Returns:
             Dict with 'daily_preds', 'sum_pred', 'sigma_7', 'dates'.
         """
-        train = df_feat[df_feat["cutoff_date"] < cutoff_date].copy()
+        # Train only on rows whose target was already observed at the cutoff.
+        # Filtering on cutoff_date alone lets rows from the prior 6 cutoffs carry
+        # targets that fall inside the test week.
+        train = df_feat[df_feat["target_date"] <= cutoff_date].copy()
         test = df_feat[df_feat["cutoff_date"] == cutoff_date].copy()
 
         if len(test) != self.config.horizon_days:
             raise ValueError(f"Expected {self.config.horizon_days} test rows for cutoff {cutoff_date}, got {len(test)}")
+        if len(train) and train["target_date"].max() >= test["target_date"].min():
+            raise AssertionError("training targets overlap the test week")
 
         if model_type == "naive_last_week":
-            # Just copy lag_7 (which is the corresponding day last week)
-            preds = test["lag_7"].to_numpy(dtype=float)
+            # Copy the same weekday from the latest week known at the cutoff
+            preds = test["seasonal_naive"].to_numpy(dtype=float)
             # Historical residual standard error on train
-            residuals = train["target"].to_numpy() - train["lag_7"].to_numpy()
+            residuals = train["target"].to_numpy() - train["seasonal_naive"].to_numpy()
             sigma_daily = float(np.std(residuals))
             sigma_7 = float(sigma_daily * np.sqrt(self.config.horizon_days))
 
@@ -197,6 +208,21 @@ class ReplenishmentForecaster:
             residuals = train["target"].to_numpy() - train_preds
             sigma_daily = float(np.std(residuals))
             sigma_7 = float(sigma_daily * np.sqrt(self.config.horizon_days))
+
+        elif model_type == demand_model.MODEL_NAME:
+            # Holiday-aware model trained on all 100 ATMs; buffer calibrated on backtest weeks.
+            terminal_id = test["terminal_id"].iloc[0]
+            if terminal_id is None or pd.isna(terminal_id):
+                raise ValueError("lgb_holiday needs a terminal_id column in the panel")
+            week = demand_model.forecast_week(cutoff_date)
+            week = week[week["terminal_id"] == int(terminal_id)].set_index("target_date")
+            preds = week["pred"].reindex(pd.to_datetime(test["target_date"])).to_numpy(dtype=float)
+            if np.isnan(preds).any():
+                raise ValueError(f"lgb_holiday has no forecast for ATM {terminal_id} at {cutoff_date}")
+            multiplier, _ = demand_model.buffer_multiplier(
+                cutoff_date, bool(week["holiday_week"].iloc[0]), self.config.target_service_level
+            )
+            sigma_7 = demand_model.equivalent_sigma(float(preds.sum()), multiplier, self.config.target_service_level)
 
         elif model_type == "lgb_calendar_holidays":
             feat_cols = HISTORY_FEATURES + CALENDAR_FEATURES + HOLIDAY_FEATURES

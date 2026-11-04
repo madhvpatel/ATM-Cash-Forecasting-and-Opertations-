@@ -65,6 +65,7 @@ def run_full_simulation():
         "pure_exogenous": [],
         "lgb_calendar_holidays_censored": [],
         "lgb_calendar_holidays_uncensored": [],
+        "lgb_holiday": [],
     }
 
     # Also store detailed per-terminal summaries
