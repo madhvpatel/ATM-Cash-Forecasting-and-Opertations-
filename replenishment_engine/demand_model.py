@@ -367,6 +367,12 @@ def buffer_multiplier(cutoff, holiday_week: bool, service_level: float = 0.99) -
     return multiplier, True
 
 
+def cycle_multiplier(buffers: dict, tid) -> float:
+    """P99 multiplier for this ATM in one portal cycle: holiday-week or quiet-week calibration."""
+    holiday = int(tid) in buffers["holiday_week_atms"]
+    return buffers["p99_multiplier_holiday_week" if holiday else "p99_multiplier_quiet_week"]
+
+
 def equivalent_sigma(pred_sum: float, multiplier: float, service_level: float = 0.99) -> float:
     """Sigma that makes the optimizer's normal buffer equal the calibrated one at this service level.
 

@@ -7,10 +7,10 @@ Forecast horizon: 31 days (2026-08-25 to 2026-09-24).
 from __future__ import annotations
 
 import json
-import os
 import json
 import math
 import sys
+import tarfile
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -28,12 +28,20 @@ from replenishment_engine.optimizer import CashLoadOptimizer, norm_ppf, norm_cdf
 from replenishment_engine import demand_model
 
 OPERATIONAL_MODEL = demand_model.MODEL_NAME
+cycle_multiplier = demand_model.cycle_multiplier
 
 
-def cycle_multiplier(buffers: dict, tid) -> float:
-    """P99 multiplier for this ATM in this cycle: holiday-week or quiet-week calibration."""
-    holiday = int(tid) in buffers["holiday_week_atms"]
-    return buffers["p99_multiplier_holiday_week" if holiday else "p99_multiplier_quiet_week"]
+RAW_DIR = CMS_ROOT / "data" / "raw"
+
+
+def end_of_day_cash(day: pd.Timestamp) -> dict:
+    """End_Cash per terminal from the day's 23:45 snapshot inside the monthly raw archive."""
+    member = f"cashfiles/{day:%Y/%m}/KVB_Cashfile_{day:%Y%m%d}234500.xlsx"
+    for archive in RAW_DIR.glob(f"*/ATM_CashFiles_15Min_XLSX_{day:%Y%m}01_*.tar.gz"):
+        with tarfile.open(archive) as tar:
+            snap = pd.read_excel(tar.extractfile(member))
+        return {int(atm[-4:]): float(cash) for atm, cash in zip(snap["ATM_ID"], snap["End_Cash"])}
+    raise FileNotFoundError(f"no raw archive holds {member}")
 
 ATM_GEO_METADATA = {
     1: {
@@ -692,17 +700,9 @@ def build_portal_data():
 
     portfolio_month_actual = sum(portfolio_daily_actual)
 
-    # Load real inventory checkpoint quality data for existing cash at cutoff date
-    checkpoint_path = CMS_ROOT / "data" / "processed" / "inventory_checkpoint_quality.csv"
-    existing_cash_map = {}
-    if checkpoint_path.exists():
-        cp_df = pd.read_csv(checkpoint_path)
-        cp_cutoff = cp_df[cp_df["calendar_date"] == str(cutoff_date.date())]
-        for _, row in cp_cutoff.iterrows():
-            existing_cash_map[int(row["terminal_id"])] = float(row["maximum_reported_end_cash"])
-        print(f"Loaded {len(existing_cash_map)} reported terminal cash balances from checkpoint quality data at {cutoff_date.date()}")
-    else:
-        print("Warning: inventory_checkpoint_quality.csv not found, using baseline estimates")
+    # Opening cash = End_Cash in the last 15-minute snapshot of the cutoff day
+    existing_cash_map = end_of_day_cash(cutoff_date)
+    print(f"Loaded {len(existing_cash_map)} end-of-day cash balances from the raw {cutoff_date.date()} 23:45 snapshot")
 
     def build_executive_explainability(
         tid,
@@ -874,7 +874,7 @@ def build_portal_data():
         serviced_by_val = geo.get("serviced_by", "CIT")
         cycle_days_val = geo.get("replenishment_cycle_days", 7)
 
-        existing_cash = existing_cash_map.get(tid, 2000000.0)
+        existing_cash = existing_cash_map[tid]
 
         dates_str = [str(d.date()) for d in t_sub["date"]]
         actual_demands = [round(x, 0) for x in t_sub["uncensored_demand"].tolist()]
@@ -1191,13 +1191,8 @@ def build_portal_data():
         "total_actual_month": round(portfolio_month_actual, 0),
     }
 
-    # Resolve CARTO Basemaps API Key from .env or environment
-    carto_api_key = os.environ.get("CARTO_API_KEY", "cb1_4shp_1_67853029428fcaa9c51011a8")
-    env_file = CMS_ROOT / ".env"
-    if env_file.exists():
-        for line in env_file.read_text().splitlines():
-            if line.startswith("CARTO_API_KEY="):
-                carto_api_key = line.split("=", 1)[1].strip()
+    # Public CARTO basemaps need no key; never write one into the committed bundle
+    carto_api_key = ""
 
     portal_bundle = {
         "metadata": {
@@ -1290,20 +1285,21 @@ def build_portal_data():
     }
 
 
-    # Write files
-    json_path = HERE / "portal_data.json"
-    js_path = HERE / "portal_data.js"
+    # Write files: live_portal_v2 is the operational portal; live_portal keeps a demo copy
+    for out_dir in (CMS_ROOT / "live_portal_v2", HERE):
+        json_path = out_dir / "portal_data.json"
+        js_path = out_dir / "portal_data.js"
 
-    with open(json_path, "w") as f:
-        json.dump(portal_bundle, f, indent=2, cls=NumpyEncoder)
-    print(f"Exported JSON: {json_path} ({json_path.stat().st_size / 1024:.1f} KB)")
+        with open(json_path, "w") as f:
+            json.dump(portal_bundle, f, indent=2, cls=NumpyEncoder)
+        print(f"Exported JSON: {json_path} ({json_path.stat().st_size / 1024:.1f} KB)")
 
-    with open(js_path, "w", encoding="utf-8") as f:
-        f.write("// Live Portal Data Bundle (Cutoff 2026-08-24, Holdout Month 2026-08-25 to 2026-09-24)\n")
-        f.write("window.LIVE_PORTAL_DATA = ")
-        json.dump(portal_bundle, f, cls=NumpyEncoder)
-        f.write(";\n")
-    print(f"Exported JS: {js_path} ({js_path.stat().st_size / 1024:.1f} KB)")
+        with open(js_path, "w", encoding="utf-8") as f:
+            f.write("// Live Portal Data Bundle (Cutoff 2026-08-24, Holdout Month 2026-08-25 to 2026-09-24)\n")
+            f.write("window.LIVE_PORTAL_DATA = ")
+            json.dump(portal_bundle, f, cls=NumpyEncoder)
+            f.write(";\n")
+        print(f"Exported JS: {js_path} ({js_path.stat().st_size / 1024:.1f} KB)")
 
     return portal_bundle
 

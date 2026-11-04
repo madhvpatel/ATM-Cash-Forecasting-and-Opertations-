@@ -99,7 +99,7 @@
 | Same weekday last week | 18.9% | 29.3% | ₹50.2L | — |
 | LightGBM calendar (old default) | 9.2% | 32.5% | ₹51.1L | +1.6% |
 
-**Why stockouts stay near 28%:** in 123 of 448 ATM-weeks (27%), actual demand exceeds the cassette capacity in `config.py`. With the week-type buffer, `lgb_holiday` has exactly 123 stockout cycles. That happens at ATM 7 in 89% of weeks and at ATM 1 in 57%. No forecast can prevent those stockouts with one visit a week, so `lgb_holiday` is at that floor. The next saving comes from a second weekly visit (or a larger cassette) at ATMs 1, 2 and 7, not from the model.
+**Why stockouts stay near 28%:** in 123 of 448 ATM-weeks (27%), actual demand exceeds the cassette capacity in `config.py`. With the week-type buffer, `lgb_holiday` has exactly 123 stockout cycles. That happens at ATM 7 in 89% of weeks and at ATM 1 in 57%. No forecast can prevent those stockouts with one visit a week, so `lgb_holiday` is at that floor *under the engine's assumptions*. Both of those assumptions are unverified: the ₹60L capacity in `config.py` has no source (no ATM here has ever reported more than ₹29.1L), and the raw data shows ATMs refilled 3–8 times a week, not once. See [PORTAL_V2_LIVE_2026-11-04.md](PORTAL_V2_LIVE_2026-11-04.md).
 
 **Not synced:** `live_portal_v2/` and `UI_2/` still hold the old bundle copies.
 
@@ -120,8 +120,8 @@
 | **By week type** | 99.1% / **+24.1%** | **99.5%** / +34.9% | 99.3% / **+28.8%** |
 
 - Quiet weeks are now within 4 points of the floor (+19.8%).
-- Engine: stockout cycles 124 → 123 (the capacity floor). Cost ₹49.3L → ₹49.0L.
-- Portal: stockout cycles 12 → 11 of 40.
+- Engine: stockout cycles 124 → 123 (the floor under the engine's assumed ₹60L capacity and weekly visits). Cost ₹49.3L → ₹49.0L.
+- Portal (v1 demo): stockout cycles 12 → 11 of 40. Opening cash later moved from the day's highest reading to the 23:45 balance: still 11 of 40, with loads up 1.8%.
 - The baselines lose coverage with the split (naive: 97.5% on quiet weeks). Each type has fewer past weeks to estimate from, which hurts noisy models more. `lgb_holiday` stays above 99% on both types.
 
 **Check:** `python3 tests/test_buffer_week_type.py`

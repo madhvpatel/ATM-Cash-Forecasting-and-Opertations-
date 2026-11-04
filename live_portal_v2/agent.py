@@ -443,7 +443,7 @@ def explain_model_variables(terminal_id: str = "1") -> str:
         f"- `site_type_transit_footfall`: Site-specific structural velocity floor ({t['site_type'] if t else 'Transit'} baseline: ~₹{round(pred_demand/cycle_days):,.0f}/day).\n\n"
         f"#### **5. Institutional Policy & Safety Constraints (Masters Configuration)**\n"
         f"- `cassette_capacity`: Physical mechanical limit (**₹{t['capacity'] if t else 6000000:,.0f}** across 4 cassettes), enforcing the hard ceiling $\\min(\\text{{Cap}}, \\text{{Demand}} + \\text{{Buffer}})$.\n"
-        f"- `target_service_level`: Dual-objective 99.0% SLA requiring standard normal quantile $z = 2.326$."
+        f"- `target_service_level`: 99.0% SLA; the buffer is the backtest P99 of actual ÷ forecast, not a normal z-score."
     )
 
 
@@ -512,11 +512,8 @@ def explain_mathematical_derivation(terminal_id: str = "1") -> str:
     gross_target = t.get("c1_gross_target") or t.get("formula_ledger", {}).get("gross_target") or min(capacity, pred_demand + safety_buffer)
     net_indent = t.get("c1_net_indent") or t.get("formula_ledger", {}).get("net_indent") or max(0.0, gross_target - existing_cash)
     sla = masters_mgr.assumptions.get("target_service_level", 0.99)
-    z_score = 2.326 if sla >= 0.99 else 1.645
-
     daily_burn = pred_demand / max(1, cycle_days)
-    daily_std = daily_burn * 0.22
-    sigma_h = daily_std * (cycle_days ** 0.5)
+    buffer_pct = safety_buffer / pred_demand * 100 if pred_demand else 0.0
 
     uncapped_gross = pred_demand + safety_buffer
     is_capped = uncapped_gross > capacity
@@ -524,31 +521,27 @@ def explain_mathematical_derivation(terminal_id: str = "1") -> str:
     return (
         f"### 🧮 Mathematical Derivation of Replenishment Indent\n\n"
         f"**Terminal:** **ATM {tid} — {t['site_name']}** ({t['city']} · {t['serviced_by']} {cycle_days}-Day Cycle)\n\n"
-        f"The replenishment indent is computed via a rigorous 6-step institutional treasury formula:\n\n"
+        f"The replenishment indent is computed via a 5-step order-up-to formula:\n\n"
         f"#### **Step 1: Cycle Horizon Demand ($\\hat{{D}}_H$)**\n"
         f"- Cycle Duration: $H = {cycle_days}\\text{{ days}}$\n"
         f"- Total Projected Withdrawal Demand:\n"
         f"  $$\\hat{{D}}_H = \\sum_{{t=1}}^{{{cycle_days}}} \\hat{{d}}_t = \\mathbf{{₹{pred_demand:,.0f}}}$$\n"
         f"- Daily Average Demand Velocity: $\\bar{{d}} = \\frac{{\\hat{{D}}_H}}{{H}} = \\mathbf{{₹{round(daily_burn):,.0f}\\text{{ / day}}}}$\n\n"
-        f"#### **Step 2: Demand Volatility & Horizon Standard Deviation ($\\sigma_H$)**\n"
-        f"- Daily Standard Deviation (Empirical CV = 0.22): $\\sigma_d = \\bar{{d}} \\times 0.22 = ₹{round(daily_std):,.0f}$\n"
-        f"- Multi-Day Lead Time Horizon Volatility:\n"
-        f"  $$\\sigma_H = \\sigma_d \\times \\sqrt{{H}} = ₹{round(daily_std):,.0f} \\times \\sqrt{{{cycle_days}}} = \\mathbf{{₹{round(sigma_h):,.0f}}}$$\n\n"
-        f"#### **Step 3: Mandated SLA Safety Buffer ($B_S$)**\n"
-        f"- Target Service Level: $\\alpha = {sla*100:.1f}\\%$ uptime compliance\n"
-        f"- Standard Normal Quantile: $z_{{\\alpha}} = z_{{0.99}} = {z_score:.3f}$\n"
-        f"- Safety Buffer:\n"
-        f"  $$B_S = z_{{\\alpha}} \\times \\sigma_H = {z_score:.3f} \\times ₹{round(sigma_h):,.0f} = \\mathbf{{₹{safety_buffer:,.0f}}}$$\n\n"
-        f"#### **Step 4: Gross Target Inventory ($T_{{gross}}$)**\n"
+        f"#### **Step 2: SLA Safety Buffer ($B_S$)**\n"
+        f"- Target Service Level: $\\alpha = {sla*100:.1f}\\%$\n"
+        f"- Multiplier from the 100-ATM backtest: the P99 of actual ÷ forecast 7-day totals over the past 26 weeks, "
+        f"calibrated separately for holiday and quiet weeks (scaled by $\\sqrt{{7/H}}$ for cycles shorter than 7 days)\n"
+        f"- Safety Buffer: $B_S = \\mathbf{{₹{safety_buffer:,.0f}}}$ ({buffer_pct:.1f}% of $\\hat{{D}}_H$)\n\n"
+        f"#### **Step 3: Gross Target Inventory ($T_{{gross}}$)**\n"
         f"- Unconstrained Requirement: $\\hat{{D}}_H + B_S = ₹{pred_demand:,.0f} + ₹{safety_buffer:,.0f} = ₹{uncapped_gross:,.0f}$\n"
         f"- Physical Cassette Capacity Limit: $\\text{{Cap}} = \\mathbf{{₹{capacity:,.0f}}}$\n"
         f"- Gross Target:\n"
         f"  $$T_{{gross}} = \\min\\left(\\text{{Cap}}, \\hat{{D}}_H + B_S\\right) = \\mathbf{{₹{gross_target:,.0f}}}$$ {'*(Capped at mechanical cassette limit)*' if is_capped else '*(Within cassette headroom)*'}\n\n"
-        f"#### **Step 5: Net Top-Up Indent ($I_{{net}}$)**\n"
+        f"#### **Step 4: Net Top-Up Indent ($I_{{net}}$)**\n"
         f"- Existing Safe Balance: $C_{{existing}} = \\mathbf{{₹{existing_cash:,.0f}}}$\n"
         f"- Net Order to Dispatch:\n"
         f"  $$I_{{net}} = \\max\\left(0, T_{{gross}} - C_{{existing}}\\right) = ₹{gross_target:,.0f} - ₹{existing_cash:,.0f} = \\mathbf{{₹{net_indent:,.0f}}}$$\n\n"
-        f"#### **Step 6: Days of Cash Remaining (DCR)**\n"
+        f"#### **Step 5: Days of Cash Remaining (DCR)**\n"
         f"- Current Runway: $\\text{{DCR}} = \\frac{{C_{{existing}}}}{{\\bar{{d}}}} = \\frac{{₹{existing_cash:,.0f}}}{{₹{round(daily_burn):,.0f}}} = \\mathbf{{{t['dcr_days']} \\text{{ Days}}}}$ ({t['urgency_status']} status)\n\n"
         f"**Verification:** Loading exactly ₹{net_indent:,.0f} restores vault cash to ₹{gross_target:,.0f}, ensuring {sla*100:.1f}% SLA compliance through {cycle_days} days without cassette overfill."
     )
@@ -1261,7 +1254,7 @@ Operational Context & Governance:
 Operational Network Context:
 - Fleet of 8 ATMs across Maharashtra (Mumbai Airport T2, Railway Concourse, Pune Mall, Nagpur CBD, Nashik Metro, etc.).
 - Replenishment cycle length: CIT = 7 days, Branch = 3 days. Active planning window: Cycle 1 (Aug 25 - Aug 31, 2026).
-- Active target SLA: 99.0% service level (z = 2.326).
+- Active target SLA: 99.0% service level (buffer = backtest P99 of actual ÷ forecast, by holiday or quiet week).
 - CIT cutoff time: 18:00 IST.
 - Baseline annual holding cost: 6.5%. Fixed CIT trip fee: ₹2,000.
 

@@ -25,6 +25,10 @@ from statistics import NormalDist
 from typing import Any, Dict, List, Optional, Set
 import numpy as np
 
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from replenishment_engine import demand_model
+
 try:
     import openpyxl
     from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
@@ -462,48 +466,9 @@ TERMINAL_OPERATIONAL_METADATA = {
     }
 }
 
-DEFAULT_EXOGENOUS_EVENTS = [
-    {
-        "id": "EVT_01",
-        "name": "Monsoon Orange Alert",
-        "city": "MUMBAI",
-        "start_date": "2026-08-28",
-        "end_date": "2026-08-30",
-        "demand_multiplier": 0.82,
-        "category_multipliers": {"Metro Transit": 0.85, "Corporate": 0.90, "Hood": 0.70, "Residential": 0.78},
-        "notes": "Heavy localized waterlogging reduces footfall near street concourses."
-    },
-    {
-        "id": "EVT_02",
-        "name": "Corporate Salary Surge",
-        "city": "ALL",
-        "start_date": "2026-08-31",
-        "end_date": "2026-09-04",
-        "demand_multiplier": 1.28,
-        "category_multipliers": {"Corporate": 1.68, "Metro Transit": 1.25, "Hood": 1.18, "Residential": 1.15},
-        "notes": "Month-end salary dispersal spike across commercial & IT zones."
-    },
-    {
-        "id": "EVT_03",
-        "name": "Ganesh Chaturthi Festive Influx",
-        "city": "PUNE",
-        "start_date": "2026-09-04",
-        "end_date": "2026-09-07",
-        "demand_multiplier": 1.45,
-        "category_multipliers": {"Hood": 1.65, "Residential": 1.40, "Metro Transit": 1.30, "Corporate": 0.60},
-        "notes": "Festival bazaar cash withdrawals at peak demand."
-    },
-    {
-        "id": "EVT_04",
-        "name": "Mid-Month Pension Credit",
-        "city": "NAGPUR",
-        "start_date": "2026-09-10",
-        "end_date": "2026-09-12",
-        "demand_multiplier": 1.15,
-        "category_multipliers": {"Residential": 1.30, "Hood": 1.12, "Corporate": 1.00, "Metro Transit": 1.05},
-        "notes": "Senior citizen pension credits at post & bank branches."
-    }
-]
+# Operator-entered demand events (city, dates, multiplier). None by default: lgb_holiday
+# already models paydays and RBI holidays, so default multipliers would count them twice.
+DEFAULT_EXOGENOUS_EVENTS: List[Dict[str, Any]] = []
 
 
 def get_physical_cassette_capacity(tid: str) -> float:
@@ -513,6 +478,24 @@ def get_physical_cassette_capacity(tid: str) -> float:
     if cassettes:
         return float(sum(c.get("max_notes", 2200) * c.get("denomination", 500) for c in cassettes))
     return 2860000.0
+
+
+def sync_feed_to_snapshot(meta: Dict[str, Any], end_cash: float) -> None:
+    """Point last_feed and cassette notes at the raw cutoff-day End_Cash.
+
+    ponytail: the raw files carry no per-denomination split, so the typed per-slot
+    shares are kept and rescaled to the real total. Replace with hopper-level data when supplied.
+    """
+    meta["last_feed"]["timestamp"] = "2026-08-24 23:45 IST (raw snapshot)"
+    meta["last_feed"]["end_cash_value"] = end_cash
+    cassettes = meta.get("cassettes", [])
+    typed_total = sum(c["current_notes"] * c["denomination"] for c in cassettes)
+    if typed_total <= 0:
+        return
+    scale = end_cash / typed_total
+    for c in cassettes:
+        c["current_notes"] = min(c["max_notes"], int(c["current_notes"] * scale))
+        c["amount"] = float(c["current_notes"] * c["denomination"])
 
 
 def get_free_cassette_space(tid: str) -> Dict[str, Any]:
@@ -640,6 +623,9 @@ class MastersManager:
         if PORTAL_DATA_FILE.exists():
             with open(PORTAL_DATA_FILE, "r") as f:
                 self.raw_bundle = json.load(f)
+        for tid, base_t in self.raw_bundle.get("terminals", {}).items():
+            if tid in TERMINAL_OPERATIONAL_METADATA:
+                sync_feed_to_snapshot(TERMINAL_OPERATIONAL_METADATA[tid], float(base_t["existing_cash"]))
 
     def _load_holidays(self):
         holidays_file = DATA_MASTERS_DIR / "holidays.json"
@@ -1305,6 +1291,8 @@ class MastersManager:
             cit_trip_cost = float(self.assumptions.get("cit_trip_cost", 2000.0))
             stockout_penalty = float(self.assumptions.get("stockout_penalty_fixed", 10000.0))
 
+            cycle_buffers = self.raw_bundle["metadata"]["operational_model"]["cycle_buffers"]["1"]
+
             recomputed_terminals = {}
             total_existing_cash = 0.0
             total_net_indent = 0.0
@@ -1325,7 +1313,8 @@ class MastersManager:
                 
                 servicing_mode = t_cfg.get("serviced_by", base_t.get("serviced_by", "CIT"))
                 cycle_days = int(t_cfg.get("cycle_days", 7 if servicing_mode == "CIT" else 3))
-                existing_cash = float(t_cfg.get("existing_cash", meta.get("last_feed", {}).get("end_cash_value", base_t.get("existing_cash", 1500000.0))))
+                # Operator-entered or swept cash first, else End_Cash from the raw cutoff-day snapshot
+                existing_cash = float(t_cfg.get("existing_cash", base_t["existing_cash"]))
 
                 t_city = t_cfg.get("city", base_t.get("city", "MUMBAI")).upper()
                 location_tier = meta.get("location_tier", "Metro")
@@ -1336,9 +1325,7 @@ class MastersManager:
                 fwd_day_names = ['Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun', 'Mon']
 
                 s_preds = base_t.get("daily_preds", {})
-                raw_pred_list = (s_preds.get("strategy_c") or s_preds.get("lgb_uncensored") or (list(s_preds.values())[0] if s_preds else [500000.0]*7))[:7]
-                if len(raw_pred_list) < 7:
-                    raw_pred_list = list(raw_pred_list) + [raw_pred_list[-1] if raw_pred_list else 500000.0] * (7 - len(raw_pred_list))
+                raw_pred_list = s_preds[demand_model.MODEL_NAME][:7]
 
                 # Apply Category-Sensitive Exogenous Multipliers per-day only within cycle (Finding A6)
                 pred_list = []
@@ -1368,7 +1355,9 @@ class MastersManager:
                     pred_list.append(round(float(raw_pred_list[i]) * day_mult, 0))
 
                 # Replenishment Order-Up-To Formula with Lead Time (Finding A7)
-                c1_default_date = meta.get("suggested_date", "2026-08-26")
+                # Refill at the cycle start: the week the buffer was calibrated on and the
+                # week the holiday flag describes. Later lgb_holiday days come from later cutoffs.
+                c1_default_date = fwd_dates[0]
                 c1_default_window = meta.get("suggested_time", "07:00 AM")
                 lead_time_days = fwd_dates.index(c1_default_date) if c1_default_date in fwd_dates else 0
                 lead_time_demand = sum(pred_list[:lead_time_days])
@@ -1378,8 +1367,13 @@ class MastersManager:
                 demand_from_c1 = sum(pred_list[lead_time_days:refill_end_idx])
                 
                 daily_burn = round((demand_from_c1 / max(1, cycle_days)) / 100.0) * 100.0
-                daily_std = (demand_from_c1 / max(1, cycle_days)) * 0.22
-                sigma_h = daily_std * math.sqrt(cycle_days)
+                # P99 multiplier calibrated on 7-day backtest totals, holiday or quiet week.
+                # ponytail: sqrt(7/days) scaling for 3-day cycles assumes independent days;
+                # conservative if days are correlated. Calibrate on 3-day totals if branch volume grows.
+                p99_multiplier = demand_model.cycle_multiplier(cycle_buffers, tid)
+                p99_multiplier = 1.0 + (p99_multiplier - 1.0) * math.sqrt(7 / min(cycle_days, 7))
+                sigma_h = demand_model.equivalent_sigma(demand_from_c1, p99_multiplier, 0.99)
+                daily_std = sigma_h / math.sqrt(cycle_days)
                 safety_buffer = round((z_score * sigma_h) / 100.0) * 100.0
 
                 # Quantile Demand Projections

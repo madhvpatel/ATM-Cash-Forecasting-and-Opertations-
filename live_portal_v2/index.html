@@ -4324,8 +4324,7 @@
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
             <div style="font-size: 11px; font-weight: 700; color: #475569; text-transform: uppercase;">CARTO Geographic
               Transit Corridor</div>
-            <span style="font-size: 10px; color: #64748B;">API Key: <code
-                style="color: #0284C7;">cb1_4shp_1_67853029428fcaa9c51011a8</code></span>
+            <span style="font-size: 10px; color: #64748B;">Public basemap</span>
           </div>
           <div id="modalLeafletMap" style="width: 100%; height: 260px; border-radius: 6px; border: 1px solid #CBD5E1;">
           </div>
@@ -4673,7 +4672,7 @@
 
       tms.forEach(t => {
         const acts = (t.actual_demands || []).slice(0, labels.length);
-        const preds = (t.daily_preds?.strategy_c || []).slice(0, labels.length);
+        const preds = (t.daily_preds?.lgb_holiday || []).slice(0, labels.length);
         acts.forEach((v, idx) => aggActuals[idx] += (v || 0));
         preds.forEach((v, idx) => aggPreds[idx] += (v || 0));
       });
@@ -5323,7 +5322,7 @@
 
       const fwdDates = ['2026-08-25', '2026-08-26', '2026-08-27', '2026-08-28', '2026-08-29', '2026-08-30', '2026-08-31'];
       const fwdDays = ['Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun', 'Mon'];
-      const rawPreds = (atm.daily_preds?.strategy_c || [301048, 291637, 288000, 403269, 400586, 400895, 416680]).slice(0, 7);
+      const rawPreds = (atm.daily_preds?.lgb_holiday || []).slice(0, 7);
 
       let bWithout = existingCash;
       let bWith = existingCash;
@@ -5684,7 +5683,6 @@
     /* ----------------------------------------------------
        CARTO BASEMAPS & LEAFLET ENGINE (API KEY AUTHENTICATED)
        ---------------------------------------------------- */
-    const CARTO_API_KEY = "cb1_4shp_1_67853029428fcaa9c51011a8";
     let embeddedLeafletMapInstance = null;
     let embeddedTileLayer = null;
     let embeddedRouteGroup = null;
@@ -5695,9 +5693,9 @@
 
     function getCartoTileUrl(theme) {
       if (theme === 'voyager') {
-        return `https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png?key=${CARTO_API_KEY}`;
+        return `https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png`;
       }
-      return `https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png?key=${CARTO_API_KEY}`;
+      return `https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png`;
     }
 
     function toggleMapBasemap() {
@@ -5970,7 +5968,7 @@
         return d;
       });
 
-      const dailyBurn = (atm.daily_preds?.strategy_c || []).slice(0, ATM_TIMELINE_DAYS);
+      const dailyBurn = (atm.daily_preds?.lgb_holiday || []).slice(0, ATM_TIMELINE_DAYS);
 
       const vaultInit = atm.existing_cash || 2000000;
       const indentToUse = overrideIndentVal !== null ? overrideIndentVal : (atm.c1_net_indent || 1800000);
@@ -6076,7 +6074,7 @@
       });
 
       const actuals = (atm.actual_demands || []).slice(0, ATM_TIMELINE_DAYS);
-      const preds = (atm.daily_preds?.strategy_c || []).slice(0, ATM_TIMELINE_DAYS);
+      const preds = (atm.daily_preds?.lgb_holiday || []).slice(0, ATM_TIMELINE_DAYS);
 
       if (typeof Chart === 'undefined') return;
       if (chartAtmDailyDemand) chartAtmDailyDemand.destroy();
@@ -6660,12 +6658,12 @@
               <div style="font-weight:700; color:var(--text-main); font-size:12px; margin-top:2px;">D_H = Σ d_t</div>
             </div>
             <div style="background:var(--bg-subtle); padding:8px; border-radius:5px; border-left:3px solid #4F46E5;">
-              <span style="color:var(--text-muted); font-size:10px;">2. Lead-Time Volatility</span>
-              <div style="font-weight:700; color:var(--text-main); font-size:12px; margin-top:2px;">σ_H = σ_d × √H</div>
+              <span style="color:var(--text-muted); font-size:10px;">2. Backtest P99 Multiplier</span>
+              <div style="font-weight:700; color:var(--text-main); font-size:12px; margin-top:2px;">m = P99(actual ÷ forecast), holiday or quiet week</div>
             </div>
             <div style="background:var(--bg-subtle); padding:8px; border-radius:5px; border-left:3px solid #D97706;">
               <span style="color:var(--text-muted); font-size:10px;">3. Safety Buffer</span>
-              <div style="font-weight:700; color:var(--text-main); font-size:12px; margin-top:2px;">B_S = 2.326 × σ_H</div>
+              <div style="font-weight:700; color:var(--text-main); font-size:12px; margin-top:2px;">B_S = (m − 1) × D_H</div>
             </div>
             <div style="background:var(--bg-subtle); padding:8px; border-radius:5px; border-left:3px solid #DC2626;">
               <span style="color:var(--text-muted); font-size:10px;">4. Net Indent</span>

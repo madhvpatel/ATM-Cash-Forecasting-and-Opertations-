@@ -118,12 +118,13 @@ class TestPolicyCalculationEngine(unittest.TestCase):
         self.assertNotIn("Salary Surge", t8.get("active_exogenous_events", []))
 
     def test_a5_branch_atm_t4_3day_horizon_zero_indent(self):
-        """A5: Branch ATM T4 simulated over its 3-day horizon must have ₹0 net indent (no phantom stockout)."""
-        res = masters_mgr.compute_fleet_replenishment()
-        t4 = res["terminals"]["4"]
+        """A5: Branch ATM T4 is sized on its 3-day horizon only (no phantom 7-day stockout or second cycle)."""
+        t4 = MastersManager().compute_fleet_replenishment()["terminals"]["4"]
         self.assertEqual(t4["cycle_days"], 3)
         self.assertEqual(t4["serviced_by"], "BRANCH")
-        self.assertEqual(t4["c1_net_indent"], 0.0, "T4 has sufficient cash for 3 days and should need ₹0 indent")
+        self.assertEqual(t4["active_strategy"], "1-CYCLE")
+        three_day_need = t4["quantile_forecast"]["p50_demand"] + t4["assumptions"]["safety_buffer"] - t4["usable_balance"]
+        self.assertAlmostEqual(t4["c1_net_indent"], max(0.0, three_day_need), delta=200.0)
 
     def test_a4_two_cycle_arithmetic_and_sequencing(self):
         """A4: 2-cycle plans must sequence Cycle 2 strictly after Cycle 1 without artificial 110% inflation."""
