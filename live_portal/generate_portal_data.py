@@ -1214,6 +1214,9 @@ def build_portal_data():
                     "calibrated separately for weeks touching a holiday and quiet weeks"
                 ),
                 "cycle_buffers": cycle_buffers,
+                # Real split-gain shares of the cycle-1 model (one model for all 100 ATMs)
+                "feature_importance_cutoff": str(cutoff_date.date()),
+                "feature_importance": demand_model.feature_importance(cutoff_date),
             },
             "default_holding_rate": config.holding_rate_annual,
             "default_cit_cost": config.cit_trip_cost,

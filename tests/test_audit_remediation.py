@@ -177,6 +177,24 @@ class TestVarianceAndAuditDataIntegrity(unittest.TestCase):
         import agent
         self.assertIn("Actual N/A", agent.explain_atm_performance_and_cycles.invoke({"terminal_id": "1"}))
 
+    def test_model_variables_come_from_the_trained_model(self):
+        """Feature importances shown by the agent and /api/data are the model's, not hard-coded text."""
+        import agent
+        op = masters_mgr.raw_bundle["metadata"]["operational_model"]
+        saved = op.get("feature_importance")
+        op["feature_importance"] = [{"feature": "roll_mean_28", "share": 0.6}, {"feature": "is_bank_closed", "share": 0.4}]
+        try:
+            self.assertEqual(masters_mgr.compute_fleet_replenishment()["operational_model"]["feature_importance"][0]["feature"], "roll_mean_28")
+            text = agent.explain_model_variables.invoke({"terminal_id": "1"})
+            self.assertIn("roll_mean_28", text)
+            self.assertIn("60.0%", text)
+            self.assertNotIn("Strategy C", text)
+            self.assertNotIn("lag_14", text)
+            op["feature_importance"] = []
+            self.assertIn("not available", agent.explain_model_variables.invoke({"terminal_id": "1"}))
+        finally:
+            op["feature_importance"] = saved
+
     def test_c2_no_fake_fixed_cycle_efficacy(self):
         """C2: Cycle efficacy should report unmeasured/N/A rather than hardcoded 94.6%."""
         res = masters_mgr.compute_fleet_replenishment()

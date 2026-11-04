@@ -3136,6 +3136,7 @@
         </svg>
         <span>CIT Manifest</span>
       </button>
+      <button class="btn-secondary" onclick="signOut()">Sign out</button>
     </div>
   </header>
 
@@ -3373,13 +3374,13 @@
         <div class="pal-kpi-cell">
           <div class="pal-kpi-lbl">Proposed Net Indent</div>
           <div class="pal-kpi-num" style="color:#047857;" id="singleAtmIndentVal">₹53,00,000</div>
-          <div class="pal-kpi-sub">Strategy C + 1.65σ</div>
+          <div class="pal-kpi-sub">Forecast + z·σ reserve</div>
         </div>
 
         <div class="pal-kpi-cell">
           <div class="pal-kpi-lbl">Post-Refill Buffer</div>
           <div class="pal-kpi-num" id="singleAtmBufferVal">₹16,15,900</div>
-          <div class="pal-kpi-sub">1.65σ dynamic reserve</div>
+          <div class="pal-kpi-sub">z·σ reserve at target SLA</div>
         </div>
 
         <div class="pal-kpi-cell">
@@ -3533,7 +3534,7 @@
               <div style="display:none;">
                 <input type="range" id="singleAtmSlider" min="0" max="6000000" step="100" />
                 <input type="number" id="singleAtmNumberInput" step="100" />
-                <div id="makerReasonNotes">Strategy C + 1.65σ dynamic reserve</div>
+                <div id="makerReasonNotes">Forecast + z·σ dynamic reserve</div>
               </div>
 
               <!-- Reason code row (appears automatically if amended) -->
@@ -3612,7 +3613,7 @@
               <div class="card-topbar" style="margin-bottom:6px; padding-bottom:6px;">
                 <div class="card-heading-group">
                   <div class="card-title" style="font-size:12px;">Next 7 Days Withdrawal Forecast & Stockout Trajectory <span class="badge" style="background:#e0e7ff; color:#3730a3; font-size:9.5px; margin-left:6px; padding:2px 6px; border-radius:4px; font-weight:700;">[MODELED PROJECTION]</span></div>
-                  <div class="card-caption" style="font-size:10.5px;">Strategy C demand projections, stockout trajectory
+                  <div class="card-caption" style="font-size:10.5px;">Holiday LightGBM demand projections, stockout trajectory
                     & carry cost (6.5% p.a.)</div>
                 </div>
               </div>
@@ -3702,7 +3703,7 @@
                   <div class="card-heading-group">
                     <div class="card-title" style="font-size:12px;">Daily Predicted Cash Withdrawals vs Historical
                       Actuals</div>
-                    <div class="card-caption" style="font-size:10px;">Strategy C demand projection with confidence
+                    <div class="card-caption" style="font-size:10px;">Holiday LightGBM demand projection with confidence
                       interval</div>
                   </div>
                 </div>
@@ -3874,7 +3875,7 @@
         </div>
 
         <div class="evidence-tab-content" id="evTabObs">
-          <div class="evidence-item"><span class="evidence-key">Strategy C 7-Day Burn</span><span class="evidence-val"
+          <div class="evidence-item"><span class="evidence-key">Forecast 7-Day Burn</span><span class="evidence-val"
               id="evObs7dBurn">₹83,54,725</span></div>
           <div class="evidence-item"><span class="evidence-key">Daily Volatility (σ)</span><span class="evidence-val"
               id="evObsStd">₹2,45,000</span></div>
@@ -4389,6 +4390,18 @@
        APPLICATION LOGIC & CHART CONTROLLERS
        ======================================================== -->
   <script>
+    // Session ended (expired, server restarted, signed out elsewhere): go back to the sign-in page
+    const nativeFetch = window.fetch.bind(window);
+    window.fetch = async (...args) => {
+      const res = await nativeFetch(...args);
+      if (res.status === 401) window.location.href = '/login';
+      return res;
+    };
+
+    async function signOut() {
+      await nativeFetch('/api/logout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+      window.location.href = '/login';
+    }
     let APP_DATA = null;
     let ACTIVE_VIEW = 'network';
     let ACTIVE_TERMINAL_ID = '1';
@@ -4696,7 +4709,7 @@
               tension: 0.25
             },
             {
-              label: 'Fleet Strategy C Forecast',
+              label: 'Fleet Forecast (Holiday LightGBM)',
               data: aggPreds,
               borderColor: '#4F46E5',
               backgroundColor: 'rgba(79, 70, 229, 0.08)',
@@ -6093,7 +6106,7 @@
             },
             {
               type: 'line',
-              label: 'Strategy C Predicted Burn',
+              label: 'Predicted Burn (Holiday LightGBM)',
               data: preds,
               borderColor: '#4F46E5',
               backgroundColor: 'rgba(79, 70, 229, 0.1)',
@@ -6524,68 +6537,37 @@
         }
       }
 
-      // 3. Feature Variables Breakdown Visual Card
+      // 3. Feature Variables Breakdown Visual Card (real split-gain shares from the trained model)
       if (payload.visual_aid && payload.visual_aid.type === 'feature_variables') {
-        const tid = String(payload.visual_aid.terminal_id || payload.terminal_id || '1');
+        const model = (APP_DATA && APP_DATA.operational_model) || {};
+        const importance = model.feature_importance || [];
+        const top = importance.slice(0, 8);
+        const maxShare = top.length ? top[0].share : 1;
         const varCard = document.createElement("div");
         varCard.className = "copilot-visual-card";
         varCard.innerHTML = `
           <div class="visual-card-header">
             <div style="display:flex; align-items:center; gap:8px;">
-              <span class="dcr-pill dcr-healthy" style="background:#EEF2FF; color:#4F46E5; border-color:#C7D2FE;">ML REGISTRY</span>
-              <strong style="font-size:13px; color:var(--text-main);">LightGBM Strategy C: Top Feature Importance Breakdown · ATM #${tid}</strong>
+              <span class="dcr-pill dcr-healthy" style="background:#EEF2FF; color:#4F46E5; border-color:#C7D2FE;">MODEL</span>
+              <strong style="font-size:13px; color:var(--text-main);">Top Forecast Inputs · ${model.name || 'Holiday-aware LightGBM'}</strong>
             </div>
-            <span style="font-size:11px; color:var(--text-muted); font-family:var(--font-mono);">30 Variables Active</span>
+            <span style="font-size:11px; color:var(--text-muted); font-family:var(--font-mono);">${importance.length} inputs · fleet-wide</span>
           </div>
           <div style="margin:10px 0; display:flex; flex-direction:column; gap:8px;">
-            <div>
-              <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:3px;">
-                <span style="font-weight:600; color:var(--text-main);">lag_7 (Same day prior week)</span>
-                <span style="font-family:var(--font-mono); font-weight:700; color:#4F46E5;">22.6% Importance</span>
+            ${top.length ? top.map(f => `
+              <div>
+                <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:3px;">
+                  <span style="font-weight:600; color:var(--text-main); font-family:var(--font-mono);">${f.feature}</span>
+                  <span style="font-family:var(--font-mono); font-weight:700; color:#4F46E5;">${(f.share * 100).toFixed(1)}%</span>
+                </div>
+                <div style="height:6px; background:var(--bg-subtle); border-radius:3px; overflow:hidden;">
+                  <div style="height:100%; width:${(f.share / maxShare * 100).toFixed(1)}%; background:#4F46E5; border-radius:3px;"></div>
+                </div>
               </div>
-              <div style="height:6px; background:var(--bg-subtle); border-radius:3px; overflow:hidden;">
-                <div style="height:100%; width:22.6%; background:#4F46E5; border-radius:3px;"></div>
-              </div>
-            </div>
-            <div>
-              <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:3px;">
-                <span style="font-weight:600; color:var(--text-main);">lag_1 (Prior-day velocity)</span>
-                <span style="font-family:var(--font-mono); font-weight:700; color:#059669;">18.4% Importance</span>
-              </div>
-              <div style="height:6px; background:var(--bg-subtle); border-radius:3px; overflow:hidden;">
-                <div style="height:100%; width:18.4%; background:#059669; border-radius:3px;"></div>
-              </div>
-            </div>
-            <div>
-              <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:3px;">
-                <span style="font-weight:600; color:var(--text-main);">is_payday (Salary credit catalyst)</span>
-                <span style="font-family:var(--font-mono); font-weight:700; color:#D97706;">16.8% Importance (+41.4% surge)</span>
-              </div>
-              <div style="height:6px; background:var(--bg-subtle); border-radius:3px; overflow:hidden;">
-                <div style="height:100%; width:16.8%; background:#D97706; border-radius:3px;"></div>
-              </div>
-            </div>
-            <div>
-              <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:3px;">
-                <span style="font-weight:600; color:var(--text-main);">rolling_mean_7 (7-day baseline)</span>
-                <span style="font-family:var(--font-mono); font-weight:700; color:#2563EB;">14.2% Importance</span>
-              </div>
-              <div style="height:6px; background:var(--bg-subtle); border-radius:3px; overflow:hidden;">
-                <div style="height:100%; width:14.2%; background:#2563EB; border-radius:3px;"></div>
-              </div>
-            </div>
-            <div>
-              <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:3px;">
-                <span style="font-weight:600; color:var(--text-main);">day_of_week (Weekend volume lift)</span>
-                <span style="font-family:var(--font-mono); font-weight:700; color:#7C3AED;">12.5% Importance (+46.3% lift)</span>
-              </div>
-              <div style="height:6px; background:var(--bg-subtle); border-radius:3px; overflow:hidden;">
-                <div style="height:100%; width:12.5%; background:#7C3AED; border-radius:3px;"></div>
-              </div>
-            </div>
+            `).join('') : `<div style="font-size:12px; color:var(--text-muted);">Feature importance not available. Regenerate the portal data.</div>`}
           </div>
           <div style="display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--border-subtle); padding-top:8px; margin-top:8px;">
-            <span style="font-size:10px; color:var(--text-muted); font-family:var(--font-mono);">Source: feature_registry.json · LightGBM Tree Gains</span>
+            <span style="font-size:10px; color:var(--text-muted); font-family:var(--font-mono);">Share of split gain · model trained to ${model.feature_importance_cutoff || 'n/a'}</span>
             <div style="display:flex; gap:6px;">
               <button class="copilot-chip" style="font-size:10px; padding:3px 8px;" onclick="handleChipClick('/holidays ' + ACTIVE_TERMINAL_ID)">View Holidays ➔</button>
               <button class="copilot-chip" style="font-size:10px; padding:3px 8px;" onclick="handleChipClick('/formula ' + ACTIVE_TERMINAL_ID)">View Formula ➔</button>

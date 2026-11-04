@@ -2068,6 +2068,7 @@ class MastersManager:
                 "executed_sweeps": self.executed_sweeps,
                 "corridors": self.raw_bundle.get("corridors", []),
                 "portfolio": self.raw_bundle.get("portfolio", {}),
+                "operational_model": self.raw_bundle.get("metadata", {}).get("operational_model", {}),
                 "assumptions": self.assumptions,
                 "terminal_configs": self.terminal_configs,
                 "exogenous_events": self.exogenous_events,

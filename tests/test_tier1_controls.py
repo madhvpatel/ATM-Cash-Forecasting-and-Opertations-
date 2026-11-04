@@ -105,6 +105,11 @@ class TestAgentGate(unittest.TestCase):
         self.assertEqual(len(masters_mgr.executed_sweeps), 0)
 
 
+class NoRedirect(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, *args, **kwargs):
+        return None
+
+
 class TestServerAuthAndCsrf(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -138,6 +143,53 @@ class TestServerAuthAndCsrf(unittest.TestCase):
             raw_body = e.read()
             return e.code, json.loads(raw_body) if raw_body.startswith(b"{") else {}
 
+    def raw_request(self, path, body=None, headers=None, method=None):
+        """Like call(), but never follows redirects and returns (status, headers)."""
+        h = {"Content-Type": "application/json"}
+        h.update(headers or {})
+        data = json.dumps(body).encode() if body is not None else None
+        req = urllib.request.Request(self.base + path, data=data, headers=h, method=method or ("POST" if data else "GET"))
+        opener = urllib.request.build_opener(NoRedirect)
+        try:
+            with opener.open(req) as r:
+                return r.status, r.headers
+        except urllib.error.HTTPError as e:
+            return e.code, e.headers
+
+    def sign_in(self, name, password):
+        status, headers = self.raw_request("/api/login", {"name": name, "password": password})
+        cookie = (headers.get("Set-Cookie") or "").split(";")[0]
+        return status, cookie, headers.get("Set-Cookie") or ""
+
+    def test_login_page_is_public_and_portal_redirects_to_it(self):
+        self.assertEqual(self.raw_request("/login")[0], 200)
+        status, headers = self.raw_request("/")
+        self.assertEqual((status, headers.get("Location")), (302, "/login"))
+        self.assertIsNone(self.raw_request("/api/data")[1].get("WWW-Authenticate"))  # no browser pop-up
+
+    def test_form_sign_in_sets_session_cookie_and_sign_out_ends_it(self):
+        self.assertEqual(self.sign_in("bob", "wrong")[0], 401)
+        status, cookie, set_cookie = self.sign_in("bob", "bob-password")
+        self.assertEqual(status, 200)
+        self.assertIn("HttpOnly", set_cookie)
+        self.assertIn("SameSite=Strict", set_cookie)
+        self.assertEqual(self.raw_request("/api/data", headers={"Cookie": cookie})[0], 200)
+        self.assertEqual(self.raw_request("/", headers={"Cookie": cookie})[0], 200)
+        # Session identity drives roles exactly like Basic auth
+        status, _ = self.raw_request("/api/replenishment/approve", {"terminal_id": "3"}, headers={"Cookie": cookie})
+        self.assertEqual(status, 200)
+        self.assertEqual(masters_mgr.approved_indents["3"]["actor"], "bob")
+        self.assertEqual(self.raw_request("/api/logout", {}, headers={"Cookie": cookie})[0], 200)
+        self.assertEqual(self.raw_request("/api/data", headers={"Cookie": cookie})[0], 401)
+
+    def test_sign_in_refuses_cross_site_and_locks_after_repeated_failures(self):
+        evil = {"Origin": "http://localhost.evil.com"}
+        self.assertEqual(self.raw_request("/api/login", {"name": "alice", "password": "alice-password"}, headers=evil)[0], 403)
+        for _ in range(serve.LOGIN_MAX_FAILS):
+            self.assertEqual(self.sign_in("alice", "guess")[0], 401)
+        self.assertEqual(self.sign_in("alice", "alice-password")[0], 429)
+        serve._login_fails.clear()
+
     def test_requires_sign_in(self):
         self.assertEqual(self.call("/api/data")[0], 401)
         self.assertEqual(self.call("/api/data", user="nobody")[0], 401)
@@ -146,10 +198,8 @@ class TestServerAuthAndCsrf(unittest.TestCase):
     def test_only_ui_pages_are_served_statically(self):
         for path in ("/users.json", "/config_overrides.json", "/serve.py", "/masters_manager.py"):
             self.assertEqual(self.call(path, user="bob")[0], 404, path)
-        req = urllib.request.Request(self.base + "/", method="HEAD")
-        with self.assertRaises(urllib.error.HTTPError) as ctx:
-            urllib.request.urlopen(req)
-        self.assertEqual(ctx.exception.code, 401)
+        status, headers = self.raw_request("/", method="HEAD")
+        self.assertEqual((status, headers.get("Location")), (302, "/login"))
 
     def test_cross_site_and_non_json_posts_are_refused(self):
         evil = {"Origin": "http://localhost.evil.com"}

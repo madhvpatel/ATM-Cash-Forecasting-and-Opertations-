@@ -260,6 +260,12 @@ def design(train: pd.DataFrame, test: pd.DataFrame, features: list[str]):
 
 
 def fit_predict(lightgbm, train, test, features, target, weight=None) -> np.ndarray:
+    model, x_test = fit_model(lightgbm, train, test, features, target, weight)
+    return np.clip(model.predict(x_test), 0, None)
+
+
+def fit_model(lightgbm, train, test, features, target, weight=None):
+    """Trained LGBMRegressor plus the test design matrix it predicts on."""
     x_train, x_test, cats = design(train, test, features)
     model = lightgbm.LGBMRegressor(
         objective="regression_l1",
@@ -276,7 +282,7 @@ def fit_predict(lightgbm, train, test, features, target, weight=None) -> np.ndar
         force_col_wise=True,
     )
     model.fit(x_train, target, sample_weight=weight, categorical_feature=cats)
-    return np.clip(model.predict(x_test), 0, None)
+    return model, x_test
 
 
 def level_features(ro) -> list[str]:
@@ -298,7 +304,8 @@ def model_inputs():
 
 
 @functools.lru_cache(maxsize=None)
-def _forecast_week(cutoff: pd.Timestamp) -> pd.DataFrame:
+def _fit_week(cutoff: pd.Timestamp):
+    """Model trained on everything up to the cutoff, its test matrix, and the test rows (horizons 1-7)."""
     ro, lightgbm, _, dates, frame = model_inputs()
     positions = np.flatnonzero(dates == np.datetime64(cutoff))
     if len(positions) != 1:
@@ -308,7 +315,14 @@ def _forecast_week(cutoff: pd.Timestamp) -> pd.DataFrame:
     test = frame.loc[frame["origin_idx"] == cutoff_idx]
     if train["target_idx"].max() > cutoff_idx or test["target_idx"].min() <= cutoff_idx:
         raise AssertionError("train and test dates overlap")
-    pred = fit_predict(lightgbm, train, test, holiday_model_features(ro), train["demand"])
+    model, x_test = fit_model(lightgbm, train, test, holiday_model_features(ro), train["demand"])
+    return model, x_test, test
+
+
+@functools.lru_cache(maxsize=None)
+def _forecast_week(cutoff: pd.Timestamp) -> pd.DataFrame:
+    model, x_test, test = _fit_week(cutoff)
+    pred = np.clip(model.predict(x_test), 0, None)
     out = test[["terminal_id", "target_date", "horizon"]].assign(pred=pred)
     out["holiday_week"] = is_holiday_day(test["days_to_holiday"]).groupby(test["terminal_id"]).transform("any")
     return out.reset_index(drop=True)
@@ -325,6 +339,18 @@ def forecast_week(cutoff) -> pd.DataFrame:
     Columns: terminal_id, target_date, horizon, pred, holiday_week (same for all 7 rows of an ATM).
     """
     return _forecast_week(pd.Timestamp(cutoff)).copy()
+
+
+def feature_importance(cutoff) -> list[dict]:
+    """Each feature's share of total split gain in the model behind forecast_week(cutoff), largest first.
+
+    One model serves all 100 ATMs, so this is fleet-wide, not per ATM.
+    """
+    model, _, _ = _fit_week(pd.Timestamp(cutoff))
+    gain = model.booster_.feature_importance(importance_type="gain")
+    shares = gain / gain.sum()
+    ranked = sorted(zip(model.booster_.feature_name(), shares), key=lambda fs: -fs[1])
+    return [{"feature": f, "share": round(float(s), 4)} for f, s in ranked]
 
 
 @functools.lru_cache(maxsize=1)

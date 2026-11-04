@@ -331,7 +331,126 @@
             94
           ]
         }
-      }
+      },
+      "feature_importance_cutoff": "2026-08-24",
+      "feature_importance": [
+        {
+          "feature": "roll_mean_28",
+          "share": 0.3592
+        },
+        {
+          "feature": "lag_28",
+          "share": 0.1883
+        },
+        {
+          "feature": "terminal_id",
+          "share": 0.1543
+        },
+        {
+          "feature": "dom",
+          "share": 0.0834
+        },
+        {
+          "feature": "lag_7",
+          "share": 0.0658
+        },
+        {
+          "feature": "lag_14",
+          "share": 0.0465
+        },
+        {
+          "feature": "next_holiday_family",
+          "share": 0.023
+        },
+        {
+          "feature": "dow",
+          "share": 0.0164
+        },
+        {
+          "feature": "holiday_family",
+          "share": 0.0146
+        },
+        {
+          "feature": "loc_type",
+          "share": 0.0123
+        },
+        {
+          "feature": "days_to_holiday",
+          "share": 0.0078
+        },
+        {
+          "feature": "month",
+          "share": 0.0071
+        },
+        {
+          "feature": "is_bank_closed",
+          "share": 0.0038
+        },
+        {
+          "feature": "roll_mean_7",
+          "share": 0.0037
+        },
+        {
+          "feature": "days_to_closure",
+          "share": 0.0023
+        },
+        {
+          "feature": "prior_holiday_lift",
+          "share": 0.002
+        },
+        {
+          "feature": "lag_1",
+          "share": 0.0017
+        },
+        {
+          "feature": "is_weekend",
+          "share": 0.0013
+        },
+        {
+          "feature": "roll_std_28",
+          "share": 0.0011
+        },
+        {
+          "feature": "roll_mean_14",
+          "share": 0.001
+        },
+        {
+          "feature": "closure_run",
+          "share": 0.001
+        },
+        {
+          "feature": "pre_holiday",
+          "share": 0.001
+        },
+        {
+          "feature": "is_month_end",
+          "share": 0.0008
+        },
+        {
+          "feature": "is_2_4_sat",
+          "share": 0.0005
+        },
+        {
+          "feature": "roll_std_7",
+          "share": 0.0004
+        },
+        {
+          "feature": "roll_std_14",
+          "share": 0.0004
+        },
+        {
+          "feature": "is_payday",
+          "share": 0.0004
+        },
+        {
+          "feature": "is_regional_holiday",
+          "share": 0.0001
+        },
+        {
+          "feature": "horizon",
+          "share": 0.0
+        }
+      ]
     },
     "default_holding_rate": 0.065,
     "default_cit_cost": 2000.0,

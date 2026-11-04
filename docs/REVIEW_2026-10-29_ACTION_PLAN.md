@@ -105,3 +105,20 @@ It does **not** have:
 python3 -m unittest tests.test_audit_remediation tests.test_tier1_controls
 ```
 All 40 tests should pass. `test_unmeasured_cycle_actuals_render_without_crashing` is the test for this bug.
+
+## Feature-importance panel: made-up numbers replaced (2026-11-04)
+
+**What was wrong:** the AI copilot's "Model Variables" answer (`agent.py`) and its bar panel (`index.html`) showed hand-written weights for a "30-variable Strategy C" model. They listed inputs the model doesn't use, such as `lag_1` and weather, and percentages nobody measured. For example, `lag_7` was shown at 22.6% and `is_payday` at 16.8%.
+
+**What changed:**
+- `demand_model.feature_importance(cutoff)` now reads the split-gain shares from the actual trained model.
+- `generate_portal_data.py` saves them as `metadata.operational_model.feature_importance`, and `/api/data` passes them through.
+- The agent answer and the panel both read from there.
+
+The real top inputs are: 28-day average demand 35.9%, demand 4 weeks before 18.8%, which ATM 15.4%, day of month 8.3%, and same weekday last week 6.6%. Payday is under 1%.
+
+**Limits:**
+- One model serves all 100 ATMs, so the weights are fleet-wide, not per ATM.
+- Gain shows how much the model relies on an input. It does not show whether the input pushes demand up or down.
+
+**To check:** ask the copilot `/variables 1`. If the data file has no importances, the answer says so instead of showing numbers.

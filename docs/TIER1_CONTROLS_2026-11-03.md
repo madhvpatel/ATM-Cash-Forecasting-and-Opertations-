@@ -23,8 +23,11 @@ they were closed.
 
 ## What changed
 
-- **Sign-in** (`serve.py`): every request needs HTTP Basic sign-in, and the browser shows its own
-  login box. Users live in `live_portal_v2/users.json`, which stores salted PBKDF2 password hashes.
+- **Sign-in** (`serve.py`): every request needs a sign-in. People use the `/login` page (added
+  2026-11-04), which sets an 8-hour HttpOnly, SameSite=Strict session cookie. 5 wrong passwords
+  for one user name lock that name for 15 minutes. Sessions live in memory, so restarting the
+  server signs everyone out. Scripts can still use HTTP Basic. Users live in
+  `live_portal_v2/users.json`, which stores salted PBKDF2 password hashes.
   Never commit this file. Each user's name and role come from the sign-in. Any `role`,
   `officer_name` or `actor` in the request body is overwritten.
 - **Cross-site requests blocked**: a POST must be JSON (`Content-Type: application/json`), come from

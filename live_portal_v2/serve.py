@@ -22,10 +22,13 @@ import getpass
 import hashlib
 import hmac
 import secrets
+import threading
+import time
+from http.cookies import SimpleCookie
 from pathlib import Path
 from http.server import SimpleHTTPRequestHandler, HTTPServer, ThreadingHTTPServer
 from urllib.parse import urlparse, parse_qs
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
@@ -64,6 +67,17 @@ def add_user(name: str, role: str, password: str) -> None:
     os.chmod(USERS_FILE, 0o600)
 
 
+def check_password(name: str, password: str, users: Dict[str, Dict[str, str]]) -> Optional[Dict[str, str]]:
+    """Returns {"name", "role"} when the password matches, else None."""
+    rec = users.get(name)
+    if not rec:
+        hash_password(password, b"0" * 16)  # same cost as a real check, so timing doesn't reveal user names
+        return None
+    if not hmac.compare_digest(hash_password(password, bytes.fromhex(rec["salt"])), rec["hash"]):
+        return None
+    return {"name": name, "role": rec["role"]}
+
+
 def check_basic_auth(header: str, users: Dict[str, Dict[str, str]]) -> Optional[Dict[str, str]]:
     """Returns {"name", "role"} for valid HTTP Basic credentials, else None."""
     if not header.startswith("Basic "):
@@ -72,12 +86,31 @@ def check_basic_auth(header: str, users: Dict[str, Dict[str, str]]) -> Optional[
         name, _, password = base64.b64decode(header[6:]).decode("utf-8").partition(":")
     except Exception:
         return None
-    rec = users.get(name)
-    if not rec:
+    return check_password(name, password, users)
+
+
+# Form sign-in sessions. ponytail: in memory, so a restart signs everyone out; fine for one local process.
+SESSION_COOKIE = "cms_session"
+SESSION_TTL_S = 8 * 3600
+LOGIN_MAX_FAILS = 5
+LOGIN_LOCKOUT_S = 15 * 60
+LOGIN_PAGES = ("/login", "/login.html")
+_sessions: Dict[str, Dict[str, Any]] = {}
+_login_fails: Dict[str, List[float]] = {}
+_auth_lock = threading.Lock()
+
+
+def session_user(cookie_header: str) -> Optional[Dict[str, str]]:
+    """Returns {"name", "role"} for a live session cookie, else None."""
+    morsel = SimpleCookie(cookie_header or "").get(SESSION_COOKIE)
+    if not morsel:
         return None
-    if not hmac.compare_digest(hash_password(password, bytes.fromhex(rec["salt"])), rec["hash"]):
-        return None
-    return {"name": name, "role": rec["role"]}
+    with _auth_lock:
+        sess = _sessions.get(morsel.value)
+        if sess and sess["expires"] < time.time():
+            del _sessions[morsel.value]
+            sess = None
+    return {"name": sess["name"], "role": sess["role"]} if sess else None
 
 
 class IterationTwoHandler(SimpleHTTPRequestHandler):
@@ -91,16 +124,57 @@ class IterationTwoHandler(SimpleHTTPRequestHandler):
         self.wfile.write(json.dumps(obj).encode("utf-8"))
 
     def _authenticate(self) -> bool:
-        """HTTP Basic auth against the local user store; the browser shows its own sign-in box."""
-        self.user = check_basic_auth(self.headers.get("Authorization", ""), self.server.users)
+        """Session cookie from the sign-in page, or HTTP Basic for scripts and tests."""
+        self.user = (session_user(self.headers.get("Cookie", ""))
+                     or check_basic_auth(self.headers.get("Authorization", ""), self.server.users))
         if self.user:
             return True
-        self.send_response(401)
-        self.send_header("WWW-Authenticate", 'Basic realm="CMS2 Cash Portal", charset="UTF-8"')
+        if urlparse(self.path).path in ("/", "/index.html"):
+            self.send_response(302)
+            self.send_header("Location", "/login")
+            self.end_headers()
+            return False
+        # No WWW-Authenticate header: it would make browsers pop up their own sign-in box
+        self._send_json(401, {"error": "Sign-in required"})
+        return False
+
+    def _handle_login(self, body: Dict[str, Any]) -> None:
+        name = str(body.get("name", "")).strip()
+        now = time.time()
+        with _auth_lock:
+            recent = [t for t in _login_fails.get(name, []) if now - t < LOGIN_LOCKOUT_S]
+            _login_fails[name] = recent
+        if len(recent) >= LOGIN_MAX_FAILS:
+            self._send_json(429, {"error": "Too many failed sign-ins. Try again in 15 minutes."})
+            return
+        user = check_password(name, str(body.get("password", "")), self.server.users)
+        if not user:
+            # ponytail: one entry per attempted name; fine on a localhost-only server
+            with _auth_lock:
+                _login_fails[name].append(now)
+            self._send_json(401, {"error": "Wrong user name or password"})
+            return
+        token = secrets.token_urlsafe(32)
+        with _auth_lock:
+            _login_fails.pop(name, None)
+            _sessions[token] = {**user, "expires": now + SESSION_TTL_S}
+        self.send_response(200)
+        # No Secure flag: the server is plain http on 127.0.0.1. Add it if this is ever put behind TLS.
+        self.send_header("Set-Cookie", f"{SESSION_COOKIE}={token}; HttpOnly; SameSite=Strict; Path=/; Max-Age={SESSION_TTL_S}")
         self.send_header("Content-Type", "application/json")
         self.end_headers()
-        self.wfile.write(b'{"error": "Sign-in required"}')
-        return False
+        self.wfile.write(json.dumps({"name": user["name"], "role": user["role"]}).encode("utf-8"))
+
+    def _handle_logout(self) -> None:
+        morsel = SimpleCookie(self.headers.get("Cookie", "")).get(SESSION_COOKIE)
+        if morsel:
+            with _auth_lock:
+                _sessions.pop(morsel.value, None)
+        self.send_response(200)
+        self.send_header("Set-Cookie", f"{SESSION_COOKIE}=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0")
+        self.send_header("Content-Type", "application/json")
+        self.end_headers()
+        self.wfile.write(b'{"status": "signed out"}')
 
     def _is_same_origin_json(self) -> bool:
         """Blocks cross-site request forgery: browsers cannot send a cross-site JSON POST without
@@ -131,6 +205,9 @@ class IterationTwoHandler(SimpleHTTPRequestHandler):
         return True
 
     def do_GET(self):
+        if urlparse(self.path).path in LOGIN_PAGES:
+            self.path = "/login.html"
+            return super().do_GET()
         if not self._authenticate():
             return
         parsed = urlparse(self.path)
@@ -232,7 +309,8 @@ class IterationTwoHandler(SimpleHTTPRequestHandler):
             return
         # Read the body before any early reply: closing with unread data resets the connection
         raw = self.rfile.read(content_len) if content_len > 0 else b"{}"
-        if not self._authenticate():
+        path = urlparse(self.path).path
+        if path not in ("/api/login", "/api/logout") and not self._authenticate():
             return
         if not self._is_same_origin_json():
             self._send_json(403, {"error": "Forbidden: POST must be same-origin with Content-Type application/json"})
@@ -244,6 +322,10 @@ class IterationTwoHandler(SimpleHTTPRequestHandler):
         if not isinstance(body, dict):
             self._send_json(400, {"error": "Request body must be a JSON object"})
             return
+        if path == "/api/login":
+            return self._handle_login(body)
+        if path == "/api/logout":
+            return self._handle_logout()
         # Identity always comes from the sign-in, never from the request body
         body.update(officer_name=self.user["name"], actor=self.user["name"], role=self.user["role"])
         try:
