@@ -89,6 +89,8 @@ class ReplenishmentSimulator:
                     f_res = forecaster_censored.forecast_7day(feat_censored, cutoff_ts, model_type="lgb_calendar_holidays")
                 elif m == "lgb_calendar_holidays_uncensored":
                     f_res = forecaster_uncensored.forecast_7day(feat_uncensored, cutoff_ts, model_type="lgb_calendar_holidays")
+                elif m == "lgb_holiday":
+                    f_res = forecaster_uncensored.forecast_7day(feat_uncensored, cutoff_ts, model_type="lgb_holiday")
                 else:
                     continue
 

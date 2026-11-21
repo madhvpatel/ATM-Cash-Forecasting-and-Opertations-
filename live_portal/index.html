@@ -1410,6 +1410,7 @@
   </style>
 </head>
 <body>
+  <div role="note" style="background:#7c2d12;color:#fff;padding:8px 16px;font-size:0.8rem;text-align:center;">Demo only: approvals, dispatch and audit entries here are not saved, and the route, van and site details are illustrative. The operational portal is <code>live_portal_v2</code>.</div>
   <div class="glow-overlay"></div>
 
   <!-- ==================== SIDEBAR ==================== -->
@@ -4974,7 +4975,7 @@ Cash Intelligence Enterprise Operations Cockpit
         scrollWheelZoom: true
       });
 
-      const cartoKey = (DATA && DATA.metadata && DATA.metadata.carto_api_key) || 'cb1_4shp_1_67853029428fcaa9c51011a8';
+      const cartoKey = (DATA && DATA.metadata && DATA.metadata.carto_api_key) || '';
       const voyagerBasemap = L.tileLayer(`https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png?key=${cartoKey}`, {
         attribution: '&copy; CARTO basemaps &bull; OpenStreetMap',
         subdomains: 'abcd',
@@ -5168,6 +5169,7 @@ Cash Intelligence Enterprise Operations Cockpit
       if (!targetObj) return;
 
       const models = [
+        { id: 'lgb_holiday', name: 'Holiday-aware LightGBM (drives indents)', tag: 'OPERATIONAL · WEEKLY RE-FORECAST', color: '#22c55e' },
         { id: 'strategy_b', name: 'Strategy B: Site Metadata Profiler', tag: 'ZERO-RETRAIN', color: '#f59e0b' },
         { id: 'pure_exogenous', name: 'Pure Exogenous (Calendar + RBI Holidays)', tag: 'BENCHMARK', color: '#38bdf8' },
         { id: 'strategy_c', name: 'Strategy C: Telemetry-Adaptive', tag: 'ZERO-RETRAIN', color: '#a855f7' },
