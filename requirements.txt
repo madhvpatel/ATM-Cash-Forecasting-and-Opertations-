@@ -1,0 +1,11 @@
+# Operations portal (live_portal_v2)
+numpy>=1.26,<3
+pandas>=2.1,<3
+langgraph>=0.2
+langchain-core>=0.3
+langchain-google-genai>=2.0
+
+# Forecasting experiments and replenishment engine
+lightgbm>=4.3,<5
+scikit-learn>=1.4
+matplotlib>=3.8
